@@ -1,0 +1,15 @@
+{
+  "name": "research-tools",
+  "description": "投資研究相關的 Claude plugin：機構風報告輸出、估值紀律、產業週期輪動與取價路由。",
+  "owner": {
+    "name": "Benjamin",
+    "url": "https://github.com/Benjamin-Teng"
+  },
+  "plugins": [
+    {
+      "name": "research-report-kit",
+      "source": "./plugins/research-report-kit",
+      "description": "機構風格投資研究報告工具組：md + PDF 雙檔輸出規範、F1–F5 可讀性排版鐵則、兩層估值路徑判別與情境機率期望值制、產品週期輪動與 channel check SOP、跨市場取價路由。台股／美股共用同一套骨架。"
+    }
+  ]
+}

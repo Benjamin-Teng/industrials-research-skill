@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.venv/
+venv/
+
+# 產檔器輸出
+*.pdf
+*.html
+pg-*.png
+
+# 例外：如果日後要把範例 PDF 一起版控，解除下一行註解
+# !examples/sample-report.pdf
