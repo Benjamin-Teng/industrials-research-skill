@@ -1,7 +1,7 @@
 # 研究報告輸出規範（格式與交付標準）
 
 > **版本**：v2.0（發布版）　|　**適用**：個股深度研究、產業／供應鏈研究、輪動掃描週報，**台股與美股共用同一套骨架**
-> **本文件管的是「格式與交付」，不是「研究內容」**：內容對錯看方法論文件（`/equity-valuation-discipline` 或你自己的框架），長什麼樣、怎麼交、怎麼歸檔看本文件。
+> **本文件管的是「格式與交付」，不是「研究內容」**：內容對錯看方法論文件（`equity-valuation-discipline` 或你自己的框架），長什麼樣、怎麼交、怎麼歸檔看本文件。
 > **回報語言**：繁體中文（專有名詞、財務科目、公司代號保留原文）。
 
 ---
@@ -10,7 +10,7 @@
 
 1. **每份研究輸出一律同時產出 `.md` 與 `.pdf` 兩個檔**，且兩檔內容必須一致（PDF 由該 md 直接產生，不得手改）。
 2. **PDF 由 `md2pdf.py` 產生**，套用機構研究報告樣式；不得用未套樣式的裸轉檔交付。
-3. **兩個檔都必須用 `SendUserFile` 交付**，並在同一則訊息內附一句話結論。
+3. **兩個檔都必須交付給使用者**，並在同一則訊息內附一句話結論。Claude 用 `SendUserFile`；Codex／其他環境把檔案寫進工作目錄並告知路徑。
 4. **md 檔必須含 YAML front matter**（第二章），缺必填欄位即不得交付。
 5. **所有關鍵數據標註資料層級標籤與查價日**（第四章），未標註者視為未完成。
 6. **骨架不因市場而變**：台股、美股共用同一套章節與檢查清單，**只換資料源、籌碼欄位與幣別口徑**（`market-localization.md`）。
@@ -183,7 +183,8 @@ kpi:                                       # ★ 首頁 KPI 摘要卡，3–5 �
 ```bash
 # 1) 依骨架寫好 報告.md（含 front matter）
 # 2) 產 PDF（同名 .pdf 落在同目錄）
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/research-report-output/scripts/md2pdf.py" 報告.md
+# $SKILL_DIR = research-report-output 這個 skill 的資料夾（見 SKILL.md 工作流程第 5 步）
+python3 "$SKILL_DIR/scripts/md2pdf.py" 報告.md
 
 # 3) 抽查排版（轉圖後目視檢查封面、表格跨頁、頁碼）
 pdftoppm -png -r 80 報告.pdf pg && ls pg*
@@ -213,7 +214,7 @@ playwright install chromium
 
 ## 七、交付與歸檔
 
-1. **交付**：`SendUserFile` 同時送出 `.md` 與 `.pdf`，附一句話結論（不要複述報告內容）。
+1. **交付**：同時交付 `.md` 與 `.pdf`，附一句話結論（不要複述報告內容）。
 2. **歸檔**：報告本體**不寫進知識庫**（避免被單一標的長文灌爆）；只有下列三種寫回：
    - 框架／規範／手冊等**方法論文件**的更新
    - 跨報告可複用的**產業地圖或觀察名單**
@@ -224,7 +225,7 @@ playwright install chromium
 
 ## 八、發布前檢查清單（格式層）
 
-每份報告必跑。內容層檢查清單見 `/equity-valuation-discipline` 的 `references/prepublish-checklist.md`。
+每份報告必跑。內容層檢查清單見 `equity-valuation-discipline` 的 `references/prepublish-checklist.md`。
 
 1. `.md` 與 `.pdf` 皆已產出，PDF 由該 md 直接生成，未手改。
 2. front matter 必填欄位齊全（含 `market`、`framework` 版本）；KPI 卡 3–5 張且與內文數字一致；價格均有幣別前綴與「數值＋日期＋盤別」三件套。
@@ -241,4 +242,4 @@ playwright install chromium
 
 | 版本 | 變更 |
 |---|---|
-| v2.0（發布版） | 從個人 project 規範泛化為可發布版本：抽離內容層檢查清單至 `/equity-valuation-discipline`；F1–F5 完整版移入 `formatting-rules.md`；台美對照移入 `market-localization.md`；新增依賴降級路徑；新增輸出模式後綴與刪節後處理；front matter 加入 `footer_right`。 |
+| v2.0（發布版） | 從個人 project 規範泛化為可發布版本：抽離內容層檢查清單至 `equity-valuation-discipline`；F1–F5 完整版移入 `formatting-rules.md`；台美對照移入 `market-localization.md`；新增依賴降級路徑；新增輸出模式後綴與刪節後處理；front matter 加入 `footer_right`。 |

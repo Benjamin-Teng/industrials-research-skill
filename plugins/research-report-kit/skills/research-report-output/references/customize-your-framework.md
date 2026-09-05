@@ -113,6 +113,6 @@ zip -r ~/research-report-kit.plugin . -x "*.DS_Store" -x "__pycache__/*"
 | 台股股價、月營收、三大法人、融資融券 | FinMind MCP |
 | 美股即時報價、歷史價、選擇權 | 券商 MCP（如 Interactive Brokers） |
 | 財報原文（10-K／10-Q／MOPS） | 對應市場的文件庫，或直接用網頁抓取 |
-| 產業報價與供應鏈情報 | 產業研究機構訂閱（付費，見 `/product-cycle-rotation` 的工具箱） |
+| 產業報價與供應鏈情報 | 產業研究機構訂閱（付費，見 `product-cycle-rotation` 的工具箱） |
 
 連上之後不需要改任何設定——`price-routing` 是在執行時偵測工具是否存在，不是讀設定檔。

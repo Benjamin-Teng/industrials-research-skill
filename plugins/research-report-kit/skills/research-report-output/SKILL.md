@@ -1,6 +1,7 @@
 ---
 name: research-report-output
 description: "產出投資研究報告時使用（台股、美股共用同一套骨架），統一輸出格式：一律同時交付 .md 與機構風 .pdf。觸發情境包含個股深度研究、產業／供應鏈／技術研究、輪動掃描與 channel check 週報、SOTP／DCF 估值報告、供應鏈上下游分析、產品銷售展望、技術瓶頸分析；也在使用者說「寫一份研究報告」「做個股深度研究」「產業研究報告」「幫我出 PDF 版報告」時使用。"
+compatibility: 產 PDF 需要 pandoc、playwright(chromium)、pypdf、PyYAML 與 Noto CJK 字型；缺件時的降級路徑見 references/output-spec.md 第六章。無這些依賴的環境（如 ChatGPT 網頁沙箱）只能交付 .md。
 ---
 
 # 研究報告輸出規範（md + PDF 雙檔）
@@ -9,9 +10,9 @@ description: "產出投資研究報告時使用（台股、美股共用同一套
 
 本 skill 管**格式與交付**：長什麼樣、怎麼排版、怎麼產檔、怎麼交。
 
-**內容標準**（估值方法、假設紀律、發布前的內容層檢查）交給 `/equity-valuation-discipline`；
-**產業掃描與 channel check** 交給 `/product-cycle-rotation`；
-**取價**交給 `/price-routing`。這三個都是可替換層——使用者若有自己的方法論文件，優先讀他的。
+**內容標準**（估值方法、假設紀律、發布前的內容層檢查）交給 `equity-valuation-discipline`；
+**產業掃描與 channel check** 交給 `product-cycle-rotation`；
+**取價**交給 `price-routing`。這三個都是可替換層——使用者若有自己的方法論文件，優先讀他的。
 
 > **使用者方法論優先**：若使用者的 project／repo 中有自訂的研究框架文件（例如「個股深度研究框架」「投資決策手冊」），**那份文件是 source of truth**，本 plugin 的方法論 skill 退為預設值。設定方式見 `references/customize-your-framework.md`。
 
@@ -19,11 +20,11 @@ description: "產出投資研究報告時使用（台股、美股共用同一套
 
 1. 一律**同時產出 `.md` 與 `.pdf`**，PDF 由該 md 直接生成，不得手改。
 2. PDF 一律用 `scripts/md2pdf.py` 產生（機構研究報告樣式）。
-3. 兩檔都用 `SendUserFile` 交付，附一句話結論——不要複述報告內容。
+3. **兩檔都要交付給使用者**，附一句話結論——不要複述報告內容。（Claude 用 `SendUserFile`；Codex／其他環境把檔案寫進工作目錄並告知路徑。）
 4. md 必須有完整 YAML front matter（見下方樣板與 `references/output-spec.md` 第二章）。
 5. 關鍵數據標**資料層級標籤**（`l1/l2/l3`）與**查價日**；價格書寫格式強制為「**數值＋日期＋盤別**」三件套（例：`US$218.98（2026-08-14 正常盤收盤）`），缺任一件即視為未查證數據。
 6. **骨架不因市場而變**：台股、美股共用同一套章節與檢查清單，只換資料源與籌碼欄位（`references/market-localization.md`），依 front matter 的 `market` 取用。
-7. 交付前跑完 `references/output-spec.md` 第八章的**格式層檢查清單**＋下方 **F-rules 六項自查（F-a 至 F-f）**；內容層檢查清單見 `/equity-valuation-discipline`。
+7. 交付前跑完 `references/output-spec.md` 第八章的**格式層檢查清單**＋下方 **F-rules 六項自查（F-a 至 F-f）**；內容層檢查清單見 `equity-valuation-discipline`。
 8. **排版即內容**：任何需要讀第二次才能拆解的排版，等於沒寫。
 
 ---
@@ -66,7 +67,10 @@ description: "產出投資研究報告時使用（台股、美股共用同一套
 5. **產 PDF**：
 
    ```bash
-   python3 "${CLAUDE_PLUGIN_ROOT}/skills/research-report-output/scripts/md2pdf.py" 你的報告.md
+   # $SKILL_DIR = 本 SKILL.md 所在的資料夾
+#   Claude：<plugin>/skills/research-report-output
+#   Codex ：~/.agents/skills/research-report-output（或專案內的 .agents/skills/...）
+python3 "$SKILL_DIR/scripts/md2pdf.py" 你的報告.md
    ```
 
    環境缺套件時：`pip install pypdf pyyaml --break-system-packages`（另需 `pandoc` 與 `playwright install chromium`）。依賴不全時的降級路徑見 `references/output-spec.md` 第六章。
@@ -77,12 +81,12 @@ description: "產出投資研究報告時使用（台股、美股共用同一套
    ```
 
    用 Read 看封面與最寬那張表所在頁，確認未溢出、頁碼正常。
-7. **交付**：`SendUserFile` 送 md + pdf。
+7. **交付**：把 `.md` 與 `.pdf` 兩個檔都交給使用者（各平台的交付方式見鐵則 3）。
 8. **歸檔**：報告本體不寫進知識庫（避免被單一標的長文灌爆）；只有方法論更新、可複用的產業地圖／觀察名單、覆盤結論才寫回。
 
 ### 取價
 
-需要即時報價時，一律透過 **`/price-routing`** 決定取價工具與路徑，本 skill 不自行判斷市場路由。
+需要即時報價時，一律透過 **`price-routing`** 決定取價工具與路徑，本 skill 不自行判斷市場路由。
 
 ---
 

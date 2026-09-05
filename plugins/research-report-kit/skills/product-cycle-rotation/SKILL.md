@@ -7,9 +7,9 @@ description: "做產業掃描、供應鏈輪動、產品世代交替分析或 ch
 
 ## 定位
 
-這個 skill 管**產業層級掃描與輪動擇時**；`/equity-valuation-discipline` 管**單一標的的深度驗證與部位大小**。
+這個 skill 管**產業層級掃描與輪動擇時**；`equity-valuation-discipline` 管**單一標的的深度驗證與部位大小**。
 
-| 面向 | 本 skill | `/equity-valuation-discipline` |
+| 面向 | 本 skill | `equity-valuation-discipline` |
 |---|---|---|
 | 目的 | 產業掃描、輪動擇時、短線催化劑 | 單一標的深度驗證、重倉依據 |
 | 時間尺度 | 數週至 12 個月 | 6–24 個月持有 |

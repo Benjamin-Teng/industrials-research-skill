@@ -1,6 +1,6 @@
 # 發布前檢查清單（內容層，12 項）
 
-報告定稿前逐項打勾；任一項未過即不得發布。格式層檢查清單另見 `/research-report-output` 的 `references/output-spec.md` 第八章。
+報告定稿前逐項打勾；任一項未過即不得發布。格式層檢查清單另見 `research-report-output` 的 `references/output-spec.md` 第八章。
 
 ---
 

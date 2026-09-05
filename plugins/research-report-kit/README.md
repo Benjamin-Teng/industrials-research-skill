@@ -44,6 +44,16 @@
 
 **或直接安裝 `.plugin` 檔**：在 Claude 桌面版把檔案拖進對話，按安裝卡片即可（這條路沒有更新通道）。
 
+**Codex**：這四個 skill 遵循 Agent Skills 開放標準，Codex 可直接使用——clone 本 repo 後把 `skills/` 底下的四個資料夾 symlink 進 `~/.agents/skills/`：
+
+```bash
+git clone https://github.com/Benjamin-Teng/industrials-research-skill.git ~/src/industrials-research-skill
+mkdir -p ~/.agents/skills
+ln -s ~/src/industrials-research-skill/plugins/research-report-kit/skills/* ~/.agents/skills/
+```
+
+用 `/skills` 確認有載到，`$research-report-output` 明確呼叫。完整說明（含專案層安裝、Windows 注意事項、ChatGPT 網頁版的限制）見 [repo 根目錄 README](../../README.md)。
+
 ### PDF 產檔的環境依賴
 
 PDF 由 `md → pandoc → HTML → Chromium → PDF` 產生，需要：
