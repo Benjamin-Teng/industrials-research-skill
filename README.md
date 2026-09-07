@@ -6,49 +6,68 @@
 
 ## 安裝
 
-這個 repo 同時符合兩套 skill 規格：**Claude plugin** 與 **Agent Skills 開放標準**（OpenAI Codex 採用同一份規格）。四個 skill 的 `SKILL.md` 未做任何平台專屬綁定，兩邊共用同一份檔案。
+同一份 skill 同時封裝成 **Claude Code plugin** 與 **Codex plugin**：Claude 讀 `.claude-plugin/`，Codex 讀 `.codex-plugin/` 與根目錄的 `.agents/plugins/marketplace.json`，兩邊共用 `plugins/research-report-kit/skills/` 底下同一份 `SKILL.md` 與 references。marketplace 名稱在兩邊都叫 `research-tools`。
 
-### Claude（Cowork / Claude Code）
+### Claude Code
 
-```
+```text
 /plugin marketplace add Benjamin-Teng/industrials-research-skill
 /plugin install research-report-kit@research-tools
+/reload-plugins
 ```
 
+> `/reload-plugins` 讓剛裝好的 plugin 立即生效，不必重開 Claude Code。
 > 之後拿新版：`/plugin marketplace update research-tools`，再 `/reload-plugins`。
 > 第三方 marketplace 預設不自動更新；要開自動更新，在 `/plugin` 的 Marketplaces 分頁打開。
 
 ### Codex
 
-Codex 從 `.agents/skills` 目錄掃描 skill，**支援 symlink 並會跟隨到目標**，所以 clone 一份再連結過去就好，更新只要 `git pull`。
+#### VS Code／Codex IDE（推薦）
 
-```bash
-# 1) clone 到你放原始碼的地方
-git clone https://github.com/Benjamin-Teng/industrials-research-skill.git ~/src/industrials-research-skill
+Codex IDE extension 目前不支援完整 plugin，但支援獨立 skill。本 plugin 沒有 MCP、connector 或 hook，所以用這條路可取得目前全部功能。四個 skill 各自獨立，要哪個裝哪個；在 Codex 對話框貼上：
 
-# 2A) 全域安裝——所有專案都吃得到
-mkdir -p ~/.agents/skills
-ln -s ~/src/industrials-research-skill/plugins/research-report-kit/skills/* ~/.agents/skills/
-
-# 2B) 或只在單一專案啟用
-mkdir -p /path/to/your/project/.agents/skills
-ln -s ~/src/industrials-research-skill/plugins/research-report-kit/skills/* /path/to/your/project/.agents/skills/
+```text
+$skill-installer 請從 https://github.com/Benjamin-Teng/industrials-research-skill/tree/main/plugins/research-report-kit/skills/research-report-output 安裝 research-report-output skill
+$skill-installer 請從 https://github.com/Benjamin-Teng/industrials-research-skill/tree/main/plugins/research-report-kit/skills/equity-valuation-discipline 安裝 equity-valuation-discipline skill
+$skill-installer 請從 https://github.com/Benjamin-Teng/industrials-research-skill/tree/main/plugins/research-report-kit/skills/product-cycle-rotation 安裝 product-cycle-rotation skill
+$skill-installer 請從 https://github.com/Benjamin-Teng/industrials-research-skill/tree/main/plugins/research-report-kit/skills/price-routing 安裝 price-routing skill
 ```
 
-**驗證**：在 Codex 裡輸入 `/skills`，應該列出 `research-report-output`、`equity-valuation-discipline`、`product-cycle-rotation`、`price-routing` 四個。
+同意下載後開啟新對話，輸入 `/skills` 應該看到剛裝的 skill；若沒出現，重新載入 VS Code。
 
-**呼叫**：打 `$research-report-output` 明確指定，或直接描述任務（「幫我做一份 XXXX 的個股深度研究報告」）讓 Codex 依 description 自動匹配。
+#### Codex CLI 對話介面
 
-**更新**：`cd ~/src/industrials-research-skill && git pull` — symlink 會自動指到新版。
+先在終端機註冊一次 marketplace：
 
-**Codex 的掃描優先序**（前面的蓋過後面的）：
-
-```
-$CWD/.agents/skills  →  $CWD/../.agents/skills  →  $REPO_ROOT/.agents/skills
-→  $HOME/.agents/skills  →  /etc/codex/skills  →  系統內建
+```shell
+codex plugin marketplace add Benjamin-Teng/industrials-research-skill
 ```
 
-> **Windows 使用者**：`ln -s` 需要開發人員模式或系統管理員權限。不想開的話直接複製資料夾（`xcopy /E /I`），代價是每次更新都要重新複製。
+接著啟動 `codex`，在對話介面輸入 `/plugins`，切換到 `research-tools` marketplace、開啟 `research-report-kit` 並選擇安裝。安裝後開始新 session。
+
+#### 終端機進階安裝
+
+若偏好完全使用命令列：
+
+```shell
+codex plugin marketplace add Benjamin-Teng/industrials-research-skill
+codex plugin add research-report-kit@research-tools
+```
+
+安裝後開啟新的 Codex session。完整 plugin 流程適用於 Codex CLI 與支援 Plugins Directory 的桌面介面，不會把 plugin 安裝進 VS Code IDE extension。
+
+**更新**：Git marketplace 的快照不會自動刷新，先 upgrade 再重裝：
+
+```shell
+codex plugin marketplace upgrade research-tools
+codex plugin add research-report-kit@research-tools
+```
+
+### 使用方式
+
+- **自動觸發（主要）**：不必打任何指令——只要對話講到研究報告、估值、產業輪動、查股價，Claude Code 或 Codex 會依 skill 的 `description` 自動載入。
+- **Claude Code 手動觸發**：`/research-report-output`（依環境亦可能顯示為 `/research-report-kit:research-report-output`）。
+- **Codex 手動觸發**：`$research-report-output`。其餘三個 skill 同理。
 
 ### ChatGPT 網頁版
 

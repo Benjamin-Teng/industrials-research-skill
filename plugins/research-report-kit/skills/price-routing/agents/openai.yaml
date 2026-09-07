@@ -1,0 +1,7 @@
+interface:
+  display_name: "Price Routing"
+  short_description: "偵測可用行情工具並依市場選路，無 MCP 時退回 yfinance"
+  default_prompt: "Use $price-routing to fetch a quote or price history through the best available data source."
+
+policy:
+  allow_implicit_invocation: true

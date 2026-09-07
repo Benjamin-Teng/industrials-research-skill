@@ -1,0 +1,20 @@
+{
+  "name": "research-tools",
+  "interface": {
+    "displayName": "Research Tools"
+  },
+  "plugins": [
+    {
+      "name": "research-report-kit",
+      "source": {
+        "source": "local",
+        "path": "./plugins/research-report-kit"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

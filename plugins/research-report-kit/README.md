@@ -35,7 +35,7 @@
 
 **從 marketplace 安裝（可收到更新）：**
 
-```
+```text
 /plugin marketplace add Benjamin-Teng/industrials-research-skill
 /plugin install research-report-kit@research-tools
 ```
@@ -44,15 +44,14 @@
 
 **或直接安裝 `.plugin` 檔**：在 Claude 桌面版把檔案拖進對話，按安裝卡片即可（這條路沒有更新通道）。
 
-**Codex**：這四個 skill 遵循 Agent Skills 開放標準，Codex 可直接使用——clone 本 repo 後把 `skills/` 底下的四個資料夾 symlink 進 `~/.agents/skills/`：
+**Codex**：本 plugin 也是 Codex 原生 plugin。終端機兩行裝好：
 
-```bash
-git clone https://github.com/Benjamin-Teng/industrials-research-skill.git ~/src/industrials-research-skill
-mkdir -p ~/.agents/skills
-ln -s ~/src/industrials-research-skill/plugins/research-report-kit/skills/* ~/.agents/skills/
+```shell
+codex plugin marketplace add Benjamin-Teng/industrials-research-skill
+codex plugin add research-report-kit@research-tools
 ```
 
-用 `/skills` 確認有載到，`$research-report-output` 明確呼叫。完整說明（含專案層安裝、Windows 注意事項、ChatGPT 網頁版的限制）見 [repo 根目錄 README](../../README.md)。
+VS Code／Codex IDE 不支援完整 plugin，改在對話框用 `$skill-installer` 從 GitHub 路徑裝獨立 skill；完整三入口與 ChatGPT 網頁版的限制見 [repo 根目錄 README](../../README.md)。裝好後以 `$research-report-output` 明確呼叫。
 
 ### PDF 產檔的環境依賴
 
@@ -81,7 +80,7 @@ apt-get install -y pandoc fonts-noto-cjk      # 或 brew install pandoc
 
 直接說要什麼就好：
 
-```
+```text
 幫我做一份 XXXX 的個股深度研究報告
 把這個產業的供應鏈拆一拆，看誰受惠
 這檔現在的估值合理嗎
@@ -103,7 +102,7 @@ Claude 會自動選對 skill、選對模板、跑完檢查清單，最後交付 
 
 ## 目錄結構
 
-```
+```text
 research-report-kit/
 ├── .claude-plugin/plugin.json
 ├── README.md

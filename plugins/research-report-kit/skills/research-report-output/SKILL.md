@@ -1,7 +1,8 @@
 ---
 name: research-report-output
 description: "產出投資研究報告時使用（台股、美股共用同一套骨架），統一輸出格式：一律同時交付 .md 與機構風 .pdf。觸發情境包含個股深度研究、產業／供應鏈／技術研究、輪動掃描與 channel check 週報、SOTP／DCF 估值報告、供應鏈上下游分析、產品銷售展望、技術瓶頸分析；也在使用者說「寫一份研究報告」「做個股深度研究」「產業研究報告」「幫我出 PDF 版報告」時使用。"
-compatibility: 產 PDF 需要 pandoc、playwright(chromium)、pypdf、PyYAML 與 Noto CJK 字型；缺件時的降級路徑見 references/output-spec.md 第六章。無這些依賴的環境（如 ChatGPT 網頁沙箱）只能交付 .md。
+metadata:
+  compatibility: 產 PDF 需要 pandoc、playwright(chromium)、pypdf、PyYAML 與 Noto CJK 字型；缺件時的降級路徑見 references/output-spec.md 第六章。無這些依賴的環境（如 ChatGPT 網頁沙箱）只能交付 .md。
 ---
 
 # 研究報告輸出規範（md + PDF 雙檔）

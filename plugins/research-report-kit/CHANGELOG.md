@@ -1,5 +1,26 @@
 # Changelog
 
+## v1.2.0 — 2026-09-07
+
+安裝模式改為與 [xs_helper](https://github.com/Benjamin-Teng/xs_helper) 相同的雙平台原生封裝：Claude Code 與 Codex 都用 marketplace 一鍵安裝，不再教使用者手動 clone + symlink。
+
+### 新增
+
+- **`.codex-plugin/plugin.json`**：Codex 原生 plugin manifest（含 `interface` 展示區塊），`skills` 指向與 Claude 共用的 `./skills/`。
+- **根目錄 `.agents/plugins/marketplace.json`**：Codex marketplace `research-tools`，以 `local` 來源指向 `./plugins/research-report-kit`，與 Claude 的 marketplace 同名。
+- **每個 skill 的 `agents/openai.yaml`**：Codex 顯示名稱、簡述、預設提示，並允許隱式觸發。
+- **`tests/test_plugin_compatibility.py`**：守住雙 manifest 同名同版、Codex marketplace 路徑真實存在、四個 openai.yaml 齊全、README 覆蓋三條安裝路徑。
+
+### 變更
+
+- **README 安裝章節**改為三入口矩陣：Claude Code 三行指令；Codex IDE 用 `$skill-installer` 從 GitHub 路徑裝獨立 skill；Codex CLI 用 `/plugins` 對話安裝或 `codex plugin add`。
+- **`.claude-plugin/marketplace.json` 補 `version` 欄位**（部分安裝器從 marketplace 條目讀版本）。
+
+### 移除
+
+- **根目錄 `manifest.json`**：Codex 只讀 `.codex-plugin/plugin.json`，該檔不屬於任何一方的規格。
+- **README 的 symlink 安裝教學與 Windows 開發人員模式警告**。
+
 ## v1.1.0 — 2026-09-05
 
 跨平台可攜性。四個 skill 現在同時符合 Claude plugin 與 Agent Skills 開放標準（OpenAI Codex 採用同一份規格），`SKILL.md` 無平台專屬綁定。

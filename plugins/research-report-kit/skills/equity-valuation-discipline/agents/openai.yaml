@@ -1,0 +1,7 @@
+interface:
+  display_name: "Equity Valuation Discipline"
+  short_description: "估值路徑判別、fade 參數紀律、情境機率與期望值、發布前檢查"
+  default_prompt: "Use $equity-valuation-discipline to value a stock with scenario probabilities and pre-publish checks."
+
+policy:
+  allow_implicit_invocation: true

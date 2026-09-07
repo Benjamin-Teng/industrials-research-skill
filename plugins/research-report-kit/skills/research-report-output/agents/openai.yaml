@@ -1,0 +1,7 @@
+interface:
+  display_name: "Research Report Output"
+  short_description: "產出機構風投資研究報告，同時交付 .md 與 .pdf"
+  default_prompt: "Use $research-report-output to write an equity or industry research report delivered as md and PDF."
+
+policy:
+  allow_implicit_invocation: true

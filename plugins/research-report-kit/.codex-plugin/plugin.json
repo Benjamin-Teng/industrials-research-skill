@@ -1,0 +1,38 @@
+{
+  "name": "research-report-kit",
+  "version": "1.2.0",
+  "description": "機構風格投資研究報告工具組：md + PDF 雙檔輸出規範、估值紀律、產品週期輪動與取價路由。台股／美股共用同一套骨架。",
+  "author": {
+    "name": "Benjamin",
+    "email": "benjamin31588@gmail.com",
+    "url": "https://github.com/Benjamin-Teng"
+  },
+  "homepage": "https://github.com/Benjamin-Teng/industrials-research-skill",
+  "repository": "https://github.com/Benjamin-Teng/industrials-research-skill",
+  "license": "MIT",
+  "keywords": [
+    "equity-research",
+    "investment-research",
+    "valuation",
+    "supply-chain",
+    "pdf-report",
+    "taiwan-stock",
+    "us-stock",
+    "channel-check"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Research Report Kit",
+    "shortDescription": "機構風投資研究報告：md + PDF 輸出、估值紀律、產業輪動、取價路由",
+    "longDescription": "把投資研究的輸出格式與內容紀律變成可重複的流程：統一的 md + PDF 雙檔輸出規範與 F1–F5 排版鐵則、估值路徑判別與情境機率期望值制、product cycle 五問與 channel check SOP，以及跨市場取價路由。台股／美股共用同一套骨架。",
+    "developerName": "Benjamin",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://github.com/Benjamin-Teng/industrials-research-skill",
+    "defaultPrompt": [
+      "幫我做一份台積電的個股深度研究報告，交付 md 與 PDF。",
+      "用情境機率與期望值制幫這檔股票做估值。",
+      "掃描這個產業的 product cycle，找出下一波受惠者。"
+    ]
+  }
+}
