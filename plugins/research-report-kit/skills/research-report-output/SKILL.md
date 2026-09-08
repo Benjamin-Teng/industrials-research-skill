@@ -1,6 +1,6 @@
 ---
 name: research-report-output
-description: "產出投資研究報告時使用（台股、美股共用同一套骨架），統一輸出格式：一律同時交付 .md 與機構風 .pdf。觸發情境包含個股深度研究、產業／供應鏈／技術研究、輪動掃描與 channel check 週報、SOTP／DCF 估值報告、供應鏈上下游分析、產品銷售展望、技術瓶頸分析；也在使用者說「寫一份研究報告」「做個股深度研究」「產業研究報告」「幫我出 PDF 版報告」時使用。"
+description: "產出投資研究報告時使用（台股、美股共用同一套骨架），統一輸出格式：一律同時交付 .md 與機構風 .pdf。觸發情境包含個股深度研究、產業／供應鏈／技術研究、輪動掃描與 channel check 週報、SOTP／DCF 估值報告、供應鏈上下游分析、產品銷售展望、技術瓶頸分析；也在使用者說「寫一份研究報告」「做個股深度研究」「產業研究報告」「幫我出 PDF 版報告」時使用；使用者要「簡介」「摘要」「briefing」「重點速覽」時走 Briefing 模式。"
 metadata:
   compatibility: 產 PDF 需要 pandoc、playwright(chromium)、pypdf、PyYAML 與 Noto CJK 字型；缺件時的降級路徑見 references/output-spec.md 第六章。無這些依賴的環境（如 ChatGPT 網頁沙箱）只能交付 .md。
 ---
@@ -109,7 +109,7 @@ python3 "$SKILL_DIR/scripts/md2pdf.py" 你的報告.md
 
 ### Briefing（摘要，≤3 頁）
 
-結論速覽版，約 2,000–2,500 中文字。觸發：「briefing」「摘要」「重點速覽」「summary」「3 頁」。命名加 `_brief` 後綴。`type` 欄位後加「（Briefing）」。
+結論速覽版，約 2,000–2,500 中文字。觸發：「簡介」「briefing」「摘要」「重點速覽」「summary」「3 頁」。命名加 `_brief` 後綴。`type` 欄位後加「（Briefing）」。
 
 **保留**：TL;DR（含 KPI 卡，刪推導表）、Key Findings（數據明細欄只留 1–2 項）、估值結論（只留情境表 ＋ Reverse DCF 一行）、Recommendations（評等 ＋ 加減碼訊號各前 2 項）、核心風險三點各一行。
 **刪去**：市場共識拆解、事業結構全文、供應鏈全文（留一行定位句）、交叉驗證細節、敏感度矩陣（留排序第一名一句）、催化劑表、儀表板、Caveats 全文、來源清單。

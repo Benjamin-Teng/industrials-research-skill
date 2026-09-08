@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.1 — 2026-09-08
+
+### 變更
+
+- **`research-report-output` 的 Briefing 模式新增觸發詞「簡介」**，並寫進 skill `description`，讓「幫我寫 XX 的簡介」也能載入 skill 並走 3 頁摘要版。
+
 ## v1.2.0 — 2026-09-07
 
 安裝模式改為與 [xs_helper](https://github.com/Benjamin-Teng/xs_helper) 相同的雙平台原生封裝：Claude Code 與 Codex 都用 marketplace 一鍵安裝，不再教使用者手動 clone + symlink。
