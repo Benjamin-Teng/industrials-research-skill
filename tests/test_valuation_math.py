@@ -792,25 +792,26 @@ def test_fade_exit_multiple_signature_has_no_dependency_on_margin_path() -> None
 
 
 def test_solve_scalar_parameter_unique_root_matches_analytic_solution() -> None:
-    """單調線性函式：唯一根，且與解析解一致（不是邊界值或取樣點）。"""
+    """單調線性函式：取樣網格上只有一個候選根，且與解析解一致（不是邊界值或取樣點）。"""
     result = vm.solve_scalar_parameter(lambda x: 2 * x - 7, lo=0.0, hi=10.0)
-    assert result.status == "unique"
+    assert result.status == "single_candidate"
     assert result.value == pytest.approx(3.5, abs=1e-6)
     assert result.residual == pytest.approx(0.0, abs=1e-6)
+    assert result.samples_used == 33  # 預設 samples，揭露取樣密度
 
 
 def test_solve_scalar_parameter_multiple_roots_are_not_collapsed_to_first_root() -> None:
     """f(x) = (x-2)(x-5) 在 [0,10] 有兩個根：必須都列出，不得只回傳第一個或邊界。"""
     result = vm.solve_scalar_parameter(lambda x: (x - 2) * (x - 5), lo=0.0, hi=10.0)
-    assert result.status == "multiple_roots"
+    assert result.status == "multiple_candidates"
     assert result.value is None
     assert sorted(result.candidates) == pytest.approx([2.0, 5.0], abs=1e-6)
 
 
 def test_solve_scalar_parameter_no_solution_in_range_is_explicit() -> None:
-    """f(x) 在整個範圍內同號：必須回傳明確的「範圍內無解」狀態，不是邊界值。"""
+    """f(x) 在整個範圍內同號：必須回傳明確的「取樣網格上無候選根」狀態，不是邊界值。"""
     result = vm.solve_scalar_parameter(lambda x: x + 100, lo=0.0, hi=10.0)
-    assert result.status == "no_solution_in_range"
+    assert result.status == "no_candidate_in_range"
     assert result.value is None
     assert result.candidates == ()
 
@@ -820,12 +821,12 @@ def test_solve_scalar_parameter_rejects_invalid_bounds() -> None:
         vm.solve_scalar_parameter(lambda x: x, lo=5.0, hi=1.0)
 
 
-# --- Codex adversarial review 發現的缺陷：只憑「有變號區間」就判定 unique，
+# --- Codex adversarial review 發現的缺陷：只憑「有變號區間」就判定 single_candidate，
 # --- 沒有驗證殘差，也沒有偵測 max_iter 耗盡。以下對照兩個實測可重現案例。
 
 
 def test_solve_scalar_parameter_rejects_discontinuous_jump_as_unconverged() -> None:
-    """跳躍不連續函式：有變號但根本沒有真正的根，不得回報 unique 假解。
+    """跳躍不連續函式：有變號但根本沒有真正的根，不得回報 single_candidate 假解。
 
     `f` 在 x=0.123 處從 -1 跳到 +1，中間沒有連續穿越 0；二分法的區間寬度
     會收斂到 tol 內，但代入收斂點的殘差恆為 ±1，遠超過殘差容差，必須被
@@ -846,20 +847,20 @@ def test_solve_scalar_parameter_rejects_discontinuous_jump_as_unconverged() -> N
 
 
 def test_solve_scalar_parameter_rejects_result_when_max_iter_exhausted() -> None:
-    """max_iter 耗盡、區間根本沒收斂到 tol 內時，不得回報 unique。"""
+    """max_iter 耗盡、區間根本沒收斂到 tol 內時，不得回報 single_candidate。"""
     result = vm.solve_scalar_parameter(
         lambda x: x - 0.3333333, lo=0.0, hi=1.0, max_iter=1, tol=1e-12
     )
     assert result.status == "unconverged"
-    assert result.status != "unique"
+    assert result.status != "single_candidate"
     assert result.value is None
     assert result.unresolved_intervals >= 1
 
 
 def test_solve_scalar_parameter_unique_root_has_tiny_verified_residual() -> None:
-    """正常單根（三次函式，root=0.42）：仍是 unique，且殘差真的接近 0。"""
+    """正常單根（三次函式，root=0.42）：仍是 single_candidate，且殘差真的接近 0。"""
     result = vm.solve_scalar_parameter(lambda x: (x - 0.42) ** 3, lo=0.0, hi=1.0)
-    assert result.status == "unique"
+    assert result.status == "single_candidate"
     assert result.value == pytest.approx(0.42, abs=1e-6)
     assert result.residual is not None
     assert abs(result.residual) < 1e-6
@@ -869,15 +870,15 @@ def test_solve_scalar_parameter_unique_root_has_tiny_verified_residual() -> None
 def test_solve_scalar_parameter_multiple_roots_still_detected_after_fix() -> None:
     """既有多根行為維持不變：兩根都列出，不因新增殘差檢驗而漏掉。"""
     result = vm.solve_scalar_parameter(lambda x: (x - 2) * (x - 5), lo=0.0, hi=10.0)
-    assert result.status == "multiple_roots"
+    assert result.status == "multiple_candidates"
     assert result.value is None
     assert sorted(result.candidates) == pytest.approx([2.0, 5.0], abs=1e-6)
 
 
 def test_solve_scalar_parameter_no_solution_in_range_still_detected_after_fix() -> None:
-    """既有無變號區間行為維持不變：完全同號一律是 no_solution_in_range，不是 unconverged。"""
+    """既有無變號區間行為維持不變：完全同號一律是 no_candidate_in_range，不是 unconverged。"""
     result = vm.solve_scalar_parameter(lambda x: x + 100, lo=0.0, hi=10.0)
-    assert result.status == "no_solution_in_range"
+    assert result.status == "no_candidate_in_range"
     assert result.value is None
     assert result.candidates == ()
 
@@ -892,7 +893,7 @@ def test_solve_scalar_parameter_residual_tol_controls_acceptance() -> None:
     assert default_result.status == "unconverged"
 
     loose_result = vm.solve_scalar_parameter(f, lo=0.0, hi=1.0, residual_tol=5e-6)
-    assert loose_result.status == "unique"
+    assert loose_result.status == "single_candidate"
     assert loose_result.value == pytest.approx(0.5, abs=1e-6)
 
 
@@ -901,10 +902,11 @@ def test_solve_scalar_parameter_residual_tol_default_is_documented_1e_minus_6() 
     assert sig.parameters["residual_tol"].default == pytest.approx(1e-6)
 
 
-# --- 第二輪 Codex review 發現的缺陷：驗證通過的根只有一個時就回報 unique，
-# --- 沒有另外統計「有幾個變號區間驗證失敗」。兩個根都是真根，但其中一個
-# --- 因為函式在該處斜率極陡，二分法收斂後殘差仍超過 residual_tol 而被丟棄，
-# --- 此時不得宣稱「唯一解」——必須讓呼叫端知道還有一段沒解出來。
+# --- 第二輪 Codex review 發現的缺陷：驗證通過的根只有一個時就回報
+# --- single_candidate（舊名 unique），沒有另外統計「有幾個變號區間驗證
+# --- 失敗」。兩個根都是真根，但其中一個因為函式在該處斜率極陡，二分法
+# --- 收斂後殘差仍超過 residual_tol 而被丟棄，此時不得宣稱「單一候選」
+# --- ——必須讓呼叫端知道還有一段沒解出來。
 
 
 _STEEP_THRESHOLD = 5.0
@@ -935,7 +937,7 @@ def _one_shallow_one_steep_root(x: float) -> float:
 
 
 def test_solve_scalar_parameter_reports_unconverged_when_one_root_fails_residual_check() -> None:
-    """一個區間驗證通過、另一個驗證失敗：不得回報 unique，必須是 unconverged。"""
+    """一個區間驗證通過、另一個驗證失敗：不得回報 single_candidate，必須是 unconverged。"""
     result = vm.solve_scalar_parameter(_one_shallow_one_steep_root, lo=0.0, hi=10.0)
     assert result.status == "unconverged"
     assert result.value is None
@@ -946,11 +948,11 @@ def test_solve_scalar_parameter_reports_unconverged_when_one_root_fails_residual
 
 
 def test_solve_scalar_parameter_loosened_residual_tol_recovers_both_roots_as_multiple() -> None:
-    """把 residual_tol 放寬到足以接受陡根：兩個變號區間都驗證通過，狀態變成 multiple_roots。"""
+    """把 residual_tol 放寬到足以接受陡根：兩個變號區間都驗證通過，狀態變成 multiple_candidates。"""
     result = vm.solve_scalar_parameter(
         _one_shallow_one_steep_root, lo=0.0, hi=10.0, residual_tol=0.1
     )
-    assert result.status == "multiple_roots"
+    assert result.status == "multiple_candidates"
     assert result.unresolved_intervals == 0
     assert sorted(result.candidates) == pytest.approx([2.0, 5.00000003], abs=1e-6)
 
@@ -958,20 +960,20 @@ def test_solve_scalar_parameter_loosened_residual_tol_recovers_both_roots_as_mul
 def test_solve_scalar_parameter_unresolved_intervals_field_exists_and_defaults_to_zero_when_clean() -> None:
     """單一真根、無其他變號區間：unresolved_intervals 必須是 0，不是預設隨便一個非零值。"""
     result = vm.solve_scalar_parameter(lambda x: 3 * x - 1, lo=0.0, hi=1.0)
-    assert result.status == "unique"
+    assert result.status == "single_candidate"
     assert result.unresolved_intervals == 0
 
 
 def test_solve_scalar_parameter_never_reports_unique_when_any_bracket_is_unresolved() -> None:
     """對照 Codex 原始重現案例（含分段點本身的額外跳躍）：不論未解區間有幾段，
-    只要 > 0，就不得回報 unique；且回傳的 unresolved_intervals 必須反映真實數量。
+    只要 > 0，就不得回報 single_candidate；且回傳的 unresolved_intervals 必須反映真實數量。
     """
 
     def f(x: float) -> float:
         return (x - 2.0) if x < 5.0 else (x - 8.0) * 1e8
 
     result = vm.solve_scalar_parameter(f, lo=0.0, hi=10.0)
-    assert result.status != "unique"
+    assert result.status != "single_candidate"
     assert result.status == "unconverged"
     assert result.value is None
     assert result.unresolved_intervals >= 1
@@ -1006,7 +1008,7 @@ def test_fade_engine_reverse_round_trip_recovers_g1_within_tolerance() -> None:
     result = vm.solve_scalar_parameter(
         lambda g1: _fade_ev_for_g1(g1) - target_ev, lo=0.0, hi=0.40
     )
-    assert result.status == "unique"
+    assert result.status == "single_candidate"
     assert result.unresolved_intervals == 0
     assert result.value is not None
 
@@ -1023,5 +1025,265 @@ def test_fade_engine_reverse_round_trip_reports_no_solution_when_target_out_of_r
     result = vm.solve_scalar_parameter(
         lambda g1: _fade_ev_for_g1(g1) - unreachable_target, lo=0.0, hi=0.40
     )
-    assert result.status == "no_solution_in_range"
+    assert result.status == "no_candidate_in_range"
     assert result.value is None
+
+
+# ============================================================
+# v1.3.1：第三輪 Codex review 發現的缺陷一——狀態名稱宣稱得比方法能證明的多
+#
+# 純變號偵測看不到偶重根（觸底但不變號），也可能把兩個相距極近的單根
+# 漏掉其中一個，卻仍用 "unique"／"no_solution_in_range" 這種強斷言字眼。
+# 以下三個案例皆為實測可重現的盲點，對應修法：(a) 狀態改名為只宣稱
+# 「取樣網格上找到的證據」；(b) 新增 |f| 局部極小偵測補足偶重根盲點。
+# ============================================================
+
+
+def test_solve_scalar_parameter_finds_even_multiplicity_root_via_local_minimum() -> None:
+    """`(x-0.42)**2` 在 x=0.42 觸底但不變號：純變號偵測會誤報無解，
+    新增的局部極小偵測必須能找到它，狀態誠實回報為 single_candidate
+    （不是宣稱唯一，只是這個網格上只找到一個候選）。
+    """
+    result = vm.solve_scalar_parameter(lambda x: (x - 0.42) ** 2, lo=0.0, hi=1.0)
+    assert result.status == "single_candidate"
+    assert result.value == pytest.approx(0.42, abs=1e-6)
+    assert result.residual is not None
+    assert abs(result.residual) < 1e-6
+    assert result.unresolved_intervals == 0
+    assert result.samples_used == 33
+
+
+def test_solve_scalar_parameter_finds_both_even_and_simple_root() -> None:
+    """`(x-0.42)**2*(x-0.75)`：0.75 是一般變號根，0.42 是偶重根，兩者都
+    必須進入 candidates，狀態是 multiple_candidates，不得漏掉偶重根、
+    誤報只有 0.75 一個唯一解。
+    """
+    result = vm.solve_scalar_parameter(
+        lambda x: (x - 0.42) ** 2 * (x - 0.75), lo=0.0, hi=1.0
+    )
+    assert result.status == "multiple_candidates"
+    assert result.value is None
+    assert result.unresolved_intervals == 0
+    assert sorted(result.candidates) == pytest.approx([0.42, 0.75], abs=1e-6)
+
+
+def test_solve_scalar_parameter_close_roots_in_same_sampling_cell_best_effort_recovery() -> None:
+    """`(x-0.500)*(x-0.505)`：兩個單根相距僅 0.005，在預設 samples=33
+    （網格寬約 0.03125）下落在同一取樣格內，純變號偵測只會找到 x=0.500
+    （恰好落在取樣點上，觸發既有變號分支），漏掉 x=0.505（對照舊版
+    bug 重現：`status="unique"`、`candidates=(0.5,)`）。
+
+    加了局部極小偵測後，這個特定案例其實兩根都被找到了：x=0.500 仍由
+    既有變號分支（取樣點恰好對到根）找到；x=0.505 則是黃金分割搜尋在
+    以 x=0.500 為中心展開的搜尋區間內，因為 x=0.505 在該區間內更靠近
+    中心、|f| 在其附近更小，搜尋被拉向 0.505 而非 0.500 收斂到的結果。
+    這是「盡力而為」機制在此組態下剛好成功的例子，**不是**保證——換一組
+    根距、換一組取樣起點，仍可能像 `_minimize_abs_f` docstring 描述的
+    那樣只找到其中一個。因此狀態仍必須誠實回報為 multiple_candidates，
+    不是 single_candidate 冒充唯一解。
+    """
+    result = vm.solve_scalar_parameter(
+        lambda x: (x - 0.500) * (x - 0.505), lo=0.0, hi=1.0
+    )
+    assert result.status == "multiple_candidates"
+    assert result.value is None
+    assert result.unresolved_intervals == 0
+    assert sorted(result.candidates) == pytest.approx([0.500, 0.505], abs=1e-6)
+
+
+def test_solve_scalar_parameter_local_minimum_that_is_truly_positive_is_rejected() -> None:
+    """`|f|` 的局部極小值本身就明顯 > residual_tol：代表那裡真的沒有根，
+    不得被局部極小偵測誤判成候選根。
+    """
+    result = vm.solve_scalar_parameter(lambda x: (x - 0.5) ** 2 + 1.0, lo=0.0, hi=1.0)
+    assert result.status == "no_candidate_in_range"
+    assert result.value is None
+    assert result.candidates == ()
+
+
+# ============================================================
+# v1.3.1：第三輪 Codex review 發現的缺陷二——NaN／inf 無聲穿過公開函式
+#
+# NaN 與任何數字比較（含 <=）恆為 False，既有的邊界檢查攔不住 NaN；
+# 每個公開函式都必須在輸入非有限、或運算結果溢位為非有限時明確拒絕。
+# ============================================================
+
+_NAN = float("nan")
+_INF = float("inf")
+
+
+def test_cost_of_equity_rejects_nan_and_inf_inputs() -> None:
+    with pytest.raises(ValueError):
+        vm.cost_of_equity(rf=_NAN, beta=1.1, erp=0.06)
+    with pytest.raises(ValueError):
+        vm.cost_of_equity(rf=0.02, beta=_INF, erp=0.06)
+
+
+def test_wacc_rejects_nan_inputs() -> None:
+    with pytest.raises(ValueError):
+        vm.wacc(ke=_NAN, kd=0.05, equity_value=80, debt_value=20, tax_rate=0.20)
+    with pytest.raises(ValueError):
+        vm.wacc(ke=0.10, kd=0.05, equity_value=80, debt_value=20, tax_rate=_NAN)
+
+
+def test_wacc_rejects_inputs_that_overflow_to_infinite_result() -> None:
+    """輸入本身有限，但運算結果溢位為 inf：一樣必須拒絕，不得無聲輸出 inf。
+
+    `kd=1e308` 與 `tax_rate=-1e308` 皆是合法的有限浮點數，但
+    `kd * (1 - tax_rate)` 約為 `1e308 * 1e308 = 1e616`，遠超過
+    float64 上限（約 1.8e308），會溢位成 `inf`。
+    """
+    with pytest.raises(ValueError):
+        vm.wacc(ke=0.05, kd=1e308, equity_value=90, debt_value=10, tax_rate=-1e308)
+
+
+def test_equity_bridge_rejects_nan_inputs() -> None:
+    """對照 Codex 原始重現：equity_bridge(100, 0, 0, NaN, 0, 10) 曾無聲回傳 (nan, nan)。"""
+    with pytest.raises(ValueError):
+        vm.equity_bridge(
+            ev_operating=100,
+            excess_cash=0,
+            non_operating_assets=0,
+            debt=_NAN,
+            other_claims=0,
+            shares=10,
+        )
+    with pytest.raises(ValueError):
+        vm.equity_bridge(
+            ev_operating=1000,
+            excess_cash=0,
+            non_operating_assets=0,
+            debt=0,
+            other_claims=0,
+            shares=_NAN,
+        )
+
+
+def test_equity_bridge_rejects_inf_inputs() -> None:
+    with pytest.raises(ValueError):
+        vm.equity_bridge(
+            ev_operating=_INF,
+            excess_cash=0,
+            non_operating_assets=0,
+            debt=0,
+            other_claims=0,
+            shares=10,
+        )
+
+
+def test_growth_path_rejects_nan_and_inf() -> None:
+    with pytest.raises(ValueError):
+        vm.growth_path(g1=_NAN, g_terminal=0.03, n=3)
+    with pytest.raises(ValueError):
+        vm.growth_path(g1=0.20, g_terminal=_INF, n=3)
+
+
+def test_reinvestment_rejects_nan_and_inf() -> None:
+    with pytest.raises(ValueError):
+        vm.reinvestment(revenue_prev=_NAN, growth=0.10, k=2)
+    with pytest.raises(ValueError):
+        vm.reinvestment(revenue_prev=100, growth=_INF, k=2)
+
+
+def test_fcff_full_rejects_nan_and_inf() -> None:
+    with pytest.raises(ValueError):
+        vm.fcff_full(nopat=_NAN, dep_amort=20, capex=35, delta_nwc=5)
+    with pytest.raises(ValueError):
+        vm.fcff_full(nopat=100, dep_amort=20, capex=_INF, delta_nwc=5)
+
+
+def test_fcff_simplified_rejects_nan_and_inf() -> None:
+    with pytest.raises(ValueError):
+        vm.fcff_simplified(nopat=_NAN, reinvestment=25)
+    with pytest.raises(ValueError):
+        vm.fcff_simplified(nopat=_INF, reinvestment=25)
+
+
+def test_terminal_value_rejects_nan_and_inf() -> None:
+    with pytest.raises(ValueError):
+        vm.terminal_value(cf_next=_NAN, discount_rate=0.10, g_perpetual=0.03)
+    with pytest.raises(ValueError):
+        vm.terminal_value(cf_next=100, discount_rate=_INF, g_perpetual=0.03)
+
+
+def test_scenario_return_rejects_nan_and_inf_inputs() -> None:
+    """對照 Codex 原始重現：scenario_return 系列曾無聲回傳 nan。"""
+    with pytest.raises(ValueError):
+        vm.scenario_return(p_end=70, dividend=2, p_entry=100, cost=_NAN)
+    with pytest.raises(ValueError):
+        vm.scenario_return(p_end=_INF, dividend=2, p_entry=100, cost=1)
+
+
+def test_price_return_rejects_nan_and_inf() -> None:
+    with pytest.raises(ValueError):
+        vm.price_return(p_end=_NAN, p_entry=100)
+    with pytest.raises(ValueError):
+        vm.price_return(p_end=_INF, p_entry=100)
+
+
+def test_annualized_return_rejects_nan_and_inf() -> None:
+    with pytest.raises(ValueError):
+        vm.annualized_return(total_return=_NAN, years=2)
+    with pytest.raises(ValueError):
+        vm.annualized_return(total_return=0.21, years=_INF)
+
+
+def test_reward_risk_rejects_nan_and_inf() -> None:
+    with pytest.raises(ValueError):
+        vm.reward_risk(p_upside=_NAN, p_entry=100, p_downside=70)
+    with pytest.raises(ValueError):
+        vm.reward_risk(p_upside=150, p_entry=100, p_downside=_INF)
+
+
+def test_expected_value_rejects_nan_in_probabilities_or_values() -> None:
+    with pytest.raises(ValueError):
+        vm.expected_value(probabilities=[_NAN, 0.5, 0.5], values=[1, 2, 3])
+    with pytest.raises(ValueError):
+        vm.expected_value(probabilities=[0.25, 0.5, 0.25], values=[1, _INF, 3])
+
+
+def test_breakeven_probability_binary_rejects_nan_and_inf() -> None:
+    with pytest.raises(ValueError):
+        vm.breakeven_probability_binary(gain=_NAN, loss=0.10, cost=0.01)
+    with pytest.raises(ValueError):
+        vm.breakeven_probability_binary(gain=_INF, loss=0.10, cost=0.01)
+
+
+def test_breakeven_bear_probability_rejects_nan_and_inf() -> None:
+    with pytest.raises(ValueError):
+        vm.breakeven_bear_probability(r_bear=_NAN, r_base=0.05, r_bull=0.1, p_base=0.5)
+    with pytest.raises(ValueError):
+        vm.breakeven_bear_probability(r_bear=-0.2, r_base=0.1, r_bull=_INF, p_base=0.5)
+
+
+def test_fade_enterprise_value_rejects_nan_in_growth_rates_or_margins() -> None:
+    with pytest.raises(ValueError):
+        vm.fade_enterprise_value(
+            growth_rates=[_NAN, 0.05], nopat_margin_path=[0.2, 0.2], k=1.0, wacc=0.10
+        )
+    with pytest.raises(ValueError):
+        vm.fade_enterprise_value(
+            growth_rates=[0.1, 0.05], nopat_margin_path=[0.2, _INF], k=1.0, wacc=0.10
+        )
+    with pytest.raises(ValueError):
+        vm.fade_enterprise_value(
+            growth_rates=[0.1, 0.05], nopat_margin_path=[0.2, 0.2], k=_NAN, wacc=0.10
+        )
+    with pytest.raises(ValueError):
+        vm.fade_enterprise_value(
+            growth_rates=[0.1, 0.05], nopat_margin_path=[0.2, 0.2], k=1.0, wacc=_NAN
+        )
+
+
+def test_fade_exit_multiple_rejects_nan_and_inf() -> None:
+    with pytest.raises(ValueError):
+        vm.fade_exit_multiple(enterprise_value=_NAN, nopat_same_period=0.30)
+    with pytest.raises(ValueError):
+        vm.fade_exit_multiple(enterprise_value=_INF, nopat_same_period=0.30)
+
+
+def test_solve_scalar_parameter_rejects_nan_and_inf_bounds() -> None:
+    with pytest.raises(ValueError):
+        vm.solve_scalar_parameter(lambda x: x, lo=_NAN, hi=1.0)
+    with pytest.raises(ValueError):
+        vm.solve_scalar_parameter(lambda x: x, lo=0.0, hi=_INF)

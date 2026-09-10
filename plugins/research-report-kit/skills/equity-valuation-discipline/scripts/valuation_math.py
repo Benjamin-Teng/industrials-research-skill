@@ -45,6 +45,29 @@ __all__ = [
 ]
 
 
+def _require_finite(name: str, value: float) -> float:
+    """輸入或輸出必須是有限實數（模組內部使用，NaN／inf 靜默穿透防呆）。
+
+    `NaN` 與任何數字比較（含 `<=`、`<`）恆為 `False`，本模組既有的邊界
+    檢查（如 `shares <= 0`）無法攔住 `NaN`；`inf` 也會使後續四則運算悄悄
+    產生看似合理但錯誤的結果。因此每個公開函式在使用參數前、回傳結果前，
+    都必須呼叫本函式明確擋下 `NaN`／`inf`，不得讓資料源缺漏（以 `NaN`
+    表示）無聲流入估值與報告。
+
+    參數：
+        name: 參數或回傳值名稱，用於錯誤訊息定位。
+        value: 待檢查的數值。
+
+    回傳：`value` 本身（未變動），方便在運算式中內嵌呼叫。
+
+    Raises:
+        ValueError: `value` 非有限（`NaN` 或 `inf`）。
+    """
+    if not math.isfinite(value):
+        raise ValueError(f"{name} 必須是有限數（非 NaN／inf），收到 {value!r}")
+    return value
+
+
 def cost_of_equity(rf: float, beta: float, erp: float) -> float:
     """股權成本 `k_e = r_f + beta_L * ERP`（COR-01）。
 
@@ -55,8 +78,14 @@ def cost_of_equity(rf: float, beta: float, erp: float) -> float:
 
     回傳：股權成本（小數）。這是股權投資人要求的報酬率，**不是** WACC；
     只有在全股權融資等特定假設下才會等於 WACC（COR-01）。
+
+    Raises:
+        ValueError: 任一輸入或回傳值非有限（`NaN`／`inf`）。
     """
-    return rf + beta * erp
+    _require_finite("rf", rf)
+    _require_finite("beta", beta)
+    _require_finite("erp", erp)
+    return _require_finite("cost_of_equity 回傳值", rf + beta * erp)
 
 
 def wacc(ke: float, kd: float, equity_value: float, debt_value: float, tax_rate: float) -> float:
@@ -77,8 +106,14 @@ def wacc(ke: float, kd: float, equity_value: float, debt_value: float, tax_rate:
 
     Raises:
         ValueError: `equity_value` 或 `debt_value` 為負，或兩者相加 <= 0
-            （資本結構未定義，折現率配對無意義）。
+            （資本結構未定義，折現率配對無意義），或任一輸入／回傳值
+            非有限（`NaN`／`inf`）。
     """
+    _require_finite("ke", ke)
+    _require_finite("kd", kd)
+    _require_finite("equity_value", equity_value)
+    _require_finite("debt_value", debt_value)
+    _require_finite("tax_rate", tax_rate)
     if equity_value < 0 or debt_value < 0:
         raise ValueError("股權價值與債務價值不得為負")
     total = equity_value + debt_value
@@ -86,7 +121,8 @@ def wacc(ke: float, kd: float, equity_value: float, debt_value: float, tax_rate:
         raise ValueError("股權加債務價值必須 > 0，否則資本權重未定義")
     weight_equity = equity_value / total
     weight_debt = debt_value / total
-    return weight_equity * ke + weight_debt * kd * (1 - tax_rate)
+    result = weight_equity * ke + weight_debt * kd * (1 - tax_rate)
+    return _require_finite("wacc 回傳值", result)
 
 
 def equity_bridge(
@@ -118,8 +154,15 @@ def equity_bridge(
     Raises:
         ValueError: `shares <= 0`（除以零或股數無意義），或算出的股權
             價值 `<= 0`（結果域邊界：負股權或零股權不得無聲通過，此處
-            選擇明確拒絕，呼叫端須重新檢視輸入或改用其他方法標記狀態）。
+            選擇明確拒絕，呼叫端須重新檢視輸入或改用其他方法標記狀態），
+            或任一輸入／回傳值非有限（`NaN`／`inf`）。
     """
+    _require_finite("ev_operating", ev_operating)
+    _require_finite("excess_cash", excess_cash)
+    _require_finite("non_operating_assets", non_operating_assets)
+    _require_finite("debt", debt)
+    _require_finite("other_claims", other_claims)
+    _require_finite("shares", shares)
     if shares <= 0:
         raise ValueError("股數必須 > 0")
     equity_value = ev_operating + excess_cash + non_operating_assets - debt - other_claims
@@ -129,6 +172,8 @@ def equity_bridge(
             "不得無聲輸出每股價值，須另行以明確狀態標記後再決策"
         )
     per_share = equity_value / shares
+    _require_finite("equity_value 回傳值", equity_value)
+    _require_finite("per_share 回傳值", per_share)
     return equity_value, per_share
 
 
@@ -151,8 +196,11 @@ def growth_path(g1: float, g_terminal: float, n: int) -> list[float]:
     回傳：長度為 `n` 的成長率序列。
 
     Raises:
-        ValueError: `n < 1`，或 `n == 1`（見上述說明）。
+        ValueError: `n < 1`，或 `n == 1`（見上述說明），或 `g1`／
+            `g_terminal` 非有限（`NaN`／`inf`）。
     """
+    _require_finite("g1", g1)
+    _require_finite("g_terminal", g_terminal)
     if n < 1:
         raise ValueError("序列長度 n 必須 >= 1")
     if n == 1:
@@ -161,7 +209,10 @@ def growth_path(g1: float, g_terminal: float, n: int) -> list[float]:
             "只需要單一年度成長率請直接使用 g1"
         )
     step = (g_terminal - g1) / (n - 1)
-    return [g1 + step * i for i in range(n)]
+    path = [g1 + step * i for i in range(n)]
+    for idx, value in enumerate(path):
+        _require_finite(f"growth_path 回傳值[{idx}]", value)
+    return path
 
 
 def reinvestment(revenue_prev: float, growth: float, k: float) -> float:
@@ -178,9 +229,16 @@ def reinvestment(revenue_prev: float, growth: float, k: float) -> float:
 
     回傳：當期再投資金額。`k == 0` 或 `revenue_prev == 0` 時公式本身是
     乘法，回傳 `0.0`，不會除以零。
+
+    Raises:
+        ValueError: 任一輸入或回傳值非有限（`NaN`／`inf`）。
     """
+    _require_finite("revenue_prev", revenue_prev)
+    _require_finite("growth", growth)
+    _require_finite("k", k)
     revenue_current = revenue_prev * (1 + growth)
-    return k * (revenue_current - revenue_prev)
+    result = k * (revenue_current - revenue_prev)
+    return _require_finite("reinvestment 回傳值", result)
 
 
 def fcff_full(nopat: float, dep_amort: float, capex: float, delta_nwc: float) -> float:
@@ -197,8 +255,15 @@ def fcff_full(nopat: float, dep_amort: float, capex: float, delta_nwc: float) ->
         delta_nwc: 營運資金變動。
 
     回傳：FCFF。
+
+    Raises:
+        ValueError: 任一輸入或回傳值非有限（`NaN`／`inf`）。
     """
-    return nopat + dep_amort - capex - delta_nwc
+    _require_finite("nopat", nopat)
+    _require_finite("dep_amort", dep_amort)
+    _require_finite("capex", capex)
+    _require_finite("delta_nwc", delta_nwc)
+    return _require_finite("fcff_full 回傳值", nopat + dep_amort - capex - delta_nwc)
 
 
 def fcff_simplified(nopat: float, reinvestment: float) -> float:
@@ -213,8 +278,13 @@ def fcff_simplified(nopat: float, reinvestment: float) -> float:
         reinvestment: 總再投資金額。
 
     回傳：FCFF。
+
+    Raises:
+        ValueError: 任一輸入或回傳值非有限（`NaN`／`inf`）。
     """
-    return nopat - reinvestment
+    _require_finite("nopat", nopat)
+    _require_finite("reinvestment", reinvestment)
+    return _require_finite("fcff_simplified 回傳值", nopat - reinvestment)
 
 
 def terminal_value(cf_next: float, discount_rate: float, g_perpetual: float) -> float:
@@ -231,13 +301,17 @@ def terminal_value(cf_next: float, discount_rate: float, g_perpetual: float) -> 
     回傳：終值。
 
     Raises:
-        ValueError: `discount_rate <= g_perpetual`。
+        ValueError: `discount_rate <= g_perpetual`，或任一輸入／回傳值
+            非有限（`NaN`／`inf`）。
     """
+    _require_finite("cf_next", cf_next)
+    _require_finite("discount_rate", discount_rate)
+    _require_finite("g_perpetual", g_perpetual)
     if discount_rate <= g_perpetual:
         raise ValueError(
             "折現率必須大於永續成長率，否則終值無限大或為負，拒絕計算"
         )
-    return cf_next / (discount_rate - g_perpetual)
+    return _require_finite("terminal_value 回傳值", cf_next / (discount_rate - g_perpetual))
 
 
 def scenario_return(p_end: float, dividend: float, p_entry: float, cost: float) -> float:
@@ -256,11 +330,16 @@ def scenario_return(p_end: float, dividend: float, p_entry: float, cost: float) 
     回傳：情境總報酬（小數），可低於 -100%（成本可使損失超過本金）。
 
     Raises:
-        ValueError: `p_entry <= 0`。
+        ValueError: `p_entry <= 0`，或任一輸入／回傳值非有限（`NaN`／`inf`）。
     """
+    _require_finite("p_end", p_end)
+    _require_finite("dividend", dividend)
+    _require_finite("p_entry", p_entry)
+    _require_finite("cost", cost)
     if p_entry <= 0:
         raise ValueError("進場價必須 > 0")
-    return (p_end + dividend - p_entry - cost) / p_entry
+    result = (p_end + dividend - p_entry - cost) / p_entry
+    return _require_finite("scenario_return 回傳值", result)
 
 
 def price_return(p_end: float, p_entry: float) -> float:
@@ -274,11 +353,13 @@ def price_return(p_end: float, p_entry: float) -> float:
     不得直接稱為 `R_H,i`。
 
     Raises:
-        ValueError: `p_entry <= 0`。
+        ValueError: `p_entry <= 0`，或任一輸入／回傳值非有限（`NaN`／`inf`）。
     """
+    _require_finite("p_end", p_end)
+    _require_finite("p_entry", p_entry)
     if p_entry <= 0:
         raise ValueError("進場價必須 > 0")
-    return p_end / p_entry - 1.0
+    return _require_finite("price_return 回傳值", p_end / p_entry - 1.0)
 
 
 def annualized_return(total_return: float, years: float) -> float:
@@ -295,8 +376,11 @@ def annualized_return(total_return: float, years: float) -> float:
     回傳：年化報酬（小數）。
 
     Raises:
-        ValueError: `years <= 0`，或 `1 + total_return <= 0`。
+        ValueError: `years <= 0`，或 `1 + total_return <= 0`，或任一輸入／
+            回傳值非有限（`NaN`／`inf`）。
     """
+    _require_finite("total_return", total_return)
+    _require_finite("years", years)
     if years <= 0:
         raise ValueError("年數必須 > 0")
     base = 1.0 + total_return
@@ -304,7 +388,7 @@ def annualized_return(total_return: float, years: float) -> float:
         raise ValueError(
             "總報酬 <= -100%，年化報酬在實數域無定義（開次方根的底數非正）"
         )
-    return base ** (1.0 / years) - 1.0
+    return _require_finite("annualized_return 回傳值", base ** (1.0 / years) - 1.0)
 
 
 def reward_risk(p_upside: float, p_entry: float, p_downside: float) -> float | None:
@@ -323,11 +407,17 @@ def reward_risk(p_upside: float, p_entry: float, p_downside: float) -> float | N
         p_downside: 下檔情境價格（如熊情境）。
 
     回傳：R/R（正常情況），或 `None`（下檔情境不低於進場價時）。
+
+    Raises:
+        ValueError: 任一輸入或（非 `None` 時的）回傳值非有限（`NaN`／`inf`）。
     """
+    _require_finite("p_upside", p_upside)
+    _require_finite("p_entry", p_entry)
+    _require_finite("p_downside", p_downside)
     denominator = p_entry - p_downside
     if denominator <= 0:
         return None
-    return (p_upside - p_entry) / denominator
+    return _require_finite("reward_risk 回傳值", (p_upside - p_entry) / denominator)
 
 
 def expected_value(probabilities: list[float], values: list[float]) -> float:
@@ -344,7 +434,8 @@ def expected_value(probabilities: list[float], values: list[float]) -> float:
 
     Raises:
         ValueError: `probabilities` 或 `values` 為空、長度不一致、含負
-            機率，或機率總和偏離 1 超過 `1e-9`。
+            機率、機率總和偏離 1 超過 `1e-9`，或任一機率／數值／回傳值
+            非有限（`NaN`／`inf`）。
     """
     probs = list(probabilities)
     vals = list(values)
@@ -352,12 +443,17 @@ def expected_value(probabilities: list[float], values: list[float]) -> float:
         raise ValueError("機率與數值不得為空集合")
     if len(probs) != len(vals):
         raise ValueError("機率與數值長度必須一致")
+    for idx, p in enumerate(probs):
+        _require_finite(f"probabilities[{idx}]", p)
+    for idx, v in enumerate(vals):
+        _require_finite(f"values[{idx}]", v)
     if any(p < 0 for p in probs):
         raise ValueError("機率不得為負")
     total = math.fsum(probs)
     if not math.isclose(total, 1.0, abs_tol=1e-9):
         raise ValueError(f"機率總和必須為 1（容差 1e-9），目前為 {total}")
-    return math.fsum(p * v for p, v in zip(probs, vals, strict=True))
+    result = math.fsum(p * v for p, v in zip(probs, vals, strict=True))
+    return _require_finite("expected_value 回傳值", result)
 
 
 def breakeven_probability_binary(gain: float, loss: float, cost: float) -> float:
@@ -376,12 +472,16 @@ def breakeven_probability_binary(gain: float, loss: float, cost: float) -> float
     本函式不做截斷。
 
     Raises:
-        ValueError: `gain + loss <= 0`（分母無意義）。
+        ValueError: `gain + loss <= 0`（分母無意義），或任一輸入／回傳值
+            非有限（`NaN`／`inf`）。
     """
+    _require_finite("gain", gain)
+    _require_finite("loss", loss)
+    _require_finite("cost", cost)
     denominator = gain + loss
     if denominator <= 0:
         raise ValueError("獲利與損失總和必須 > 0，損益兩平勝率未定義")
-    return (loss + cost) / denominator
+    return _require_finite("breakeven_probability_binary 回傳值", (loss + cost) / denominator)
 
 
 def breakeven_bear_probability(
@@ -408,14 +508,20 @@ def breakeven_bear_probability(
 
     Raises:
         ValueError: `p_base` 不在 `[0, 1]`，或 `r_bear == r_bull`（除以零，
-            熊牛情境報酬相同時無法反解）。
+            熊牛情境報酬相同時無法反解），或任一輸入／回傳值非有限
+            （`NaN`／`inf`）。
     """
+    _require_finite("r_bear", r_bear)
+    _require_finite("r_base", r_base)
+    _require_finite("r_bull", r_bull)
+    _require_finite("p_base", p_base)
     if not 0.0 <= p_base <= 1.0:
         raise ValueError("基準機率必須介於 0 與 1 之間")
     denominator = r_bear - r_bull
     if denominator == 0:
         raise ValueError("熊與牛情境報酬相同，無法反解損益兩平機率")
-    return -(p_base * r_base + (1 - p_base) * r_bull) / denominator
+    result = -(p_base * r_base + (1 - p_base) * r_bull) / denominator
+    return _require_finite("breakeven_bear_probability 回傳值", result)
 
 
 # ============================================================
@@ -541,13 +647,20 @@ def fade_enterprise_value(
     Raises:
         ValueError: `growth_rates` 為空、與 `nopat_margin_path` 長度不
             一致、`k < 0`、`terminal_policy` 不在允許集合內、終端 RONIC
-            < WACC 卻未提供 `terminal_policy`，或終值折現率 <= 終端成長率
-            （透過 `terminal_value()` 拒絕）。
+            < WACC 卻未提供 `terminal_policy`、終值折現率 <= 終端成長率
+            （透過 `terminal_value()` 拒絕），或任一輸入非有限
+            （`NaN`／`inf`）。
     """
     if len(growth_rates) == 0:
         raise ValueError("成長序列不得為空")
     if len(growth_rates) != len(nopat_margin_path):
         raise ValueError("成長序列與 NOPAT 利潤率路徑長度必須一致")
+    for idx, g in enumerate(growth_rates):
+        _require_finite(f"growth_rates[{idx}]", g)
+    for idx, margin in enumerate(nopat_margin_path):
+        _require_finite(f"nopat_margin_path[{idx}]", margin)
+    _require_finite("k", k)
+    _require_finite("wacc", wacc)
     if k < 0:
         raise ValueError("k（資本強度）不得為負")
     if terminal_policy is not None and terminal_policy not in _TERMINAL_POLICIES:
@@ -563,7 +676,7 @@ def fade_enterprise_value(
         nopat = revenue * margin
         reinvest = reinvestment(revenue_prev=revenue_prev, growth=g, k=k)
         fcff = fcff_simplified(nopat=nopat, reinvestment=reinvest)
-        discount_factor = 1.0 / (1 + wacc) ** idx
+        discount_factor = _require_finite("discount_factor", 1.0 / (1 + wacc) ** idx)
         years.append(
             FadeYearDetail(
                 year=idx,
@@ -574,7 +687,7 @@ def fade_enterprise_value(
                 reinvestment=reinvest,
                 fcff=fcff,
                 discount_factor=discount_factor,
-                present_value=fcff * discount_factor,
+                present_value=_require_finite("present_value", fcff * discount_factor),
             )
         )
 
@@ -600,9 +713,13 @@ def fade_enterprise_value(
     # 且終端年成長、再投資、利潤率與下一期現金流由同一組公式算出，
     # 保證彼此一致（COR-03 4.6）。
     terminal_value_at_n = terminal_value(cf_next=fcff_next, discount_rate=wacc, g_perpetual=g_term)
-    terminal_value_pv = terminal_value_at_n / (1 + wacc) ** len(years)
+    terminal_value_pv = _require_finite(
+        "terminal_value_present_value", terminal_value_at_n / (1 + wacc) ** len(years)
+    )
 
-    enterprise_value = math.fsum(year.present_value for year in years) + terminal_value_pv
+    enterprise_value = _require_finite(
+        "enterprise_value", math.fsum(year.present_value for year in years) + terminal_value_pv
+    )
 
     return FadeResult(
         enterprise_value=enterprise_value,
@@ -637,11 +754,14 @@ def fade_exit_multiple(enterprise_value: float, nopat_same_period: float) -> flo
     回傳：EV/NOPAT 倍數。
 
     Raises:
-        ValueError: `nopat_same_period <= 0`。
+        ValueError: `nopat_same_period <= 0`，或任一輸入／回傳值非有限
+            （`NaN`／`inf`）。
     """
+    _require_finite("enterprise_value", enterprise_value)
+    _require_finite("nopat_same_period", nopat_same_period)
     if nopat_same_period <= 0:
         raise ValueError("同期 NOPAT 必須 > 0，否則 EV/NOPAT 倍數無意義")
-    return enterprise_value / nopat_same_period
+    return _require_finite("fade_exit_multiple 回傳值", enterprise_value / nopat_same_period)
 
 
 # ============================================================
@@ -658,48 +778,83 @@ class ParameterSolveResult:
     剛好只有一個候選根通過驗證，只要還有其他變號區間沒解出來，那個
     「唯一」就是假的（第二輪 Codex review 發現的缺陷：陡峭的第二個真根
     因收斂後殘差略超過 `residual_tol` 被丟棄，若只看「通過驗證的根數」
-    會誤判成 `unique`）。
+    會誤判成單一候選）。
+
+    **第三輪 Codex review 發現的更根本缺陷：狀態名稱宣稱得比方法能證明的
+    多。** 本函式的求解方法是「等距取樣 + 偵測變號」，這種方法在數學上
+    只能證明「取樣網格上偵測到幾個通過驗證的候選根」，**不能**證明「這是
+    定義域內唯一的根」或「這個範圍內確實無解」——但舊版狀態名稱
+    `"unique"`／`"no_solution_in_range"` 卻做出了方法本身不支持的強斷言。
+    三個實測盲點：
+
+    1. 偶重根（如 `(x-0.42)**2`）在根處觸底但不變號，純變號偵測完全看
+       不到，會誤報成「範圍內無解」。
+    2. 偶重根與一般根混在同一函式中時，偶重根一樣會被漏掉，只剩看得到
+       的那個根被誤報成「唯一」。
+    3. 兩個相距極近的單根可能落在同一取樣格內，其中一個會被完全漏掉，
+       剩下的一個一樣被誤報成「唯一」。
+
+    因應方式：狀態名稱全面改為只宣稱「這個取樣網格上找到的證據」，不再
+    宣稱「唯一」或「無解」；同時新增「偵測 `|f|` 局部極小」的機制作為變號
+    偵測的補充，讓（1）（2）能被找到（見 `samples_used` 與下方偶重根偵測
+    說明），（3）則是取樣密度的固有限制，**盡力而為、不保證**，呼叫端可
+    調高 `samples` 降低（但不能消除）漏根機率。
+
+    **要主張「唯一解」，呼叫端必須另外論證** `f` 在該範圍內連續且嚴格
+    單調（或用其他數學方法證明），不能只憑本函式回傳 `"single_candidate"`
+    就宣稱唯一——這是文件層約束，Python 型別系統不強制檢查。
 
     | 條件 | status | value | candidates |
     |---|---|---|---|
     | `U > 0`（不論 R 幾個） | `"unconverged"` | `None` | 已驗證的根（R，可能是空的） |
-    | `U == 0`、`R == 1` | `"unique"` | 該根 | 該根（單一元素 tuple） |
-    | `U == 0`、`R > 1` | `"multiple_roots"` | `None` | 全部 R 個根 |
-    | `U == 0`、`R == 0` | `"no_solution_in_range"` | `None` | `()` |
+    | `U == 0`、`R == 1` | `"single_candidate"` | 該根 | 該根（單一元素 tuple） |
+    | `U == 0`、`R > 1` | `"multiple_candidates"` | `None` | 全部 R 個根 |
+    | `U == 0`、`R == 0` | `"no_candidate_in_range"` | `None` | `()` |
 
     屬性：
         status: 見上表，四種之一：
-            - `"unique"`：唯一候選根，且沒有任何變號區間驗證失敗。
-            - `"no_solution_in_range"`：取樣完全沒有偵測到變號區間（`f`
-              在整個範圍內同號）。不代表全域無解，只代表這個範圍內找
-              不到；呼叫端可放寬範圍再試。
+            - `"single_candidate"`：在取樣網格上只找到一個通過驗證的
+              候選根，且沒有任何變號區間驗證失敗。**單一候選不等於
+              唯一解**——只代表這個取樣密度下沒有偵測到第二個候選，
+              不代表定義域內數學上只有這一個根。
+            - `"no_candidate_in_range"`：在取樣網格上未偵測到任何候選根
+              （既無變號區間，`|f|` 的局部極小也都沒能通過殘差檢驗）。
+              **不證明範圍內無解**，只代表這個取樣密度下找不到；呼叫端
+              可放寬範圍或調高 `samples` 再試。
             - `"unconverged"`：**只要有任何一個變號區間沒能通過驗證**
               （`unresolved_intervals > 0`），無論已驗證的根有幾個，都
               回報這個狀態——常見成因是 `f` 不連續，或某段區間函式斜率
               太陡導致收斂後殘差仍超過 `residual_tol`，或 `max_iter`
-              不足。這與 `no_solution_in_range` 是不同的失敗模式：前者
-              是「這個範圍本來就不含解」，後者是「範圍內疑似有解，但
-              至少有一段求解不可靠，不能忽略」。
-            - `"multiple_roots"`：找到一個以上通過檢驗的候選根，且沒有
-              未解出的區間，須由呼叫端自行選根並揭露依據。
-        value: `status == "unique"` 時為該根；其餘狀態一律 `None`。
-            **不得**在非 `unique` 狀態時填入邊界值或候選根冒充答案。
-        residual: `status == "unique"` 時，該根代入 `f` 的殘差（保證
-            `abs(residual) <= residual_tol` 且為有限數）。`status ==
+              不足。這與 `no_candidate_in_range` 是不同的失敗模式：前者
+              是「這個範圍內疑似有解，但求解不可靠」，後者是「這個取樣
+              密度下沒偵測到任何候選」。
+            - `"multiple_candidates"`：找到一個以上通過檢驗的候選根，且
+              沒有未解出的區間，須由呼叫端自行選根並揭露依據。
+        value: `status == "single_candidate"` 時為該根；其餘狀態一律
+            `None`。**不得**在非 `single_candidate` 狀態時填入邊界值或
+            候選根冒充答案。
+        residual: `status == "single_candidate"` 時，該根代入 `f` 的殘差
+            （保證 `abs(residual) <= residual_tol` 且為有限數）。`status ==
             "unconverged"` 時，回傳所有被拒候選中「最接近通過檢驗」的
             殘差（依絕對值最小者），供呼叫端判斷離收斂有多遠；其餘狀態
             為 `None`。
-        candidates: 已通過驗證的根。`"unique"` 時為單一元素 tuple；
-            `"multiple_roots"` 時為全部通過驗證的根；`"unconverged"` 時
-            為**部分結果**——已驗證通過的根（可能為空，也可能不只一個），
-            讓呼叫端至少看得到「哪些是可信的」，而不是整段丟棄；
-            `"no_solution_in_range"` 時為空 tuple。
+        candidates: 已通過驗證的根。`"single_candidate"` 時為單一元素
+            tuple；`"multiple_candidates"` 時為全部通過驗證的根；
+            `"unconverged"` 時為**部分結果**——已驗證通過的根（可能為
+            空，也可能不只一個），讓呼叫端至少看得到「哪些是可信的」，
+            而不是整段丟棄；`"no_candidate_in_range"` 時為空 tuple。
         bounds: 搜尋範圍 `(lo, hi)`，供揭露「解的搜尋範圍」（即已檢查過
             的邊界）。
         unresolved_intervals: 偵測到變號、但沒能同時通過「區間已收斂」
             與「殘差 <= residual_tol」的變號區間數（即上表的 U）。呼叫端
             與測試可直接用這個數字斷言「有幾段沒解出來」，不必從
-            `status` 反推。`status != "unconverged"` 時恆為 `0`。
+            `status` 反推。`status != "unconverged"` 時恆為 `0`。**注意**
+            這個計數只涵蓋變號偵測分支；偶重根偵測分支（見下）沒通過
+            殘差檢驗時單純不計入 `candidates`，不會讓這個計數增加——那
+            屬於「盡力而為找不到」，不是「偵測到疑似解但驗證失敗」。
+        samples_used: 本次求解實際使用的取樣點數（即呼叫時的 `samples`
+            參數值）。揭露「這個結論是在多細的網格上得到的」，讓呼叫端
+            判斷取樣密度是否足夠，或該不該調高 `samples` 重跑。
     """
 
     status: str
@@ -708,6 +863,7 @@ class ParameterSolveResult:
     candidates: tuple[float, ...]
     bounds: tuple[float, float]
     unresolved_intervals: int
+    samples_used: int
 
 
 def _bisect_root(
@@ -741,6 +897,48 @@ def _bisect_root(
     return (lo + hi) / 2.0, False
 
 
+_GOLDEN_RATIO = (math.sqrt(5.0) - 1.0) / 2.0  # 約 0.618，黃金分割搜尋比例
+
+
+def _minimize_abs_f(
+    f: Callable[[float], float], lo: float, hi: float, tol: float, max_iter: int
+) -> float:
+    """在 `[lo, hi]` 內以黃金分割搜尋逼近 `|f(x)|` 的局部極小點（模組內部使用）。
+
+    用於偵測偶重根（`f` 在根處觸底但不變號，一般的變號偵測看不到）：
+    純量取樣若剛好在某個局部極小附近夾出一段區間，就用本函式把 `|f|`
+    壓到最小，收斂點若殘差夠小即視為候選根。
+
+    **假設 `|f|` 在 `[lo, hi]` 內大致單峰**（只有一個低谷）。這假設在
+    「取樣格夠細、兩個真根夠遠」時成立；但若一個取樣格內同時藏有兩個
+    以上的根（例如兩個相距極近的單根），`|f|` 在格內會是「谷—峰—谷」
+    的雙峰形狀，黃金分割搜尋只會收斂到其中一個低谷附近（通常是取樣點
+    本身最接近的那個），**不保證**能分辨並找出全部——這是本函式明確
+    的已知限制，不是實作疏漏；呼叫端可調高 `samples` 縮小取樣格降低
+    發生機率，但無法完全消除。
+
+    回傳收斂區間的中點，不對殘差是否合格做任何判斷——是否合格由呼叫端
+    以 `residual_tol` 驗證。
+    """
+    a, b = lo, hi
+    c = b - _GOLDEN_RATIO * (b - a)
+    d = a + _GOLDEN_RATIO * (b - a)
+    fc = abs(f(c))
+    fd = abs(f(d))
+    for _ in range(max_iter):
+        if (b - a) < tol:
+            break
+        if fc < fd:
+            b, d, fd = d, c, fc
+            c = b - _GOLDEN_RATIO * (b - a)
+            fc = abs(f(c))
+        else:
+            a, c, fc = c, d, fd
+            d = a + _GOLDEN_RATIO * (b - a)
+            fd = abs(f(d))
+    return (a + b) / 2.0
+
+
 def solve_scalar_parameter(
     f: Callable[[float], float],
     lo: float,
@@ -765,51 +963,75 @@ def solve_scalar_parameter(
     該值為有限數（`math.isfinite`），兩項皆通過才計入合格的根；沒通過
     的候選根一律捨棄，不得計入 `candidates` 或當作答案。
 
-    `tol` 與 `residual_tol` 管的是兩件不同的事：`tol` 管二分法的自變數
-    `x` 是否收斂（區間夠不夠窄）；`residual_tol` 管收斂點代入 `f` 之後
-    是否真的接近 0（找到的是不是「真的根」）。兩者都通過才算數——單獨
-    區間收斂不代表找到根（不連續函式的例子），單獨殘差小也不代表已經
-    收斂（極端情況下可能剛好取樣點落在殘差很小但區間還很寬的位置，
-    `max_iter` 過小時尤其容易發生）。
+    **偶重根偵測（補充變號偵測的盲點）**：純變號偵測看不到「觸底但不
+    變號」的偶重根（如 `(x-a)**2` 在 `x=a`）。因此在變號偵測之外，另外
+    掃描取樣點序列找 `|f|` 的局部極小（`|f(x_i)| <= |f(x_{i-1})|` 且
+    `<= |f(x_{i+1})|`），對每個局部極小以黃金分割搜尋（`_minimize_abs_f`）
+    在其相鄰取樣點構成的區間內把 `|f|` 壓到最小；壓到的最小值若通過
+    `residual_tol` 檢驗，就併入候選根（走與變號分支相同的驗證與去重
+    流程）；若收斂到一個明顯為正的極小值，代表這個局部極小處真的沒有
+    根，直接捨棄，**不計入 `unresolved_intervals`**——這條分支的性質是
+    「盡力而為找不到」，不是「偵測到疑似解但驗證失敗」，兩者在語意上
+    不同，故不共用同一個失敗計數器。此機制也能帶出一部分「同一取樣格
+    內兩個相距極近的單根」，但**不保證**——那是取樣密度的固有限制，見
+    `_minimize_abs_f` 的說明；**不得**因為這個機制找到了某個候選根，就
+    反過來宣稱結果是唯一解。
 
-    **不假設 `f` 在整個範圍內單調**，且**只要有任何一個變號區間沒能通過
-    驗證，就不得宣稱唯一解**——即使剛好只有一個候選根通過驗證，只要還
-    有其他變號區間驗證失敗（不論是不連續、還是該處斜率太陡使收斂後殘差
-    仍超過 `residual_tol`），那個「唯一」就是假的。判定規則（`R` 為通過
-    驗證的根數，`U` 為 `unresolved_intervals`）：
+    `tol` 與 `residual_tol` 管的是兩件不同的事：`tol` 管二分法／黃金分割
+    搜尋的自變數 `x` 是否收斂（區間夠不夠窄）；`residual_tol` 管收斂點
+    代入 `f` 之後是否真的接近 0（找到的是不是「真的根」）。兩者都通過
+    才算數——單獨區間收斂不代表找到根（不連續函式的例子），單獨殘差小
+    也不代表已經收斂（極端情況下可能剛好取樣點落在殘差很小但區間還很
+    寬的位置，`max_iter` 過小時尤其容易發生）。
+
+    **不假設 `f` 在整個範圍內單調，且本函式的結論僅限於「在這個取樣網格
+    上看到的證據」——狀態名稱刻意不使用「唯一」「無解」等需要連續性與
+    單調性論證才能成立的強斷言**（見 `ParameterSolveResult` docstring）。
+    只要有任何一個變號區間沒能通過驗證，就不得宣稱單一候選——即使剛好
+    只有一個候選根通過驗證，只要還有其他變號區間驗證失敗（不論是不
+    連續、還是該處斜率太陡使收斂後殘差仍超過 `residual_tol`），那個
+    「單一候選」就是假的。判定規則（`R` 為通過驗證的根數，`U` 為
+    `unresolved_intervals`）：
 
     - `U > 0`（不論 `R` 是 0、1 或更多）→ `"unconverged"`。
-    - `U == 0` 且 `R == 1` → `"unique"`。
-    - `U == 0` 且 `R > 1` → `"multiple_roots"`，列出所有候選根，不得只
-      挑第一個或最後一個當答案。
-    - `U == 0` 且 `R == 0`（完全沒有偵測到變號區間）→
-      `"no_solution_in_range"`，這只代表「在這個搜尋範圍內」找不到解，
+    - `U == 0` 且 `R == 1` → `"single_candidate"`（**不等於唯一解**，見
+      `ParameterSolveResult` docstring）。
+    - `U == 0` 且 `R > 1` → `"multiple_candidates"`，列出所有候選根，
+      不得只挑第一個或最後一個當答案。
+    - `U == 0` 且 `R == 0`（完全沒有偵測到候選根）→
+      `"no_candidate_in_range"`，這只代表「在這個取樣網格上」找不到，
       不代表全域無解。
 
-    `"unconverged"` 與 `"no_solution_in_range"` 對呼叫端的意義不同，
+    `"unconverged"` 與 `"no_candidate_in_range"` 對呼叫端的意義不同，
     **不得**混用：前者代表範圍內疑似有解、但求解不可靠（該檢查 `f` 是否
-    連續，或調大 `max_iter`／`tol`／`residual_tol`），後者代表這個範圍
-    本來就不含解（該放寬範圍）。
+    連續，或調大 `max_iter`／`tol`／`residual_tol`），後者代表這個取樣
+    密度下沒偵測到任何候選（該放寬範圍或調高 `samples`）。
 
     參數：
         f: 一元函式，通常是 `lambda x: 正算函式(x) - 目標值` 的殘差函式。
         lo, hi: 搜尋範圍，須 `hi > lo`。
         samples: 等距取樣點數（含端點），須 >= 2；越多越不容易漏掉相近
             的多個根，但計算成本線性增加。
-        tol: 二分法收斂的區間寬度容差。
+        tol: 二分法／黃金分割搜尋收斂的區間寬度容差。
         residual_tol: 候選根代入 `f` 後的殘差容差；超過此值視為未通過
             檢驗。預設 `1e-6` 是絕對容差，假設 `f` 的量級與本模組常見的
             報酬率／成長率相近；若 `f` 的量級明顯不同（例如以完整價格
             為單位，數百上千元，或函式在根附近斜率極大），呼叫端應自行
             放寬或縮小 `residual_tol` 以符合該量級下的「重建誤差可接受
             範圍」——這是呼叫端該調整的輸入，不是本函式該放寬的規則。
-        max_iter: 每個變號區間的二分法最大疊代次數。
+        max_iter: 每個變號區間或偶重根候選的二分法／黃金分割搜尋最大
+            疊代次數。
 
     回傳：`ParameterSolveResult`。
 
     Raises:
-        ValueError: `hi <= lo`，或 `samples < 2`。
+        ValueError: `hi <= lo`、`samples < 2`，或 `lo`／`hi`／`tol`／
+            `residual_tol` 非有限（`NaN`／`inf`）。
     """
+    _require_finite("lo", lo)
+    _require_finite("hi", hi)
+    _require_finite("tol", tol)
+    _require_finite("residual_tol", residual_tol)
     if hi <= lo:
         raise ValueError("搜尋範圍上界必須大於下界")
     if samples < 2:
@@ -822,18 +1044,25 @@ def solve_scalar_parameter(
     rejected_residuals: list[float] = []
     unresolved = 0
 
+    def _add_root_if_new(candidate: float) -> None:
+        merge_tol = max(tol * 10, 1e-9)
+        for existing in roots:
+            if math.isclose(existing, candidate, abs_tol=merge_tol):
+                return
+        roots.append(candidate)
+
     def _consider(candidate: float, converged: bool) -> None:
         nonlocal unresolved
         residual = f(candidate)
         passes = converged and math.isfinite(residual) and abs(residual) <= residual_tol
         if passes:
-            if not roots or not math.isclose(roots[-1], candidate, abs_tol=max(tol * 10, 1e-9)):
-                roots.append(candidate)
+            _add_root_if_new(candidate)
             return
         unresolved += 1
         if math.isfinite(residual):
             rejected_residuals.append(residual)
 
+    # 分支一：變號偵測 + 二分法。
     for i in range(len(xs) - 1):
         f_a, f_b = fs[i], fs[i + 1]
         if f_a == 0.0:
@@ -845,6 +1074,22 @@ def solve_scalar_parameter(
     if fs[-1] == 0.0:
         _consider(xs[-1], converged=True)
 
+    # 分支二：|f| 局部極小偵測 + 黃金分割搜尋（補足偶重根盲點）。失敗
+    # 的候選單純捨棄，不計入 unresolved_intervals（見上方 docstring）。
+    for i in range(1, len(xs) - 1):
+        mag_prev, mag_cur, mag_next = abs(fs[i - 1]), abs(fs[i]), abs(fs[i + 1])
+        # 兩側都嚴格較大才算「真的凹下去」的局部極小；只要求 <=（非嚴格）
+        # 會把完全平坦的區段（|f| 到處相等，例如不連續函式兩側各自的常數
+        # 平台）也當成候選，只要 residual_tol 剛好比平台高度寬鬆就會產生
+        # 大量與根無關的假候選（見 v1.3.1 修正紀錄）。要求兩側嚴格排除了
+        # 平坦區段，也排除了「平台一路銜接到跳躍點」這種單側嚴格的情況，
+        # 只保留真正兩側都下降的凹點——即偶重根「觸底不變號」的典型形狀。
+        if mag_cur < mag_prev and mag_cur < mag_next:
+            candidate = _minimize_abs_f(f, xs[i - 1], xs[i + 1], tol, max_iter)
+            residual = f(candidate)
+            if math.isfinite(residual) and abs(residual) <= residual_tol:
+                _add_root_if_new(candidate)
+
     if unresolved > 0:
         best_residual = min(rejected_residuals, key=abs) if rejected_residuals else None
         return ParameterSolveResult(
@@ -854,31 +1099,35 @@ def solve_scalar_parameter(
             candidates=tuple(roots),
             bounds=(lo, hi),
             unresolved_intervals=unresolved,
+            samples_used=samples,
         )
     if len(roots) == 1:
         root = roots[0]
         return ParameterSolveResult(
-            status="unique",
+            status="single_candidate",
             value=root,
             residual=f(root),
             candidates=(root,),
             bounds=(lo, hi),
             unresolved_intervals=0,
+            samples_used=samples,
         )
     if len(roots) > 1:
         return ParameterSolveResult(
-            status="multiple_roots",
+            status="multiple_candidates",
             value=None,
             residual=None,
             candidates=tuple(roots),
             bounds=(lo, hi),
             unresolved_intervals=0,
+            samples_used=samples,
         )
     return ParameterSolveResult(
-        status="no_solution_in_range",
+        status="no_candidate_in_range",
         value=None,
         residual=None,
         candidates=(),
         bounds=(lo, hi),
         unresolved_intervals=0,
+        samples_used=samples,
     )
