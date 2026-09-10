@@ -1,5 +1,58 @@
 # Changelog
 
+## v1.3.0 — 2026-09-10
+
+**方法論改版（破壞性）**：估值架構從「三情境估值期望值 × 安全邊際 → 評等」的單一折現決策鏈，改為
+**`expectations-v1`：價格隱含預期 → 可驗證預期差 → 情境估值與持有期報酬 → 催化劑與風險 → 決策覆盤**。
+DCF 保留為按需工具；**單一折現估值與固定安全邊際不再自動決定評等**。
+
+舊報告不受影響也不會被覆寫；方法論改版不等於每份報告的結論必然改變。
+逐條退役紀錄與舊／新對照見 `skills/equity-valuation-discipline/references/calibration-and-governance.md`。
+
+### 新增
+
+- **`references/expectations-and-decisions.md`**：方法論的**公式與口徑單一來源**。定義研究契約、三種預期基線、
+  價格隱含預期的識別性與反解失敗行為、預期差台帳、`V0`／`P_H`／`R_H` 三種輸出的嚴格區分、價格反映機制、
+  Reward/Risk、示範機率與逐組解讀、損益兩平、風險映射、決策門檻、部位輸入門檻、`edge_status`。
+- **`scripts/valuation_math.py` 與 `tests/test_valuation_math.py`**：上述公式的可測試實作（74 項測試）。
+  含 fade 引擎、股權橋接、折現率配對、成長序列、再投資、終值、R/R、期望值、損益兩平與 Reverse round-trip。
+- **A 型報告新增第九章「催化劑與驗證時間表」**：舊版 `output-spec.md` 宣稱有這一章、A 模板卻沒有，本次補齊並對齊。
+- **Front matter 新增**：`methodology_version`、`research_question`、`as_of`、`strategy_type`、
+  `holding_horizon_months`、`forecast_horizon_years`、`valuation_methods`、`expectations_status`、
+  `decision_status`、`decision_policy_source`、`edge_status`。`rating` 須與 `decision_status` 一致。
+- **`thesis_id` 串接**：預期差台帳、情境、催化劑、監控儀表板與輪動交接共用同一組命題 ID。
+
+### 變更
+
+- **模型路由**：`A/B/C` 互斥三分類改為六個方法 ID（`fcff_dcf`／`cycle_normalized`／`sotp`／
+  `financial_equity`／`asset_nav`／`growth_scenario`），依公司經濟特性與資料條件路由。
+  **混合型公司必須拆解**結構成長與循環因素，不得把外部 capex 循環全塞進利潤率。
+- **COR-01 折現率配對**：`rf + β × ERP` 更正為**股權成本 `k_e`**（舊版誤標為 WACC）。
+  FCFF 配 WACC 得營運企業價值；FCFE／股利／剩餘利益配 `k_e` 得股權價值。
+- **COR-02 倍數命名**：FCFF 折現衍生的是 **EV/NOPAT**（舊稱 P/NOPAT），且**須完成股權橋接才得每股價值**。
+  `(1 − g/ROIC)(1+g)/(WACC−g)` 不再稱 justified P/E。企業價值一律寫 `EV_enterprise`，
+  機率加權股權價值寫 `expected_equity_value`／`E[V0]`，**`EV` 不再作為簡稱**。
+- **COR-03 fade 與再投資**：成長序列第一年恆等於指定的 `g1`（舊版 `i/N` 寫法第一筆即偏離，
+  `g1=20%` 實際給出 16.6%）；再投資改為 `k × (Revenue_t − Revenue_{t−1})`，不再以成長率當分母；
+  展示倍數的分母改為**同時點 NOPAT**；`RONIC < WACC` 時不再自動取零成長，改回傳標記由報告明示情境。
+- **風險處理**：從「財務品質警示只能調機率」改為**後果進情境、機率進權重**，兩者各記一次即為完整。
+- **決策**：改為條件門檻（`decision_status` 四態）。使用者未提供風險政策時只輸出條件式結論。
+- **檢查清單**：12 項無條件硬門檻改為 **27 項適用性檢查**，每項含「適用情境／不適用時／檢查內容」。
+- **`product-cycle-rotation`**：週期階段**不再自動導出建倉**；市場反映度改為行情代理與價格隱含預期**分欄**；
+  催化劑須登記六要素、過期分「被證偽／延後／結果未取得」三類；B 級 channel check 不自動升格為財務基準事實。
+- **`.markdownlint-cli2.jsonc`**：承認既有的 PDF 樣式慣例（`<span class="tag">`／`<br>`）與模板填空佔位符，
+  並修正全 repo 既有的 lint 錯誤——`main` 原有 55 個 error，本版起為 **0**。
+
+### 移除
+
+- **舊決策鏈**：`現價 ≤ E[V0] × (1 − 安全邊際)` → 評等；90 日波動率綁定 20／30／40% 安全邊際分級。
+- **營收錨 L0–L3 階序**與其自動折讓（0／5／10／20／30%）與信用調整降級。
+- **控股折價自動 0–15%**；「未套折價只能當理論上限」。
+- **部位預設處方**：`min(波動率倒數配置, 1/4 Kelly)`；執行期限「逾期自動執行一半」。
+- **「差距 >5pp 者終端一律採結構性口徑」**、**「出場年營業利益率一律不得做敏感度」**。
+- **「未併表 JV 存在即禁用 SOTP」**、**「出場倍數一律由 fade 推導」**。
+- **術語「紀律值」**（機率加權期望值）：與「框架預設值」一詞兩義，易與 `V0`／`P_H` 混用，全面改寫。
+
 ## v1.2.1 — 2026-09-08
 
 ### 變更

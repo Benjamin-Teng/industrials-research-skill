@@ -10,6 +10,16 @@ price_asof: YYYY-MM-DD
 author: 〈你的名字或機構〉
 framework: 〈你的方法論文件名 vX.Y〉 ＋ 研究報告輸出規範 v2.0
 rating: 〈產業評等／結論標籤〉
+methodology_version: expectations-v1
+research_question: 〈本次要驗證的產業命題，一句話、可證偽〉
+as_of: "YYYY-MM-DD HH:MM"           # 本次可用資訊的截止日期與時間（FR-01）
+strategy_type: catalyst          # fundamental／catalyst／monitoring（FR-01；產業掃描與輪動擇時預設 catalyst）
+holding_horizon_months: null
+forecast_horizon_years: null
+valuation_methods: []
+expectations_status: insufficient # supported / insufficient / no_material_gap
+decision_status: watch           # actionable_candidate / watch / avoid
+decision_policy_source: unspecified
 kpi:
   - {label: 市場規模, value: "US$0.0bn", note: "2026e，〈機構〉口徑"}
   - {label: CAGR, value: "00%", note: "2026–2030e", tone: bull}
@@ -64,13 +74,22 @@ kpi:
 
 ## 六、Content value 增減表（世代交替題材必做）
 
-| 環節 | 舊世代 $/unit | 新世代 $/unit | 變化 | 判定 | **市場反映度** | **研究優先序** |
-|---|---|---|---|---|---|---|
-| | | | | ↑↑ / ↑ / 持平 / ↓ / design-out | 高／中／低 | |
+| 環節 | 舊世代 $/unit | 新世代 $/unit | 變化 | 判定 | **研究優先序** |
+|---|---|---|---|---|---|
+| | | | | ↑↑ / ↑ / 持平 / ↓ / design-out | |
 
-> **研究優先序 ＝ content value 變化幅度 × (1 − 市場反映度)。**
+> **研究優先序 ＝ content value 變化幅度 × (1 − 綜合反映度)。** 綜合反映度取自下表，須同時參照行情代理與價格隱含預期，不得只看漲幅。
 > ↑↑ 的環節通常也是市場最早注意到的環節——**變化最大不等於落差最大**。design-out 端仍優先研究（回避或放空名單）。
-> 反映度粗估法：同族群 forward EV/S 相對其歷史 band 位階，或近 3 個月相對族群報酬。
+
+### 市場反映度（有來源的比較——行情代理與價格隱含預期分欄，不得合併為單一「漲多＝反映完畢」判斷）
+
+| 環節 | 行情代理：相對報酬／band 位階 | 價格隱含預期判讀 | 綜合反映度 | 資料來源與日期 |
+|---|---|---|---|---|
+| | | | 高／中／低 | |
+
+> - **行情代理**：同族群 forward EV/S 相對其歷史 band 位階，或近 3 個月相對族群報酬——這只是**價格已經動了多少**，不是市場對經營結果的假設。
+> - **價格隱含預期**：依 `equity-valuation-discipline/references/expectations-and-decisions.md` 第3節，選合適引擎反解現價隱含的經營假設組合（固定什麼、解什麼、搜尋範圍、資料口徑）；無法反解時標「待補，見個股深度研究」，不得留空後仍宣稱高反映度。
+> - ⛔ **不以漲多或估值 band 高位單獨等同於「反映完畢」。**
 
 ## 七、供需與產能
 
@@ -88,13 +107,14 @@ kpi:
 
 ## 九、投資意涵與標的清單
 
-| 分類 | 標的（市場） | 一句話理由 | 現階段動作 |
-|---|---|---|---|
-| 純度高 | 〈公司（TW／US）〉 | | 送入個股深度研究 |
-| 受惠但稀釋 | | | 觀察 |
-| design-out 風險 | | | 回避／放空候選 |
+| 分類 | 標的（市場） | `thesis_id` | 一句話理由 | 現階段動作 | 深度研究連結／待驗證標記 |
+|---|---|---|---|---|---|
+| 純度高 | 〈公司（TW／US）〉 | | | 送入個股深度研究 | |
+| 受惠但稀釋 | | | | 觀察 | |
+| design-out 風險 | | | | 回避／放空候選 | |
 
 > 標的一律註明市場；同一環節台美標的並列時，估值比較須含原幣、換算幣別與匯率基準日（規範 5.3）。
+> **個股動作須引用深度研究或標待驗證**：「現階段動作」欄若給出具體交易方案（非僅「送入研究」「觀察」），須連結該標的深度研究報告；尚無深度研究者標「待驗證」，不得只憑本報告族群級分析直接給出個股動作。若確實提出具體個股交易方案，R/R 與示範機率表依 `equity-valuation-discipline/references/expectations-and-decisions.md` 第7–9節同樣適用（FR-15）。
 
 ## 十、風險與反方論證
 

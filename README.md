@@ -88,7 +88,7 @@ codex plugin add research-report-kit@research-tools
 | Skill | 管什麼 |
 |---|---|
 | `research-report-output` | 格式與交付：檔名、front matter、章節骨架、F1–F5 排版鐵則、PDF 產檔、三種輸出模式 |
-| `equity-valuation-discipline` | 內容紀律：估值路徑判別、fade 參數約束、情境機率與期望值、12 項發布前檢查 |
+| `equity-valuation-discipline` | 內容紀律：價格隱含預期與預期差、模型路由、內在價值／期末價格／持有期報酬分離、R/R 與示範機率、決策門檻、發布前檢查 |
 | `product-cycle-rotation` | 產業掃描：product cycle 五問、T-18～T+6 時間軸、channel check SOP |
 | `price-routing` | 取價路由：偵測可用行情工具 → 依市場選路 → 無 MCP 時退回 yfinance |
 
@@ -110,7 +110,7 @@ apt-get install -y pandoc fonts-noto-cjk      # 或 brew install pandoc
 
 MIT License，見 [LICENSE](LICENSE)。
 
-**這裡的任何內容都不是投資建議。** plugin 管的是流程與紀律，不保證結論正確。所有紀律值（倍數上限、折讓數列、安全邊際分級）都是待校準的經驗值，母體與校準路徑列在 `calibration-and-governance.md`——用之前先看它們是從哪類公司、哪段期間校準的。
+**這裡的任何內容都不是投資建議。** plugin 管的是流程與紀律，不保證結論正確。框架內任何常數與門檻都是**使用者政策或待校準假設**，不是已驗證的投資優勢；母體與校準路徑列在 `calibration-and-governance.md`——用之前先看它們是從哪類公司、哪段期間校準的。報告中的示範機率沒有實證勝率含義，**研究輸出不等於交易授權**。
 
 ---
 

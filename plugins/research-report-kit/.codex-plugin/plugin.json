@@ -1,7 +1,7 @@
 {
   "name": "research-report-kit",
-  "version": "1.2.1",
-  "description": "機構風格投資研究報告工具組：md + PDF 雙檔輸出規範、估值紀律、產品週期輪動與取價路由。台股／美股共用同一套骨架。",
+  "version": "1.3.0",
+  "description": "機構風格投資研究報告工具組：md + PDF 雙檔輸出規範、F1–F5 可讀性排版鐵則、以價格隱含預期與可驗證預期差為核心的估值紀律（內在價值／持有期末價格／持有期報酬分離、R/R 與示範機率、條件式決策門檻）、產品週期輪動與 channel check SOP、跨市場取價路由。台股／美股共用同一套骨架。",
   "author": {
     "name": "Benjamin",
     "email": "benjamin31588@gmail.com",
@@ -18,20 +18,25 @@
     "pdf-report",
     "taiwan-stock",
     "us-stock",
-    "channel-check"
+    "channel-check",
+    "expectations-investing",
+    "reverse-dcf"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Research Report Kit",
-    "shortDescription": "機構風投資研究報告：md + PDF 輸出、估值紀律、產業輪動、取價路由",
-    "longDescription": "把投資研究的輸出格式與內容紀律變成可重複的流程：統一的 md + PDF 雙檔輸出規範與 F1–F5 排版鐵則、估值路徑判別與情境機率期望值制、product cycle 五問與 channel check SOP，以及跨市場取價路由。台股／美股共用同一套骨架。",
+    "shortDescription": "機構風投資研究報告：預期差導向估值、R/R 與持有期報酬、md + PDF 輸出",
+    "longDescription": "把投資研究的輸出格式與內容紀律變成可重複的流程：統一的 md + PDF 雙檔輸出規範與 F1–F5 排版鐵則；估值改以「價格隱含預期 → 可驗證預期差 → 情境估值與持有期報酬 → 催化劑與風險 → 決策覆盤」統整，強制分開當前內在價值、持有期末價格與持有期總報酬，並以條件門檻取代固定安全邊際評等；另含 product cycle 五問與 channel check SOP，以及跨市場取價路由。台股／美股共用同一套骨架。",
     "developerName": "Benjamin",
     "category": "Productivity",
-    "capabilities": ["Read", "Write"],
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
     "websiteURL": "https://github.com/Benjamin-Teng/industrials-research-skill",
     "defaultPrompt": [
       "幫我做一份台積電的個股深度研究報告，交付 md 與 PDF。",
-      "用情境機率與期望值制幫這檔股票做估值。",
+      "現價已經假設了什麼？讀出價格隱含預期、找出可驗證的預期差，並算牛熊 R/R 與不同機率下的期望價差報酬。",
       "掃描這個產業的 product cycle，找出下一波受惠者。"
     ]
   }

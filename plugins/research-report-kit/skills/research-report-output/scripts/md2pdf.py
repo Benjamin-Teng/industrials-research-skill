@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 md2pdf.py — 把研究報告 Markdown 轉成「機構研究報告風」PDF（繁體中文）
 
@@ -73,7 +72,7 @@ DISCLAIMER = ("本報告為個人研究筆記，非投資建議，不構成任�
 def split_front_matter(text: str):
     if not text.startswith("---"):
         return {}, text
-    m = re.match(r"^---\s*\n(.*?)\n---\s*\n?", text, re.S)
+    m = re.match(r"^---\s*\n(.*?)\n---\s*\n?", text, re.DOTALL)
     if not m:
         return {}, text
     meta = yaml.safe_load(m.group(1)) or {}
@@ -88,8 +87,13 @@ def md_to_html(md_body: str) -> str:
            "+tex_math_dollars+raw_html+strikeout+auto_identifiers")
     p = subprocess.run(
         ["pandoc", "-f", fmt, "-t", "html5", "--no-highlight", "--wrap=none"],
-        input=md_body, capture_output=True, text=True,
+        input=md_body, capture_output=True, text=True, encoding="utf-8", check=False,
     )
+    # encoding 必填：不指定時 text=True 會走 locale.getpreferredencoding()。
+    # Linux／macOS 容器多半是 UTF-8 所以不會出事，但中文 Windows 是 cp950、
+    # 西文 Windows 是 cp1252，兩者都編不出報告裡到處都有的 − ≤ ≥ → 而拋
+    # UnicodeEncodeError（Windows 開了 UTF-8 mode 則不受影響）。本檔其餘 IO
+    # 都已明寫 utf-8，唯獨這裡漏掉，才會只在部分環境炸。
     if p.returncode != 0:
         sys.exit(f"pandoc 轉檔失敗：\n{p.stderr}")
     return p.stdout
@@ -126,7 +130,7 @@ def build_toc(body: str):
         items.append((lvl, hid, text))
         return f"<h{lvl}{attrs}>{inner}</h{lvl}>"
 
-    body = re.sub(r"<h([23])([^>]*)>(.*?)</h\1>", repl, body, flags=re.S)
+    body = re.sub(r"<h([23])([^>]*)>(.*?)</h\1>", repl, body, flags=re.DOTALL)
     if not items:
         return body, ""
     lis = "".join(
@@ -241,7 +245,24 @@ def merge(parts, out: Path):
 
 
 # ---------------------------------------------------------------- main
+def _force_utf8_stdio() -> None:
+    """讓訊息輸出不受系統 locale 影響。
+
+    locale 編碼非 UTF-8 時（中文 Windows 為 cp950、西文 Windows 為 cp1252），
+    `print("✓ …")` 會 UnicodeEncodeError，造成「PDF 其實已經產出來了，
+    腳本卻以非零離開碼結束」——呼叫端因此分不出成敗。
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except (ValueError, OSError):  # 少數被重導向的串流不支援，忽略即可
+                pass
+
+
 def main():
+    _force_utf8_stdio()
     ap = argparse.ArgumentParser(description="研究報告 Markdown → 機構風 PDF")
     ap.add_argument("md")
     ap.add_argument("-o", "--out")

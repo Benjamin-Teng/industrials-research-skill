@@ -7,7 +7,7 @@
 | **格式層**（`research-report-output`） | 檔名、front matter、章節骨架、F1–F5 排版鐵則、PDF 樣式、交付流程 | 多數人直接用；只需改署名與免責標語 |
 | **內容層**（`equity-valuation-discipline`、`product-cycle-rotation`） | 估值路徑、參數紀律、情境機率、channel check SOP、發布前內容檢查 | **這是預設值，不是教條**——有自己方法論的人應該覆蓋掉 |
 
-分層的理由：排版與交付規則跨方法論通用（不管你用 DCF 還是 EV/EBITDA，數據密集段落都該拆表）；但估值方法論高度個人化，硬套別人的紀律值只會產生假精確。
+分層的理由：排版與交付規則跨方法論通用（不管你用 DCF 還是 EV/EBITDA，數據密集段落都該拆表）；但估值方法論高度個人化，硬套別人的框架預設值只會產生假精確。
 
 ---
 
@@ -37,7 +37,15 @@ disclaimer: 本報告由〈機構〉編製，僅供內部參考，不構成投�
 
 ---
 
-## 二、接上自己的方法論（建議做法）
+## 二、`methodology_version` 是什麼、使用者政策覆寫寫在哪
+
+自 `expectations-v1` 起，A 型報告的 front matter 多了一組 FR-01 契約欄位（`research_question`／`strategy_type`／`as_of`／`holding_horizon_months`／`forecast_horizon_years`／`decision_policy_source` 等，完整定義見 `references/output-spec.md` 二）。這些欄位是**每份報告自己的研究契約與政策紀錄**，不是方法論本身。
+
+- **`methodology_version`**：標的是這份報告套用的**方法論主版本**（例如 `expectations-v1`），對應 `equity-valuation-discipline/references/expectations-and-decisions.md` 定義的那一代公式、口徑與決策門檻。它**不等於**報告自己的 `version`（結論改版），也**不等於** plugin 的 semver（套件發布版本）；三者分開的完整說明見 `references/output-spec.md` 二之 2.1。方法論本身改版（例如未來出現 `expectations-v2`）時才需要改這個欄位；補資料或結論變動改的是 `version`。
+- **使用者政策覆寫寫在哪**：`decision_policy_source`（報酬要求與風險政策的來源）、`holding_horizon_months`（持有期政策）與 `edge_status` 的證據門檻，都是**逐份報告在 front matter 填寫**，不是改 skill 檔案。你要覆寫的是「這次研究要用什麼政策」，不是「方法論公式本身」——公式與口徑一律留在 `expectations-and-decisions.md`，不要在報告或你自己的框架文件裡另抄一份變體，否則兩處對不上時無法判斷哪個才是準的。
+- 若你有自己一套決策政策（例如固定的風險預算、Kelly 上限、停損政策），寫成一份文件放進專案知識庫，在 `decision_policy_source` 填該文件名稱與版本；**不要**把政策數字直接寫死進 skill 的模板或 SKILL.md，那樣每份報告都要手動同步。
+
+## 三、接上自己的方法論（建議做法）
 
 ### 做法 A：用專案／知識庫文件當 source of truth（推薦）
 
@@ -61,7 +69,7 @@ disclaimer: 本報告由〈機構〉編製，僅供內部參考，不構成投�
 
 `equity-valuation-discipline/references/valuation-paths.md` 與 `prepublish-checklist.md` 是純 markdown，直接改寫即可。改完重新打包 plugin（見下）。
 
-適合：你的方法論骨架與預設值接近，只想換掉紀律值與門檻。
+適合：你的方法論骨架與預設值接近，只想換掉框架預設值與門檻。
 
 ### 做法 C：整個停用內容層
 
@@ -71,7 +79,7 @@ disclaimer: 本報告由〈機構〉編製，僅供內部參考，不構成投�
 
 ---
 
-## 三、改 PDF 樣式
+## 四、改 PDF 樣式
 
 `assets/report.css` 的可調處：
 
@@ -89,7 +97,7 @@ disclaimer: 本報告由〈機構〉編製，僅供內部參考，不構成投�
 
 ---
 
-## 四、改完之後重新打包
+## 五、改完之後重新打包
 
 **若你是從 marketplace 安裝的**（repo 形式）：改完 `plugins/research-report-kit/` 底下的檔案 → 進 `plugin.json` 的 `version` → 寫 CHANGELOG → commit & push。使用者端 `/plugin marketplace update` 就會拿到。
 
@@ -104,7 +112,7 @@ zip -r ~/research-report-kit.plugin . -x "*.DS_Store" -x "__pycache__/*"
 
 ---
 
-## 五、資料源 MCP（選配）
+## 六、資料源 MCP（選配）
 
 `price-routing` 會自動偵測可用的取價工具，**一個都沒有時退回 `yfinance`**，所以不裝任何 MCP 也能運作。想要更好的資料品質時：
 

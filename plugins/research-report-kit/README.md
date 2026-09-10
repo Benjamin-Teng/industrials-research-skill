@@ -4,7 +4,7 @@
 
 台股與美股共用同一套骨架——只換資料源與籌碼欄位，不為單一市場另建流程。
 
-> **English summary**: A Claude plugin for institutional-style equity and industry research. Enforces dual `.md` + PDF delivery, a readability rule set for data-dense writing, a two-layer valuation path selector (SOTP / cyclical normalization / growth fade model), scenario-probability expected value in place of single-point R/R thresholds, and a 12-item pre-publication content checklist. Content is in Traditional Chinese; the methodology layer is designed to be replaced with your own.
+> **English summary**: A Claude plugin for institutional-style equity and industry research. Enforces dual `.md` + PDF delivery, a readability rule set for data-dense writing, and an expectations-driven research workflow: read the expectations priced in, build a falsifiable expectations-gap ledger, keep present intrinsic value / holding-period price / holding-period return strictly separate, state reward-risk and illustrative-probability expected values, and route decisions through conditional thresholds rather than a fixed margin of safety. Content is in Traditional Chinese; the methodology layer is designed to be replaced with your own.
 
 ---
 
@@ -13,7 +13,7 @@
 | Skill | 管什麼 | 什麼時候會自己跳出來 |
 |---|---|---|
 | **`research-report-output`** | 格式與交付：檔名、front matter、章節骨架、F1–F5 排版鐵則、PDF 產檔、輸出模式 | 「寫一份研究報告」「做個股深度研究」「幫我出 PDF 版報告」 |
-| **`equity-valuation-discipline`** | 內容紀律：估值路徑判別、fade 參數約束、情境機率與期望值、敏感度規則、12 項發布前檢查 | 「DCF」「SOTP」「目標價」「reverse DCF」「這檔值不值得買」 |
+| **`equity-valuation-discipline`** | 內容紀律：價格隱含預期與預期差、模型路由、三種價值／報酬分離、R/R 與示範機率、決策門檻、發布前檢查 | 「DCF」「SOTP」「目標價」「reverse DCF」「預期差」「R/R」「這檔值不值得買」 |
 | **`product-cycle-rotation`** | 產業掃描：product cycle 五問、T-18～T+6 時間軸、channel check SOP、催化劑框架 | 「誰受惠」「design win」「BOM 拆解」「供應鏈輪動」 |
 | **`price-routing`** | 取價路由：偵測可用行情工具 → 依市場選路 → 沒有 MCP 時退回 yfinance | 任何需要股價的場景 |
 
@@ -25,7 +25,9 @@
 
 **1. 排版即內容。** 任何需要讀第二次才能拆解的段落，等於沒寫。所以有 F1–F5 五條排版鐵則：≥3 個數字的段落必須拆成「一行結論 ＋ 實績表 ＋ 推導表」；表格儲存格塞多組數值必須拆出「斷言欄 ＋ 數據明細欄」；每張 >3 行的表格前面必須有一句話摘要。這些規則不是美學偏好，是從「印成 PDF 之後讀不下去」的返工紀錄裡歸納出來的。
 
-**2. 保守性只能收一次費。** 多數估值錯誤不是某個參數抓錯，而是「營收打折 → 利潤率取下緣 → 倍數再降一級 → 折現率再加碼」四處各打一次折，相乘後的「基準情境」其實是 P10。這個 plugin 把保守集中在**情境機率**與**買入安全邊際**兩處，參數本身回到無偏最佳估計——這樣「紀律值 vs 市價」才重新是有意義的比較。
+**2. 便宜不是理由，預期差才是。** 研究的對象不是「這家公司值多少」，而是「現價已經假設了什麼、我有什麼可驗證的理由認為它不對、以及市場會在什麼時候因為什麼而改變假設」。所以流程強制分開三件過去被混在一起的東西：**當前內在價值**（折回今天）、**持有期末價格**（需要一個說得出口的價格反映機制）、**持有期總報酬**（含股利、成本與稅）。同樣保留「保守性只能收一次費」——營收打折、利潤率取下緣、倍數再降一級、折現率再加碼，相乘後的「基準情境」其實是 P10——但改以「後果進情境、機率進權重」處理，而不是把風險一律塞進機率。
+
+> **v1.3.0 的破壞性變更**：舊版「三情境估值期望值 × 安全邊際 → 評等」的單一決策鏈已退役。單一折現估值與固定安全邊際**不再自動決定評等**；決策改走條件門檻，且使用者未提供風險政策時只輸出條件式結論。退役規則逐條列在 `skills/equity-valuation-discipline/references/calibration-and-governance.md`，舊報告不受影響、也不會被覆寫。
 
 **3. 方法論該是你的，不是我的。** 估值紀律那一層是預設值不是教條。你有自己的框架文件，就讓它覆蓋掉；沒有的話，用這裡的當骨架。設定方式見 `skills/research-report-output/references/customize-your-framework.md`。
 
@@ -122,10 +124,12 @@ research-report-kit/
     │   └── assets/report.css
     ├── equity-valuation-discipline/
     │   ├── SKILL.md
-    │   └── references/
-    │       ├── valuation-paths.md              # SOTP／週期股／成長股三條路徑
-    │       ├── prepublish-checklist.md         # 內容層 12 項
-    │       └── calibration-and-governance.md   # 常數怎麼校準、規則怎麼退役
+    │   ├── references/
+    │   │   ├── expectations-and-decisions.md   # 方法論單一來源：預期差、報酬、R/R、決策
+    │   │   ├── valuation-paths.md              # 模型路由與計算口徑（折現配對、股權橋接、fade）
+    │   │   ├── prepublish-checklist.md         # 發布前內容層適用性檢查
+    │   │   └── calibration-and-governance.md   # 常數怎麼校準、規則怎麼退役、退役表
+    │   └── scripts/valuation_math.py           # 上述公式的可測試實作
     ├── product-cycle-rotation/
     │   ├── SKILL.md
     │   └── references/channel-check-sop.md
@@ -148,4 +152,6 @@ research-report-kit/
 
 MIT License。
 
-**這個 plugin 產出的任何內容都不是投資建議。** 它管的是流程與紀律，不保證結論正確。所有紀律值（倍數上限、折讓數列、安全邊際分級）都是待校準的經驗值，母體與校準路徑列在 `calibration-and-governance.md`——**用之前先看它們是從哪類公司、哪段期間校準的**。引用的實證研究多為美股樣本，外推至其他市場前請先用自己的覆盤資料驗證。
+**這個 plugin 產出的任何內容都不是投資建議。** 它管的是流程與紀律，不保證結論正確。框架內任何常數與門檻都是**使用者政策或待校準假設**，不是已驗證的投資優勢；母體與校準路徑列在 `calibration-and-governance.md`——**用之前先看它們是從哪類公司、哪段期間校準的**。引用的實證研究多為美股樣本，外推至其他市場前請先用自己的覆盤資料驗證。
+
+報告中的示範機率（`illustrative`）**沒有實證勝率含義**，用途是說明「這筆交易需要什麼條件才成立」；`edge_status` 預設為 `hypothesis_only`，**研究輸出不等於交易授權**。

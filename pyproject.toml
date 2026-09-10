@@ -1,0 +1,17 @@
+[project]
+name = "industrials-research-skill"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "playwright>=1.62.0",
+    "pypdf>=6.18.0",
+    "pytest>=9.1.1",
+    "pyyaml>=6.0.3",
+    "ruff>=0.16.6",
+    "ty>=0.0.80",
+]

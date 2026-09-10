@@ -161,6 +161,9 @@ blockquote p:last-child { margin-bottom: 0; }
 .tag.l3 { background: var(--bear); color: #fff; }   /* 未具名／第二手 */
 
 code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; background: var(--grey-1); padding: 0 3px; }
+/* 表頭是深藍底白字，code 只設了淺色底卻沒設字色，會繼承白字 → 白字配淺底＝隱形。
+   新方法論的表頭常帶 `P_H,i`、`r_i^price` 這類符號，這條是它們的可讀性前提。 */
+th code { background: rgba(255, 255, 255, 0.18); color: #fff; }
 pre { background: var(--grey-1); padding: 3mm; font-size: 8.4pt; overflow-x: hidden; white-space: pre-wrap; break-inside: avoid; }
 img { max-width: 100%; }
 figure { margin: 3mm 0; break-inside: avoid; }

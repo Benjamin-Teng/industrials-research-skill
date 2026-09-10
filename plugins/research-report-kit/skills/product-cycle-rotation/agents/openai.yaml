@@ -1,7 +1,7 @@
 interface:
   display_name: "Product Cycle Rotation"
-  short_description: "產品週期五問、T-18～T+6 時間軸、channel check SOP"
-  default_prompt: "Use $product-cycle-rotation to scan an industry for product-cycle beneficiaries and run a channel check."
+  short_description: "產品週期五問、T-18～T+6 時間軸、channel check SOP、命題交接與催化劑登記"
+  default_prompt: "Use $product-cycle-rotation to scan an industry for product-cycle beneficiaries, run a channel check, and hand candidate theses to deep research."
 
 policy:
   allow_implicit_invocation: true

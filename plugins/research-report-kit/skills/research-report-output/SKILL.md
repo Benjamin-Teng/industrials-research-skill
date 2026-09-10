@@ -69,9 +69,9 @@ metadata:
 
    ```bash
    # $SKILL_DIR = 本 SKILL.md 所在的資料夾
-#   Claude：<plugin>/skills/research-report-output
-#   Codex ：~/.agents/skills/research-report-output（或專案內的 .agents/skills/...）
-python3 "$SKILL_DIR/scripts/md2pdf.py" 你的報告.md
+   # Claude：<plugin>/skills/research-report-output
+   # Codex ：~/.agents/skills/research-report-output（或專案內的 .agents/skills/...）
+   python3 "$SKILL_DIR/scripts/md2pdf.py" 你的報告.md
    ```
 
    環境缺套件時：`pip install pypdf pyyaml --break-system-packages`（另需 `pandoc` 與 `playwright install chromium`）。依賴不全時的降級路徑見 `references/output-spec.md` 第六章。
@@ -105,14 +105,14 @@ python3 "$SKILL_DIR/scripts/md2pdf.py" 你的報告.md
 
 須逐條掃描刪除：①框架標籤（`★A1`–`★A7`、`◇B1`–`◇B4` 及章節標題中的括號標註）；②框架引用句（「依框架 2.X」「規範第 N 章」「框架 vX.Y」）；③方法論補充段（改為直述結論）；④框架降級說明（改為直述理由）；⑤規範版本聲明；⑥自查清單引用；⑦強制處置的框架出處（保留處置本身）；⑧Caveats 中的方法論路徑描述（保留資料缺口本身）。
 
-**保留**：所有數字、表格、結論、資料層級標籤、來源清單、KPI 卡、bull/bear/caveat 區塊內容本身。
+**保留**：所有數字、表格、結論、資料層級標籤、來源清單、KPI 卡、bull/bear/caveat 區塊內容本身。A 型（`methodology_version: expectations-v1`）另須保留：模型依賴（走哪條估值路徑）、機率主觀性（示範機率的 `illustrative`／`subjective_evidence_based`／`empirically_calibrated` 標記）、資料缺口、時間假設（`holding_horizon_months`／`forecast_horizon_years`／價格反映收斂係數）、R/R 與示範機率表的示範標籤、價格假設（進場基準、日期、盤別）、機率來源與計算限制——刪內部方法論編號不等於可以移除這些揭露。
 
 ### Briefing（摘要，≤3 頁）
 
 結論速覽版，約 2,000–2,500 中文字。觸發：「簡介」「briefing」「摘要」「重點速覽」「summary」「3 頁」。命名加 `_brief` 後綴。`type` 欄位後加「（Briefing）」。
 
-**保留**：TL;DR（含 KPI 卡，刪推導表）、Key Findings（數據明細欄只留 1–2 項）、估值結論（只留情境表 ＋ Reverse DCF 一行）、Recommendations（評等 ＋ 加減碼訊號各前 2 項）、核心風險三點各一行。
-**刪去**：市場共識拆解、事業結構全文、供應鏈全文（留一行定位句）、交叉驗證細節、敏感度矩陣（留排序第一名一句）、催化劑表、儀表板、Caveats 全文、來源清單。
+**保留**：TL;DR（含 KPI 卡，刪推導表）、Key Findings（數據明細欄只留 1–2 項）、預期差台帳（核心命題一列）、估值結論（只留情境表 ＋ Reverse DCF 一行）、**R/R（至少牛／熊與基準／熊兩種）＋ 示範機率表（至少三組）＋ 每組一句解讀**（A 型不得刪，見 `expectations-and-decisions.md` 第 7、8 節）、Recommendations（`decision_status`／`rating` ＋ 加減碼訊號各前 2 項）、核心風險三點各一行。
+**刪去**：市場共識基線拆解細節（留分歧一句）、事業結構全文、供應鏈全文（留一行定位句）、交叉驗證細節、敏感度矩陣（留排序第一名一句）、催化劑表（留下一個關鍵觀察時點一行）、命題監控儀表板、Caveats 全文、來源清單。⛔ 篇幅不足時優先縮減背景敘述，**不得刪除機率性質標記或成本／股利缺口揭露**。
 
 ### ⚠️ 刪節後處理（External 與 Briefing 共用）
 
@@ -138,19 +138,31 @@ date: 2026-08-06
 price_asof: 2026-08-05 正常盤收盤     # 數值＋日期＋盤別三件套
 author: 〈你的名字或機構〉
 framework: 〈你的方法論文件名 vX.Y〉 ＋ 研究報告輸出規範 v2.0
+methodology_version: expectations-v1  # 方法論主版本，與 version、plugin semver 分開（見 output-spec.md 二）
+research_question: 〈本次要驗證的投資命題，一句話、可證偽〉
+as_of: 2026-08-05 18:00               # 本次可用資訊截止日期與時間
+strategy_type: fundamental            # fundamental / catalyst / monitoring
+holding_horizon_months: 12
+forecast_horizon_years: 5
+valuation_methods: [cycle_normalized]
+expectations_status: insufficient     # supported / insufficient / no_material_gap
+decision_status: watch                # actionable_candidate / watch / avoid；須與 rating 一致
+decision_policy_source: unspecified
+edge_status:                          # hypothesis_only / evidence_supported / validated_with_limits；提出 edge 結論時必填
 rating: 〈分批布局／觀察／回避〉
 footer_right: 〈頁尾右欄標語，預設「個人研究筆記 · 非投資建議」〉
 disclaimer: 〈封面免責條款全文；不填則用預設值〉
 baseline_of: 2026-08-13 Investor Day  # 選填；未來 30 天內有已排定事件、或事件已發生但結果未取得時必填
 kpi:
   - {label: 現價, value: "NT$28.5", note: "2026-08-05 正常盤收盤"}
-  - {label: 內在價值區間, value: "34–41", note: 三情境, tone: bull}
-  - {label: 期望值 EV, value: "37", note: 機率加權}
-  - {label: 熊情境下檔, value: "-18%", note: 論點失效時, tone: bear}
+  - {label: 核心價格隱含要求, value: "〈成長率／利潤率組合〉", note: 條件性假設組合}
+  - {label: 內在價值區間 V0, value: "34–41", note: 三情境, tone: bull}
+  - {label: "指定持有期成本後預期報酬 E[R_H]", value: "11%", note: 機率加權}
+  - {label: 熊情境持有期損失, value: "-18%", note: 非最大損失, tone: bear}
 ---
 ```
 
-`tone` 可填 `bull`／`bear`／留空（中性）。KPI 卡 3–5 張，且數字須與內文一致。
+`tone` 可填 `bull`／`bear`／留空（中性）。KPI 卡 3–5 張，且數字須與內文一致；**未知項不填零**，缺值行為見 `references/output-spec.md` 二；⛔ **不得把熊情境持有期損失標為最大可能損失**。`rating` 必須與 `decision_status` 一致（對照表見 `references/output-spec.md` 2.2）。
 
 ## 專用語法速查
 

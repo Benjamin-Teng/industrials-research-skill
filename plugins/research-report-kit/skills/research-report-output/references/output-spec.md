@@ -20,7 +20,7 @@
 
 ## 一、檔名規則
 
-```
+```text
 {主體}_{報告類型}_{版本}_{YYYYMMDD}.md / .pdf
 ```
 
@@ -47,24 +47,68 @@ subtitle: 一句話講清楚論點與方法            # ★
 type: 個股深度研究                         # ★ 個股深度研究 / 產業供應鏈研究 / 輪動掃描週報
 market: TW                                 # ★ TW / US / TW+US → 決定套哪一組在地化欄位
 ticker: TWSE:0000                          # ★ 台股 TWSE:xxxx／TPEx:xxxx；美股 NYSE:XXX／NASDAQ:XXXX
-version: v1.0                              # ★
+version: v1.0                              # ★ 報告版本（見下方三者分開說明）
 date: 2026-08-06                           # ★ 發布日
 price_asof: 2026-08-05 正常盤收盤           # ★ 市場數據基準日與口徑（三件套）
 author: 〈你的名字或機構〉                   # ★
 framework: 〈方法論文件名 vX.Y〉             # ★ 本報告套用的上位框架與版本
+methodology_version: expectations-v1       # ★ A 型必填；方法論主版本（見下方三者分開說明）
+research_question: 〈本次要驗證的投資命題〉  # ★ 一句話、可證偽（FR-01）
+as_of: 2026-08-05 18:00                    # ★ 本次可用資訊截止日期與時間（FR-01）
+strategy_type: fundamental                 # fundamental / catalyst / monitoring；未定填 unknown 並說明影響
+holding_horizon_months: 12                 # 未指定時填暫定值並在 Caveats 標為研究假設
+forecast_horizon_years: 5                  # 營運模型明確預測年限，與 holding_horizon_months 分開，不得互代
+valuation_methods: [cycle_normalized]      # 對應 FR-05 方法 ID，可多選
+expectations_status: insufficient          # supported / insufficient / no_material_gap；預設 insufficient
+decision_status: watch                     # actionable_candidate / watch / avoid；預設 watch；須與 rating 一致
+decision_policy_source: unspecified        # 使用者報酬要求與風險政策來源；預設 unspecified
+edge_status:                               # hypothesis_only / evidence_supported / validated_with_limits；提出 edge 結論時必填，預設不得高於 hypothesis_only
 rating: 〈分批布局／觀察／回避〉              # A 型必填；B/C 型填產業評等或結論標籤
 footer_right: 個人研究筆記 · 非投資建議      # 選填；頁尾右欄標語
 disclaimer: 〈封面免責條款全文〉            # 選填；不填則用產檔器預設值
 baseline_of: 2026-08-13 Investor Day       # 選填；未來 30 天內有已排定事件、或事件已發生但結果未取得時必填
 kpi:                                       # ★ 首頁 KPI 摘要卡，3–5 張
   - {label: 現價, value: "NT$28.5", note: "2026-08-05 正常盤收盤"}
-  - {label: 內在價值區間, value: "34–41", note: 三情境, tone: bull}
-  - {label: 期望值 EV, value: "37", note: 機率加權}
-  - {label: 熊情境下檔, value: "-18%", note: 論點失效時, tone: bear}
+  - {label: 核心價格隱含要求, value: "〈成長率／利潤率組合〉", note: 條件性假設組合}
+  - {label: 內在價值區間 V0, value: "34–41", note: 三情境, tone: bull}
+  - {label: "指定持有期成本後預期報酬 E[R_H]", value: "11%", note: 機率加權}
+  - {label: 熊情境持有期損失, value: "-18%", note: 非最大損失, tone: bear}
 ---
 ```
 
-`tone` 可填 `bull`／`bear`／留空（中性）。B 型的 KPI 卡改放市場規模、CAGR、關鍵瓶頸環節、滲透率；C 型改放本期問題數、A/B 級證據數、部位動作數、Brier 分數。
+`tone` 可填 `bull`／`bear`／留空（中性）。B 型的 KPI 卡改放市場規模、CAGR、關鍵瓶頸環節、滲透率；C 型改放本期問題數、A/B 級證據數、部位動作數、Brier 分數。A 型 KPI 卡可含現價、核心價格隱含要求、內在價值區間、指定持有期成本後預期報酬、熊情境持有期損失；**未知項不填零，缺值行為見下方**；⛔ **不得把熊情境持有期損失標為最大可能損失**。
+
+### 2.1 `methodology_version`／`version`／plugin semver 三者分開
+
+| 欄位 | 管的是什麼 | 誰改它 |
+|---|---|---|
+| `methodology_version` | 本報告套用的**方法論主版本**（如 `expectations-v1`），對應 `equity-valuation-discipline` 的方法論代際 | 方法論改版時才變 |
+| `version`（front matter 既有欄位） | **這份報告**本身的版本（`v1.0`／`v1.1`／`v2.0`），見第一章版本語意 | 每次補資料或結論改變時變 |
+| plugin manifest 的 semver | **這個 plugin 套件**的版本（`plugin.json`） | plugin 發布新版時變 |
+
+三者不得互相替代：同一 `methodology_version` 下可以有很多份不同 `version` 的報告；plugin 升版不代表所有既有報告的 `methodology_version` 自動變更。
+
+### 2.2 `rating` 必須與 `decision_status` 一致
+
+`rating` 是**閱讀用的評等文字**，`decision_status` 是**機器可讀的條件門檻結果**（定義見 `equity-valuation-discipline/references/expectations-and-decisions.md` 第 11 節）。兩者必須一致，對應規則：
+
+| `decision_status` | `rating` 應填 |
+|---|---|
+| `actionable_candidate` | 分批布局／可建首批（依框架用語） |
+| `watch` | 觀察 |
+| `avoid` | 回避 |
+
+⛔ 兩者不一致視為未完成；改其中一個必須同步改另一個。
+
+### 2.3 新增欄位的缺值行為
+
+- `strategy_type`／`holding_horizon_months`／`forecast_horizon_years`／`decision_policy_source` 等 FR-01 契約欄位：**未知者一律標 `unknown`（或對應預設值）並在正文說明對結論成熟度的影響**，不得捏造使用者偏好。
+- `holding_horizon_months` 未指定時可提暫定值，但須在十二、Caveats 明標為研究假設，不得直接當成使用者要求。
+- `valuation_methods` 為空陣列時，代表尚未完成路徑判別，報告不得宣稱已完成估值。
+- `expectations_status` 缺省為 `insufficient`；分歧不足或模型不可識別時應維持 `insufficient` 或改為 `no_material_gap`，不得因未填而預設 `supported`。
+- `decision_status` 缺省為 `watch`；升為 `actionable_candidate` 前須通過 `expectations-and-decisions.md` 第 11 節條件門檻全部項目。
+- `decision_policy_source` 缺省為 `unspecified`；為 `unspecified` 時，Recommendations 只能輸出條件式結論，不得輸出最適部位或自動交易指令。
+- `edge_status` 選填，但**提出 edge 結論時必填**；未填視為未提出 edge 結論；填寫時預設不得高於 `hypothesis_only`，除非在文中補齊對應證據（`expectations-and-decisions.md` 第 13 節交付條件）。
 
 ::: note
 **`baseline_of` 渲染**：`md2pdf.py` 會讀取此欄位，封面出現琥珀色「基線版」橫幅（含事件內容），封面資訊表也會列出一列。**只填 `baseline_of` 即可**；是否併寫進 `subtitle` 為建議而非必要。
@@ -78,19 +122,23 @@ kpi:                                       # ★ 首頁 KPI 摘要卡，3–5 �
 
 ## 三、三種報告的骨架
 
-### A 型｜個股深度研究報告
+### A 型｜個股深度研究報告（`methodology_version: expectations-v1`）
 
 0. 首頁 KPI 摘要卡（由 front matter `kpi` 自動生成）
-1. **TL;DR**（三點，每點粗體開頭）
+1. **TL;DR**：決策狀態、主要預期差、持有期／最大不確定性（三點，每點粗體開頭）
 2. **Key Findings**（約 5 點，每點附一手來源與資料層級標籤）
-3. **市場共識基線與變異觀點**（含全樣本規則、量化評等機構分列、失效條件）
-4. **Details**：(a) 事業結構拆解｜(b) 供應鏈定位（一般／高階兩層）｜(c) 財務品質檢核｜(d) 估值＋交叉驗證（**先跑路徑判別**，歸類結果寫在估值節開頭；含情境機率與期望值）｜(e) 敏感度分析｜(f) 治理籌碼｜(g) 產業週期定位
-5. **反方論證與 Pre-mortem**（用 `::: bear` 框，含情境機率的書面理由）
-6. **催化劑時間表**
-7. **Recommendations**（加碼／減碼訊號清單；建倉時加部位量化）
-8. **論點監控儀表板**（表格七欄，規格見方法論文件）
-9. **Caveats**（用 `::: caveat` 框）
-10. **付費資料來源追蹤**
+3. **市場預期基線與預期差台帳**：公司指引、賣方共識、價格隱含預期分列；含 FR-04 兩張預期差台帳表（`thesis_id` 串連情境與監控）
+4. **事業結構與供應鏈**：(a) 事業結構拆解｜(b) 供應鏈定位（一般／高階兩層）
+5. **財務品質**：具體風險如何進入現金流與情境（風險映射，不得只調機率）
+6. **模型選擇、三情境內在價值、持有期價格與報酬、交叉比較**：**先跑路徑判別**，歸類結果寫在估值節開頭；依 FR-07 分開 `V0_i`／`P_H_i`／`R_H_i` 三個量；於價格情境後依 FR-15／16 插入「R/R → 示範機率表 → 各組條列解讀」
+7. **敏感度分析**：主導變數、機率與必要的價格反映假設；二維表標現價
+8. **反方論證與 Pre-mortem**（用 `::: bear` 框，含情境機率的書面理由）
+9. **催化劑與驗證時間表**：每個催化劑對應命題、模型輸入、預期觀察值／區間、資料來源、日期、更新規則（FR-12）
+10. **Recommendations**：條件門檻（`decision_status`）、政策來源（`decision_policy_source`）與選用部位分析（FR-10／FR-11），含 `edge_status`
+11. **命題監控儀表板**（表格七欄，`thesis_id` 可回溯，規格見方法論文件）
+12. **Caveats 與來源追蹤**（用 `::: caveat` 框，含付費資料來源追蹤）
+
+> 章節重編後所有交叉引用（模板內互指、本文件、`SKILL.md`）必須同步更新；公式與口徑一律引用 `equity-valuation-discipline/references/expectations-and-decisions.md`，不得另抄一份變體。
 
 ### B 型｜產業／供應鏈技術研究報告
 
@@ -228,7 +276,8 @@ playwright install chromium
 每份報告必跑。內容層檢查清單見 `equity-valuation-discipline` 的 `references/prepublish-checklist.md`。
 
 1. `.md` 與 `.pdf` 皆已產出，PDF 由該 md 直接生成，未手改。
-2. front matter 必填欄位齊全（含 `market`、`framework` 版本）；KPI 卡 3–5 張且與內文數字一致；價格均有幣別前綴與「數值＋日期＋盤別」三件套。
+2. front matter 必填欄位齊全（含 `market`、`framework` 版本、`methodology_version`、`research_question`、`as_of`）；KPI 卡 3–5 張且與內文數字一致、未知項未填零；價格均有幣別前綴與「數值＋日期＋盤別」三件套。
+2.1 `rating` 與 `decision_status` 一致（見第二章 2.2）；提出 edge 結論者 `edge_status` 已填且不高於 `hypothesis_only`，除非補齊對應證據。
 3. 檔名符合第一章規則；版本語意正確（結論改變＝主版號進位）；輸出模式後綴正確。
 4. 抽查 PDF：封面資訊正確、目錄無斷字、寬表未溢出版面（**欄數 >7 已拆表**）、頁碼正常、提示框顏色語意正確。
 5. 資料層級標籤與查價日已標；`l3` 資訊未被用作基準假設；一手取證失敗處已依 4.3 明寫。
