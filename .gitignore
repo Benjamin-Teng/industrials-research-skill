@@ -18,3 +18,6 @@ pg-*.png
 
 # 本機工作文件（規格草稿、交接手冊），不隨 plugin 散佈
 docs/
+
+# Cowork 交換用 bundle，不進版控
+Claude outputs/

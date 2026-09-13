@@ -800,6 +800,27 @@ class ParameterSolveResult:
     說明），（3）則是取樣密度的固有限制，**盡力而為、不保證**，呼叫端可
     調高 `samples` 降低（但不能消除）漏根機率。
 
+    **v1.3.2（第四輪 Codex review）修正的兩個獨立缺陷：**
+
+    1. **收斂旗標遺漏**：`_minimize_abs_f` 耗盡 `max_iter` 仍未收斂時，舊版
+       照樣回傳當下中點，而候選驗收只檢查殘差、沒檢查自變數是否收斂——
+       偶重根附近 `|f|` 本來就平坦，殘差天生就小，未收斂的候選因此被
+       誤判成可用答案（實測：`0.001*(x-0.42)**2`、`max_iter=1`、
+       `tol=1e-12` 會回傳 `single_candidate`，值誤差達 0.0018，卻宣稱
+       16 位精度）。修法：`_minimize_abs_f` 改回傳
+       `(root_estimate, converged)`，候選必須**同時**通過「區間已收斂」
+       與「殘差 <= residual_tol」才計入 `candidates`；未收斂的候選改計入
+       `unresolved_intervals`，讓狀態落到 `"unconverged"`，不得是
+       `"single_candidate"` 或 `"no_candidate_in_range"`。
+    2. **`f` 回傳非有限值被靜默吞掉**：取樣陣列 `fs` 舊版未檢查有限性就
+       直接拿去做變號與局部極小判斷，`NaN` 與任何比較恆為 `False`，於是
+       「`f` 在某段範圍算不出來」與「`f` 正常算過、確實無解」在回傳值上
+       完全無法區分。修法：所有對 `f` 的求值一律經過內部 `_eval`
+       wrapper 計數，新增 `non_finite_evaluations` 欄位；任一相鄰取樣點
+       對只要有一端非有限，即視為「這段區間未被有效評估」計入
+       `unresolved_intervals`（讓狀態落到 `"unconverged"`），不得被當成
+       「沒有變號」或「不是局部極小」靜默略過。
+
     **要主張「唯一解」，呼叫端必須另外論證** `f` 在該範圍內連續且嚴格
     單調（或用其他數學方法證明），不能只憑本函式回傳 `"single_candidate"`
     就宣稱唯一——這是文件層約束，Python 型別系統不強制檢查。
@@ -845,16 +866,37 @@ class ParameterSolveResult:
             而不是整段丟棄；`"no_candidate_in_range"` 時為空 tuple。
         bounds: 搜尋範圍 `(lo, hi)`，供揭露「解的搜尋範圍」（即已檢查過
             的邊界）。
-        unresolved_intervals: 偵測到變號、但沒能同時通過「區間已收斂」
-            與「殘差 <= residual_tol」的變號區間數（即上表的 U）。呼叫端
-            與測試可直接用這個數字斷言「有幾段沒解出來」，不必從
+        unresolved_intervals: 計入以下三種「沒能得出可信結論」的情況（即
+            上表的 U）：
+
+            (a) 變號偵測分支中，偵測到變號但候選根沒能同時通過「區間已
+                收斂」與「殘差 <= residual_tol」；
+            (b) 偶重根偵測分支中，黃金分割搜尋耗盡 `max_iter` 仍未收斂
+                （即使代入後殘差恰好很小——平坦函式的殘差本來就小，
+                不收斂就不能信這個殘差，v1.3.2 修正）；
+            (c) 任一相鄰取樣點對中至少一端求值非有限，導致這段區間根本
+                沒被有效評估（v1.3.2 修正，見 `non_finite_evaluations`）。
+
+            呼叫端與測試可直接用這個數字斷言「有幾段沒解出來」，不必從
             `status` 反推。`status != "unconverged"` 時恆為 `0`。**注意**
-            這個計數只涵蓋變號偵測分支；偶重根偵測分支（見下）沒通過
-            殘差檢驗時單純不計入 `candidates`，不會讓這個計數增加——那
-            屬於「盡力而為找不到」，不是「偵測到疑似解但驗證失敗」。
+            偶重根偵測分支中「已收斂但殘差真的超標」（真的沒有根）**不**
+            計入此數——那屬於「盡力而為找不到」，是與上述三種不同的情況。
         samples_used: 本次求解實際使用的取樣點數（即呼叫時的 `samples`
             參數值）。揭露「這個結論是在多細的網格上得到的」，讓呼叫端
             判斷取樣密度是否足夠，或該不該調高 `samples` 重跑。
+        non_finite_evaluations: 呼叫 `f` 求值時，回傳非有限值（`NaN`／
+            `inf`）的次數（v1.3.2 新增）。**恆 >= 0**，即使 `status` 不是
+            `"unconverged"` 也可能 > 0（求值過程中出現過的非有限雜訊，
+            但最終沒有影響任何判斷分支的結論時仍會被計入）；但只要有
+            任何一段搜尋區間因非有限求值而未被有效評估，就必然同時反映
+            在 `unresolved_intervals > 0`（狀態落到 `"unconverged"`）——
+            呼叫端可用「`non_finite_evaluations > 0` 但 `status` 仍正常」
+            與「兩者同時出現」區分「求值過程中出現過雜訊、但不影響結論」
+            與「有一段範圍根本沒被評估」。全域皆非有限時（所有取樣點都
+            非有限），`non_finite_evaluations` 至少等於取樣點數，且狀態
+            必為 `"unconverged"`，與「乾淨地沒找到」
+            （`"no_candidate_in_range"`，`non_finite_evaluations == 0`）
+            明確可分辨。
     """
 
     status: str
@@ -864,6 +906,7 @@ class ParameterSolveResult:
     bounds: tuple[float, float]
     unresolved_intervals: int
     samples_used: int
+    non_finite_evaluations: int
 
 
 def _bisect_root(
@@ -876,6 +919,13 @@ def _bisect_root(
     時區間一樣會收斂，但收斂點兩側的函數值可能仍相差很大。是否真的是
     根，由呼叫端另外驗證殘差（`solve_scalar_parameter` 的 `residual_tol`）。
     `max_iter` 耗盡仍未收斂時，回傳當下的中點與 `converged=False`。
+
+    **迭代中任一求值非有限（`NaN`／`inf`）時立即回傳 `converged=False`**：
+    `NaN` 與任何數字比較恆為 `False`，若不攔截，符號比較會靜默走到
+    `else` 分支繼續「收斂」，最後交出一個沒有根據的候選（v1.3.2 第五輪
+    Codex review 重現：端點有限、中段 `NaN` 的無根函式在 `samples=2` 下
+    被回報成 `single_candidate`）。呼叫端據此把該區間計入
+    `unresolved_intervals`。
     """
     f_lo = f(lo)
     if f_lo == 0.0:
@@ -883,9 +933,13 @@ def _bisect_root(
     f_hi = f(hi)
     if f_hi == 0.0:
         return hi, True
+    if not (math.isfinite(f_lo) and math.isfinite(f_hi)):
+        return (lo + hi) / 2.0, False
     for _ in range(max_iter):
         mid = (lo + hi) / 2.0
         f_mid = f(mid)
+        if not math.isfinite(f_mid):
+            return mid, False
         if f_mid == 0.0:
             return mid, True
         if (f_lo < 0.0) == (f_mid < 0.0):
@@ -902,7 +956,7 @@ _GOLDEN_RATIO = (math.sqrt(5.0) - 1.0) / 2.0  # 約 0.618，黃金分割搜尋�
 
 def _minimize_abs_f(
     f: Callable[[float], float], lo: float, hi: float, tol: float, max_iter: int
-) -> float:
+) -> tuple[float, bool]:
     """在 `[lo, hi]` 內以黃金分割搜尋逼近 `|f(x)|` 的局部極小點（模組內部使用）。
 
     用於偵測偶重根（`f` 在根處觸底但不變號，一般的變號偵測看不到）：
@@ -917,16 +971,28 @@ def _minimize_abs_f(
     的已知限制，不是實作疏漏；呼叫端可調高 `samples` 縮小取樣格降低
     發生機率，但無法完全消除。
 
-    回傳收斂區間的中點，不對殘差是否合格做任何判斷——是否合格由呼叫端
-    以 `residual_tol` 驗證。
+    回傳 `(root_estimate, converged)`。`converged` 僅代表「區間寬度已縮小
+    到 `tol` 內」，**不**保證 `f(root_estimate)` 真的接近 0——是否合格由
+    呼叫端以 `residual_tol` 另外驗證（與 `_bisect_root` 的 `converged`
+    語意一致）。`max_iter` 耗盡仍未收斂時，`converged` 為 `False`；
+    呼叫端**不得**把未收斂的候選點當成可用答案，即使代入後殘差恰好夠
+    小——平坦（偶重根附近）函式的殘差本來就小，光看殘差無法分辨「已經
+    逼近真根」與「還沒開始收斂但剛好取樣點附近殘差不大」（v1.3.2 修正
+    第四輪 Codex review 發現的缺陷：見 `ParameterSolveResult` docstring）。
+    **迭代中任一求值非有限時立即回傳 `converged=False`**（與 `_bisect_root`
+    同一條規則）：`abs(NaN) < x` 恆為 `False`，若不攔截會靜默走到 `else`
+    分支繼續縮區間，最後交出一個沒有根據的候選。
     """
     a, b = lo, hi
     c = b - _GOLDEN_RATIO * (b - a)
     d = a + _GOLDEN_RATIO * (b - a)
     fc = abs(f(c))
     fd = abs(f(d))
+    converged = (b - a) < tol
     for _ in range(max_iter):
-        if (b - a) < tol:
+        if not (math.isfinite(fc) and math.isfinite(fd)):
+            return (a + b) / 2.0, False
+        if converged:
             break
         if fc < fd:
             b, d, fd = d, c, fc
@@ -936,7 +1002,10 @@ def _minimize_abs_f(
             a, c, fc = c, d, fd
             d = a + _GOLDEN_RATIO * (b - a)
             fd = abs(f(d))
-    return (a + b) / 2.0
+        converged = (b - a) < tol
+    if not (math.isfinite(fc) and math.isfinite(fd)):
+        return (a + b) / 2.0, False
+    return (a + b) / 2.0, converged
 
 
 def solve_scalar_parameter(
@@ -967,15 +1036,31 @@ def solve_scalar_parameter(
     變號」的偶重根（如 `(x-a)**2` 在 `x=a`）。因此在變號偵測之外，另外
     掃描取樣點序列找 `|f|` 的局部極小（`|f(x_i)| <= |f(x_{i-1})|` 且
     `<= |f(x_{i+1})|`），對每個局部極小以黃金分割搜尋（`_minimize_abs_f`）
-    在其相鄰取樣點構成的區間內把 `|f|` 壓到最小；壓到的最小值若通過
-    `residual_tol` 檢驗，就併入候選根（走與變號分支相同的驗證與去重
-    流程）；若收斂到一個明顯為正的極小值，代表這個局部極小處真的沒有
-    根，直接捨棄，**不計入 `unresolved_intervals`**——這條分支的性質是
-    「盡力而為找不到」，不是「偵測到疑似解但驗證失敗」，兩者在語意上
-    不同，故不共用同一個失敗計數器。此機制也能帶出一部分「同一取樣格
-    內兩個相距極近的單根」，但**不保證**——那是取樣密度的固有限制，見
+    在其相鄰取樣點構成的區間內把 `|f|` 壓到最小；壓到的最小值須**同時**
+    通過「區間已收斂到 `tol` 內」與「殘差 `<= residual_tol`」才併入候選
+    根（走與變號分支相同的去重流程）——`_minimize_abs_f` 耗盡 `max_iter`
+    仍未收斂時即使殘差恰好夠小也**不得**接受，改計入
+    `unresolved_intervals`（v1.3.2 修正：平坦的偶重根附近殘差本來就小，
+    光看殘差無法分辨「已經逼近真根」與「還沒開始收斂」）；若已收斂但
+    收斂到一個明顯為正的極小值，代表這個局部極小處真的沒有根，直接
+    捨棄，**不計入 `unresolved_intervals`**——這條分支的性質是「盡力
+    而為找不到」，不是「偵測到疑似解但驗證失敗」，兩者在語意上不同，
+    故不共用同一個失敗計數器。此機制也能帶出一部分「同一取樣格內兩個
+    相距極近的單根」，但**不保證**——那是取樣密度的固有限制，見
     `_minimize_abs_f` 的說明；**不得**因為這個機制找到了某個候選根，就
     反過來宣稱結果是唯一解。
+
+    **非有限求值的處理（v1.3.2 修正）**：`f` 是呼叫端傳入的外部函式，
+    它在某個 `x` 算出 `NaN`／`inf` 是一種**需要回報的搜尋結果**，不是
+    參數錯誤，本函式**不會** raise；但也**不得**讓非有限值靜默參與變號
+    或局部極小判斷——`NaN` 與任何數字比較（含 `<`、`<=`）恆為 `False`，
+    若不主動檢查，非有限的取樣點會被誤判成「沒有變號」或「不是局部
+    極小」而悄悄略過，使「這段範圍根本沒被評估」與「這段範圍評估過、
+    確實無解」在回傳值上無法區分。修法：所有對 `f` 的求值一律經過內部
+    wrapper 計數進 `non_finite_evaluations`；取樣階段任一相鄰取樣點對
+    只要有一端非有限，就視為「這段區間未被有效評估」計入
+    `unresolved_intervals`（連帶跳過該窗口的局部極小判斷），讓狀態落到
+    `"unconverged"`，不得是 `"single_candidate"` 或 `"no_candidate_in_range"`。
 
     `tol` 與 `residual_tol` 管的是兩件不同的事：`tol` 管二分法／黃金分割
     搜尋的自變數 `x` 是否收斂（區間夠不夠窄）；`residual_tol` 管收斂點
@@ -1037,8 +1122,21 @@ def solve_scalar_parameter(
     if samples < 2:
         raise ValueError("取樣點數必須 >= 2")
 
+    non_finite_evaluations = 0
+
+    def _eval(x: float) -> float:
+        """`f` 求值的唯一入口（模組內部使用）：取樣、二分法、黃金分割
+        三條路徑都必須經過這裡，讓非有限求值一律被計數，不被任何一條
+        路徑靜默忽略（v1.3.2 修正第四輪 Codex review 發現的缺陷二）。
+        """
+        nonlocal non_finite_evaluations
+        value = f(x)
+        if not math.isfinite(value):
+            non_finite_evaluations += 1
+        return value
+
     xs = [lo + (hi - lo) * i / (samples - 1) for i in range(samples)]
-    fs = [f(x) for x in xs]
+    fs = [_eval(x) for x in xs]
 
     roots: list[float] = []
     rejected_residuals: list[float] = []
@@ -1053,7 +1151,7 @@ def solve_scalar_parameter(
 
     def _consider(candidate: float, converged: bool) -> None:
         nonlocal unresolved
-        residual = f(candidate)
+        residual = _eval(candidate)
         passes = converged and math.isfinite(residual) and abs(residual) <= residual_tol
         if passes:
             _add_root_if_new(candidate)
@@ -1062,22 +1160,34 @@ def solve_scalar_parameter(
         if math.isfinite(residual):
             rejected_residuals.append(residual)
 
-    # 分支一：變號偵測 + 二分法。
+    # 分支一：變號偵測 + 二分法。相鄰取樣點對只要有一端非有限，就無法
+    # 判斷這段區間是否變號——不得靜默當成「沒有變號」略過，必須計入
+    # unresolved_intervals，讓狀態落到 unconverged（v1.3.2 修正）。
     for i in range(len(xs) - 1):
         f_a, f_b = fs[i], fs[i + 1]
+        if not (math.isfinite(f_a) and math.isfinite(f_b)):
+            unresolved += 1
+            continue
         if f_a == 0.0:
             _consider(xs[i], converged=True)
             continue
         if (f_a < 0.0) != (f_b < 0.0):
-            root, converged = _bisect_root(f, xs[i], xs[i + 1], tol, max_iter)
+            root, converged = _bisect_root(_eval, xs[i], xs[i + 1], tol, max_iter)
             _consider(root, converged)
-    if fs[-1] == 0.0:
+    if math.isfinite(fs[-1]) and fs[-1] == 0.0:
         _consider(xs[-1], converged=True)
 
-    # 分支二：|f| 局部極小偵測 + 黃金分割搜尋（補足偶重根盲點）。失敗
-    # 的候選單純捨棄，不計入 unresolved_intervals（見上方 docstring）。
+    # 分支二：|f| 局部極小偵測 + 黃金分割搜尋（補足偶重根盲點）。三個
+    # 樣本點只要有一個非有限就整個窗口跳過（已由分支一對應的相鄰點對
+    # 計入 unresolved_intervals，這裡不重複計數）。已收斂但殘差真的
+    # 超標的候選單純捨棄，不計入 unresolved_intervals（見上方
+    # docstring）；未收斂的候選一律計入 unresolved_intervals，不得因為
+    # 殘差恰好夠小就接受（v1.3.2 修正缺陷一）。
     for i in range(1, len(xs) - 1):
-        mag_prev, mag_cur, mag_next = abs(fs[i - 1]), abs(fs[i]), abs(fs[i + 1])
+        f_prev, f_cur, f_next = fs[i - 1], fs[i], fs[i + 1]
+        if not (math.isfinite(f_prev) and math.isfinite(f_cur) and math.isfinite(f_next)):
+            continue
+        mag_prev, mag_cur, mag_next = abs(f_prev), abs(f_cur), abs(f_next)
         # 兩側都嚴格較大才算「真的凹下去」的局部極小；只要求 <=（非嚴格）
         # 會把完全平坦的區段（|f| 到處相等，例如不連續函式兩側各自的常數
         # 平台）也當成候選，只要 residual_tol 剛好比平台高度寬鬆就會產生
@@ -1085,10 +1195,18 @@ def solve_scalar_parameter(
         # 平坦區段，也排除了「平台一路銜接到跳躍點」這種單側嚴格的情況，
         # 只保留真正兩側都下降的凹點——即偶重根「觸底不變號」的典型形狀。
         if mag_cur < mag_prev and mag_cur < mag_next:
-            candidate = _minimize_abs_f(f, xs[i - 1], xs[i + 1], tol, max_iter)
-            residual = f(candidate)
-            if math.isfinite(residual) and abs(residual) <= residual_tol:
+            candidate, converged = _minimize_abs_f(_eval, xs[i - 1], xs[i + 1], tol, max_iter)
+            residual = _eval(candidate)
+            if not math.isfinite(residual):
+                unresolved += 1
+                continue
+            if not converged:
+                unresolved += 1
+                continue
+            if abs(residual) <= residual_tol:
                 _add_root_if_new(candidate)
+            # else：已收斂但殘差真的超標，代表這裡真的沒有根，捨棄且
+            # 不計入 unresolved_intervals（既有行為，見上方 docstring）。
 
     if unresolved > 0:
         best_residual = min(rejected_residuals, key=abs) if rejected_residuals else None
@@ -1100,17 +1218,19 @@ def solve_scalar_parameter(
             bounds=(lo, hi),
             unresolved_intervals=unresolved,
             samples_used=samples,
+            non_finite_evaluations=non_finite_evaluations,
         )
     if len(roots) == 1:
         root = roots[0]
         return ParameterSolveResult(
             status="single_candidate",
             value=root,
-            residual=f(root),
+            residual=_eval(root),
             candidates=(root,),
             bounds=(lo, hi),
             unresolved_intervals=0,
             samples_used=samples,
+            non_finite_evaluations=non_finite_evaluations,
         )
     if len(roots) > 1:
         return ParameterSolveResult(
@@ -1121,6 +1241,7 @@ def solve_scalar_parameter(
             bounds=(lo, hi),
             unresolved_intervals=0,
             samples_used=samples,
+            non_finite_evaluations=non_finite_evaluations,
         )
     return ParameterSolveResult(
         status="no_candidate_in_range",
@@ -1130,4 +1251,5 @@ def solve_scalar_parameter(
         bounds=(lo, hi),
         unresolved_intervals=0,
         samples_used=samples,
+        non_finite_evaluations=non_finite_evaluations,
     )
