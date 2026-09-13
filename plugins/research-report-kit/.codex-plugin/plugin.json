@@ -1,6 +1,6 @@
 {
   "name": "research-report-kit",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "機構風格投資研究報告工具組：md + PDF 雙檔輸出規範、F1–F5 可讀性排版鐵則、以價格隱含預期與可驗證預期差為核心的估值紀律（內在價值／持有期末價格／持有期報酬分離、R/R 與示範機率、條件式決策門檻）、產品週期輪動與 channel check SOP、跨市場取價路由。台股／美股共用同一套骨架。",
   "author": {
     "name": "Benjamin",

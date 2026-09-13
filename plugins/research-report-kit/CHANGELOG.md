@@ -1,5 +1,40 @@
 # Changelog
 
+## v1.3.2 — 2026-09-13
+
+修正 v1.3.1 反解器的兩個缺陷（第四輪 Codex adversarial review 指出，經實測重現）。
+方法論方向不變；新增一條鐵則：**殘差小不等於參數被識別出來**。
+
+### 變更
+
+- **SKILL.md 反解鐵則新增第 5 條**：估值模型在最適值附近常常平坦，殘差天生就小、
+  自變數卻還沒收斂；反解值的位數不得超過模型實際能識別的精度。
+  `expectations-and-decisions.md` 第 3.3 節與發布前檢查清單第 4 項同步補上
+  「假精確」與「非有效評估」兩條。
+- `ParameterSolveResult` 新增 `non_finite_evaluations` 欄位；`unconverged` 狀態的語意擴大為
+  「未收斂、不連續、或搜尋區域根本沒被有效評估」。
+
+### 修正
+
+- **黃金分割搜尋耗盡 `max_iter` 仍接受候選**：偶重根分支舊版只驗殘差、不驗區間是否收斂。
+  平坦函式的殘差本來就小，未收斂的中點因此被當成 `single_candidate`
+  （重現：`0.001*(x−0.42)**2`、`max_iter=1`、`tol=1e-12` 回報 0.4182，誤差 0.0018 卻宣稱 16 位精度）。
+  現在候選必須**同時**通過「區間已收斂」與「殘差達標」，否則計入 `unresolved_intervals`。
+- **`f` 回傳 NaN／inf 被靜默當成「沒找到」**：NaN 與任何數字比較恆為 `False`，
+  舊版取樣值未檢查有限性，「那段範圍算不出來」與「正常搜尋後確實無解」外觀完全相同
+  （重現：`lambda x: nan` 回報 `no_candidate_in_range`；後半段 NaN 的函式照樣回報 `single_candidate`）。
+  現在所有求值經單一入口計數，任一相鄰取樣點對有一端非有限即計入 `unresolved_intervals`，
+  狀態落到 `unconverged`；已驗證的根仍保留在 `candidates`。
+- **取樣端點有限、但二分法／黃金分割迭代內部才碰到 NaN**（第五輪 Codex review 補抓）：
+  NaN 的符號比較恆為 `False`，舊版會靜默走 `else` 分支繼續縮區間，把無根函式回報成
+  `single_candidate`（重現：`x<0.4 → −1e−7`、`0.4≤x≤0.6 → NaN`、`x>0.6 → 1`，`samples=2`）。
+  現在 `_bisect_root` 與 `_minimize_abs_f` 迭代中任一求值非有限即回傳 `converged=False`，
+  呼叫端計入 `unresolved_intervals`。
+
+### 驗收
+
+`ruff` / `ty` 全 repo 0 error；`pytest` 143 passed（v1.3.1 為 134，新增 9 個重現測試）。
+
 ## v1.3.1 — 2026-09-11
 
 修正 v1.3.0 反解器的兩個缺陷（Codex adversarial review 指出，經實測重現）。

@@ -1102,6 +1102,183 @@ def test_solve_scalar_parameter_local_minimum_that_is_truly_positive_is_rejected
 
 
 # ============================================================
+# v1.3.2：第四輪 Codex review 發現的缺陷一——黃金分割搜尋未收斂也接受候選
+#
+# `_minimize_abs_f` 迭代耗盡時照樣回傳中點，候選驗收舊版只檢查殘差、沒
+# 檢查自變數是否收斂。平坦的偶重根殘差天生就小，未收斂的候選因此被誤判
+# 成可用答案。實測重現：
+#   solve_scalar_parameter(lambda x: 0.001*(x-0.42)**2, 0.0, 1.0,
+#                          max_iter=1, tol=1e-12)
+#   -> 舊版 status='single_candidate', value=0.4181864378515658
+#      真根 0.42，誤差 0.0018，但 tol 設的是 1e-12（假精確）。
+# ============================================================
+
+
+def test_solve_scalar_parameter_flat_even_root_with_low_max_iter_is_not_single_candidate() -> None:
+    """平坦偶重根 + max_iter=1：區間根本沒收斂到 tol 內，不得回報 single_candidate。
+
+    對照舊版重現：`0.001*(x-0.42)**2` 在 `max_iter=1`、`tol=1e-12` 下，
+    黃金分割搜尋的區間寬度遠大於 1e-12（不可能一次迭代就收斂），舊版
+    只驗殘差（本來就小）就接受，新版必須額外檢查區間收斂而拒絕。
+    """
+    result = vm.solve_scalar_parameter(
+        lambda x: 0.001 * (x - 0.42) ** 2, lo=0.0, hi=1.0, max_iter=1, tol=1e-12
+    )
+    assert result.status != "single_candidate"
+    assert result.status != "no_candidate_in_range"
+    assert result.status == "unconverged"
+    assert result.value is None
+    assert result.unresolved_intervals >= 1
+
+
+def test_solve_scalar_parameter_flat_even_root_with_sufficient_max_iter_still_found() -> None:
+    """同一個平坦偶重根，`max_iter` 充足時仍應正常收斂找到 0.42。
+
+    確保defect 1 的修法只是拒絕「未收斂就接受」，不是連正常情況也一併
+    拒絕了——這是本次修正唯一允許的行為緊縮，不得波及正常收斂案例。
+    """
+    result = vm.solve_scalar_parameter(
+        lambda x: 0.001 * (x - 0.42) ** 2, lo=0.0, hi=1.0
+    )
+    assert result.status == "single_candidate"
+    assert result.value == pytest.approx(0.42, abs=1e-6)
+    assert result.unresolved_intervals == 0
+
+
+# ============================================================
+# v1.3.2：第四輪 Codex review 發現的缺陷二—— f 回傳非有限值被當成「沒找到」
+#
+# 取樣值 fs 舊版沒有檢查有限性就進入變號與局部極小判斷，NaN 與任何數字
+# 比較恆為 False，於是「f 這段範圍根本算不出來」與「f 正常算過、確實
+# 無解」在回傳值上完全無法區分。
+# ============================================================
+
+
+def test_solve_scalar_parameter_global_nan_is_distinguishable_from_clean_no_solution() -> None:
+    """全域 NaN：狀態與 non_finite_evaluations 都必須能與「乾淨地沒找到」區分。
+
+    對照舊版重現：`lambda x: float('nan')` 曾回報
+    `status='no_candidate_in_range'`，與正常「範圍內同號、確實無解」的
+    `lambda x: x+5` 完全無法區分。
+    """
+    nan_result = vm.solve_scalar_parameter(lambda x: float("nan"), lo=0.0, hi=1.0)
+    clean_result = vm.solve_scalar_parameter(lambda x: x + 5.0, lo=0.0, hi=1.0)
+
+    assert clean_result.status == "no_candidate_in_range"
+    assert clean_result.non_finite_evaluations == 0
+
+    assert nan_result.status != "no_candidate_in_range"
+    assert nan_result.status == "unconverged"
+    assert nan_result.non_finite_evaluations > 0
+    assert nan_result.value is None
+    # 兩者必須可區分（狀態或欄位至少一項不同，這裡兩項都不同）
+    assert (nan_result.status, nan_result.non_finite_evaluations) != (
+        clean_result.status,
+        clean_result.non_finite_evaluations,
+    )
+
+
+def test_solve_scalar_parameter_partial_range_nan_does_not_report_single_candidate() -> None:
+    """部分範圍 NaN：不得回報 single_candidate 而不揭露有區域未被有效評估。
+
+    對照舊版重現：`lambda x: (x-0.3) if x < 0.6 else float('nan')` 曾回報
+    `status='single_candidate', value=0.3`，後半範圍完全沒被有效評估，
+    卻照樣給候選——呼叫端因此無從得知資料缺漏。真根 0.3 仍應出現在
+    candidates（部分結果不整段丟棄），但狀態必須誠實反映「還有一段沒
+    評估」。
+    """
+
+    def f(x: float) -> float:
+        return (x - 0.3) if x < 0.6 else float("nan")
+
+    result = vm.solve_scalar_parameter(f, lo=0.0, hi=1.0)
+    assert result.status != "single_candidate"
+    assert result.status == "unconverged"
+    assert result.non_finite_evaluations > 0
+    assert result.unresolved_intervals >= 1
+    # 已驗證通過的根（0.3）仍應揭露在 candidates，不是整段丟棄。
+    assert 0.3 in [pytest.approx(c, abs=1e-6) for c in result.candidates]
+
+
+def test_solve_scalar_parameter_global_inf_is_distinguishable_from_clean_no_solution() -> None:
+    """inf 比照 NaN 測一組：全域回傳 inf 一樣必須與乾淨無解區分開來。"""
+    inf_result = vm.solve_scalar_parameter(lambda x: float("inf"), lo=0.0, hi=1.0)
+    clean_result = vm.solve_scalar_parameter(lambda x: x + 5.0, lo=0.0, hi=1.0)
+
+    assert inf_result.status != "no_candidate_in_range"
+    assert inf_result.status == "unconverged"
+    assert inf_result.non_finite_evaluations > 0
+    assert inf_result.value is None
+    assert clean_result.non_finite_evaluations == 0
+
+
+def test_solve_scalar_parameter_partial_range_inf_does_not_report_single_candidate() -> None:
+    """部分範圍 inf：比照部分範圍 NaN，同樣不得靜默漏揭露未評估區域。"""
+
+    def f(x: float) -> float:
+        return (x - 0.3) if x < 0.6 else float("inf")
+
+    result = vm.solve_scalar_parameter(f, lo=0.0, hi=1.0)
+    assert result.status != "single_candidate"
+    assert result.status == "unconverged"
+    assert result.non_finite_evaluations > 0
+    assert result.unresolved_intervals >= 1
+
+
+def test_solve_scalar_parameter_non_finite_evaluations_field_defaults_to_zero_when_clean() -> None:
+    """既有正常案例：non_finite_evaluations 必須是 0，不是預設隨便一個非零值。"""
+    result = vm.solve_scalar_parameter(lambda x: 2 * x - 7, lo=0.0, hi=10.0)
+    assert result.status == "single_candidate"
+    assert result.non_finite_evaluations == 0
+
+
+# ============================================================
+# v1.3.2：第五輪 Codex review 補抓——取樣端點有限、但二分法／黃金分割迭代
+# 內部才碰到 NaN 的情況。NaN 的符號比較恆為 False，舊版會靜默走 else 分支
+# 繼續「收斂」，最後把無根函式回報成 single_candidate。實測重現：
+#   f: x<0.4 -> -1e-7, 0.4<=x<=0.6 -> nan, x>0.6 -> 1.0；samples=2
+#   -> 舊版 status='single_candidate', value≈0.4, unresolved_intervals=0,
+#      non_finite_evaluations=17
+# ============================================================
+
+
+def _nan_gap_no_root(x: float) -> float:
+    if x < 0.4:
+        return -1e-7
+    if x <= 0.6:
+        return float("nan")
+    return 1.0
+
+
+def test_solve_scalar_parameter_nan_inside_bisection_is_not_single_candidate() -> None:
+    """取樣端點有限、二分法迭代內遇到 NaN：不得回報 single_candidate，須計入未解區間。"""
+    result = vm.solve_scalar_parameter(_nan_gap_no_root, lo=0.0, hi=1.0, samples=2)
+    assert result.status == "unconverged"
+    assert result.value is None
+    assert result.unresolved_intervals >= 1
+    assert result.non_finite_evaluations > 0
+
+
+def test_solve_scalar_parameter_nan_inside_golden_section_is_not_single_candidate() -> None:
+    """取樣點有限、黃金分割迭代內遇到 NaN：同樣不得靜默交出候選。
+
+    `|f|` 在取樣點 0.0／0.5／1.0 呈現凹形（觸發偶重根分支），但 0.5 兩側
+    很窄的區間內 `f` 為 NaN，黃金分割搜尋一定會踩到。
+    """
+
+    def f(x: float) -> float:
+        if 0.45 < x < 0.55 and x != 0.5:
+            return float("nan")
+        return (x - 0.5) ** 2 + 1e-3
+
+    result = vm.solve_scalar_parameter(f, lo=0.0, hi=1.0, samples=3)
+    assert result.status == "unconverged"
+    assert result.value is None
+    assert result.unresolved_intervals >= 1
+    assert result.non_finite_evaluations > 0
+
+
+# ============================================================
 # v1.3.1：第三輪 Codex review 發現的缺陷二——NaN／inf 無聲穿過公開函式
 #
 # NaN 與任何數字比較（含 <=）恆為 False，既有的邊界檢查攔不住 NaN；
