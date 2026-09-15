@@ -80,7 +80,7 @@
 |---|---|
 | 日期 | — |
 | 問題編號 | 對應 Step 2 |
-| **`thesis_id`** | 對應 `equity-valuation-discipline/references/expectations-and-decisions.md` 第4節預期差台帳的穩定命題 ID；用於串連催化劑、驗證點與部位動作（見 `product-cycle-rotation/SKILL.md` 第二節研究入口條件） |
+| **`thesis_id`** | 對應 `equity-valuation-discipline/references/expectations-and-decisions.md` 第4節個人判斷與市場定價落差的穩定命題 ID；用於串連催化劑、驗證點與部位動作（見 `product-cycle-rotation/SKILL.md` 第二節研究入口條件） |
 | 來源層級 | L1–L5 |
 | 來源描述 | **類型化描述，不記可識別個資** |
 | **推定原始消息源** | 這條資訊最可能從哪裡來（某券商通路調查／某展會／某法說會／某供應商業務）——**用於判定獨立性** |

@@ -23,7 +23,7 @@ description: "做產業掃描、供應鏈輪動、產品世代交替分析或 ch
 
 1. 目前 product cycle 階段。
 2. **若落在 T0 之後，為何值得在此階段研究**（既有持倉覆核／事件驅動／下一代 delta 判定）。
-3. `thesis_id`——與深度研究預期差台帳共用同一穩定 ID（見 `equity-valuation-discipline/references/expectations-and-decisions.md` 第4節），交接後不得重新編號斷鏈。
+3. `thesis_id`——與深度研究個人判斷與市場定價落差共用同一穩定 ID（見 `equity-valuation-discipline/references/expectations-and-decisions.md` 第4節），交接後不得重新編號斷鏈。
 4. **共識／價格反映依據**：本標的目前的行情代理讀數，以及（若有）價格隱含預期判讀，並註明資料來源與日期。
 5. **候選預期差**：本 skill 觀察到、值得深度研究驗證的具體分歧假設（哪個環節、哪個方向）。
 6. **驗證時點**：預定何時應有觀察結果可比對（對應第五節催化劑日曆）。

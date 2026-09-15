@@ -1,6 +1,6 @@
 interface:
   display_name: "Research Report Output"
-  short_description: "產出機構風投資研究報告，含預期差台帳與 R/R，同時交付 .md 與 .pdf"
+  short_description: "產出機構風投資研究報告，含個人判斷與市場定價落差、R/R，同時交付 .md 與 .pdf"
   default_prompt: "Use $research-report-output to write an equity or industry research report delivered as md and PDF."
 
 policy:

@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.4.1 — 2026-09-15
+
+命名修正：FR-04 的「預期差台帳」改名為**「個人判斷與市場定價落差」**。舊名不說明比較的兩端，
+而口語替代「與市場共識落差」會與第 1 節的**賣方共識**基線撞名，讓讀者以為是在跟分析師共識比；
+實際比的是**本研究判斷 vs 價格隱含預期**，賣方共識只是表中一欄參考。
+
+### 變更
+
+- `equity-valuation-discipline/SKILL.md` 第三步、`references/expectations-and-decisions.md` 第 4 節、
+  `prepublish-checklist.md`、`calibration-and-governance.md`、`product-cycle-rotation` 兩處交接引用、
+  `research-report-output` 的 Briefing 保留清單、`output-spec.md`、A 模板、範例報告與 `openai.yaml`
+  描述：一律改用新名稱；模板內「台帳」簡稱維持，指的仍是同一張表。
+- `expectations-and-decisions.md` 第 4 節新增一段說明比較的兩端，並禁止改稱「與市場共識落差」。
+- `docs/v1.3.0-spec.md` 為歷史規格，保留舊名不動。
+
+不影響任何計算與引擎行為。
+
 ## v1.4.0 — 2026-09-13
 
 修正一個**指引層與引擎層互相矛盾**的缺陷：發布前檢查清單與 A 模板都寫著「fade 流量全程為

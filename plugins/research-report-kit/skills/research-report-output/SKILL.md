@@ -111,7 +111,7 @@ metadata:
 
 結論速覽版，約 2,000–2,500 中文字。觸發：「簡介」「briefing」「摘要」「重點速覽」「summary」「3 頁」。命名加 `_brief` 後綴。`type` 欄位後加「（Briefing）」。
 
-**保留**：TL;DR（含 KPI 卡，刪推導表）、Key Findings（數據明細欄只留 1–2 項）、預期差台帳（核心命題一列）、估值結論（只留情境表 ＋ Reverse DCF 一行）、**R/R（至少牛／熊與基準／熊兩種）＋ 示範機率表（至少三組）＋ 每組一句解讀**（A 型不得刪，見 `expectations-and-decisions.md` 第 7、8 節）、Recommendations（`decision_status`／`rating` ＋ 加減碼訊號各前 2 項）、核心風險三點各一行。
+**保留**：TL;DR（含 KPI 卡，刪推導表）、Key Findings（數據明細欄只留 1–2 項）、個人判斷與市場定價落差（核心命題一列）、估值結論（只留情境表 ＋ Reverse DCF 一行）、**R/R（至少牛／熊與基準／熊兩種）＋ 示範機率表（至少三組）＋ 每組一句解讀**（A 型不得刪，見 `expectations-and-decisions.md` 第 7、8 節）、Recommendations（`decision_status`／`rating` ＋ 加減碼訊號各前 2 項）、核心風險三點各一行。
 **刪去**：市場共識基線拆解細節（留分歧一句）、事業結構全文、供應鏈全文（留一行定位句）、交叉驗證細節、敏感度矩陣（留排序第一名一句）、催化劑表（留下一個關鍵觀察時點一行）、命題監控儀表板、Caveats 全文、來源清單。⛔ 篇幅不足時優先縮減背景敘述，**不得刪除機率性質標記或成本／股利缺口揭露**。
 
 ### ⚠️ 刪節後處理（External 與 Briefing 共用）
