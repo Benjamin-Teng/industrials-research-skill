@@ -319,6 +319,31 @@ class TestPreEntryScreenContract(unittest.TestCase):
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, s3_section)
 
+    def test_s3_requires_unique_classification_and_incremental_exposure(self) -> None:
+        """同一底層現金流不得跨來源或固定／或有分類重複計入。"""
+        screen = read(VALUATION / "references" / "pre-entry-balance-sheet-screen.md")
+        s3_section = screen.split("| S3 |", 1)[1].split("| S4 |", 1)[0]
+        for requirement in ("底層現金流", "只能歸類一次", "未涵蓋的增額曝險"):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, s3_section)
+
+    def test_active_markdown_has_no_probability_only_risk_rule(self) -> None:
+        """有效文件不得要求風險只改機率而排除情境內的經濟後果。"""
+        forbidden = (
+            "警示由情境機率承接",
+            "不得再砍營收或把利潤率取下緣",
+            "未另外砍營收或取利潤率下緣",
+        )
+        offenders: list[str] = []
+        for path in MARKDOWN_FILES:
+            if path.name == "CHANGELOG.md":
+                continue
+            text = read(path)
+            for phrase in forbidden:
+                if phrase in text:
+                    offenders.append(f"{path.relative_to(PLUGIN)}: {phrase}")
+        self.assertEqual(offenders, [], "仍有風險只調機率的舊規則：\n" + "\n".join(offenders))
+
 
 class TestRetiredRulesAreNotActiveInstructions(unittest.TestCase):
     """已退役的規則只能以「退役說明」出現，不得留為有效指令。
