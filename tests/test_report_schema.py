@@ -357,17 +357,27 @@ class TestPreEntryMinimumCheck(unittest.TestCase):
             and not re.search(r"未另行估計|不代表", line)
         ]
         self.assertEqual(offenders, [])
-        # 機率面沒有可靠估計時，依 SSOT 8.4 以示範配置呈現，決策段要指名這個做法
+        # 6.7 的每一組配置都必須是示範性質（SSOT 8.3）
+        rows = table_rows(section(sample, "### 6.7 示範機率與期望價差報酬"))
+        configs = [row for row in rows if re.fullmatch(r"[A-Z]", row[0])]
+        self.assertEqual([row[0] for row in configs], ["A", "B", "C"])
+        for row in configs:
+            self.assertEqual(row[1], "`illustrative`", f"配置 {row[0]} 的機率性質不是 illustrative")
+        # 機率面沒有可靠估計時，依 SSOT 8.4 以示範配置呈現，配置 A 的 E[R_H] 不作正式預期報酬
         response = next(line for line in sample.splitlines() if line.startswith("**財務品質警示的回應**"))
         self.assertIn("8.4", response)
+        self.assertIn("不作正式預期報酬", response)
 
     def test_sample_normal_rows_carry_their_benchmarks(self) -> None:
         # 「正常」要有門檻所需的比較資料，缺了應標未查；否則缺資料會被當成安全訊號
         quality = section(read(SAMPLE), "## 五、財務品質")
         rows = {row[0].strip("*"): row for row in table_rows(quality)}
-        leverage = rows["負債比／流動比／利息保障／到期結構"]
-        for needed in ("同業", "5 年均值", "流動比", "利息保障", "到期"):
-            self.assertIn(needed, leverage[1])
+        # 槓桿列的四個子項各自要有同業與自身歷史兩種基準，不能只靠其中一項帶過
+        leverage = rows["負債比／流動比／利息保障／到期結構"][1]
+        for name in ("負債比", "流動比", "利息保障", "到期"):
+            part = next(item for item in leverage.split("；") if name in item)
+            self.assertIn("同業中位", part, f"{name} 缺同業比較")
+            self.assertIn("自身 5 年均值", part, f"{name} 缺自身歷史比較")
         self.assertIn("營收", rows["承諾與或有事項"][1])
         response = next(line for line in read(SAMPLE).splitlines() if line.startswith("**財務品質警示的回應**"))
         if "沒有未查項目" in response:
