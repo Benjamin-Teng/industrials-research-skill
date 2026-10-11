@@ -78,6 +78,7 @@ RETIRED_PATTERNS = {
     r"情境機率\**表達": "舊|退役",
     r"不得再砍營收": "舊|退役",
     r"反映(?:在|於).{0,12}情境機率": "舊|退役",
+    r"只以.{0,8}權重表達": "舊|退役",
 }
 
 MARKDOWN_FILES = sorted(PLUGIN.rglob("*.md"))
@@ -342,6 +343,15 @@ class TestPreEntryMinimumCheck(unittest.TestCase):
         clause = next(line for line in rules.splitlines() if "比較基準" in line)
         self.assertIn("未查", clause)
         self.assertRegex(clause, r"⛔.*暫判警示.*暫判正常")
+
+    def test_financial_route_swaps_in_its_own_indicators(self) -> None:
+        # 銀行與保險套一般企業的槓桿與資本強度沒有經濟意義；改看路由表為該路徑列出的指標
+        route = next(row for row in table_rows(self.paths_text) if row[0] == "`financial_equity`")
+        rule = next(line for line in self.check.splitlines() if "`financial_equity`" in line)
+        self.assertIn("不適用", rule)
+        for indicator in ("監理資本", "資產品質"):
+            self.assertIn(indicator, rule)
+            self.assertIn(indicator, route[-1])
 
     def test_quick_format_lists_every_item(self) -> None:
         line = next(row for row in self.check.splitlines() if row.startswith("> **建倉前最低檢查**"))
