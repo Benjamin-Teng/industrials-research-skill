@@ -339,10 +339,23 @@ class TestPreEntryMinimumCheck(unittest.TestCase):
 
     def test_missing_benchmark_is_marked_unchecked(self) -> None:
         # 比較基準取不到時若暫判警示，體質乾淨的公司會被誤報；暫判正常則會漏報
-        rules = section(self.paths_text, "### 5.1 檢核項與警示門檻")
-        clause = next(line for line in rules.splitlines() if "比較基準" in line)
+        clause = next(line for line in self.check.splitlines() if line.startswith("- 查不到的項目"))
         self.assertIn("未查", clause)
         self.assertRegex(clause, r"⛔.*暫判警示.*暫判正常")
+        # 證據只有一家公司，依治理 4.1 只用於最低檢查；5.1 全表是否比照列在觀察區
+        self.assertNotIn("暫判警示", section(self.paths_text, "### 5.1 檢核項與警示門檻"))
+        governance = section(read(REFERENCES / "calibration-and-governance.md"), "### 4.5 觀察區")
+        self.assertIn("5.1 全表", governance)
+
+    def test_sample_keeps_illustrative_weights_illustrative(self) -> None:
+        # 範例的權重是示範先驗；說成「發生機率已放進權重」會讓範例看似完成 FR-09
+        offenders = [
+            line[:60]
+            for line in read(SAMPLE).splitlines()
+            if re.search(r"發生(?:可能性|機率).{0,6}(?:放在|在|進).{0,10}權重", line)
+            and not re.search(r"未另行估計|不代表", line)
+        ]
+        self.assertEqual(offenders, [])
 
     def test_unrated_company_still_gets_a_credit_assessment(self) -> None:
         # 「未取得評等」只說明沒有外部評等，信用風險仍要用其他訊號評估，取不到才標未查
