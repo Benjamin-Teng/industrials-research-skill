@@ -349,13 +349,29 @@ class TestPreEntryMinimumCheck(unittest.TestCase):
 
     def test_sample_keeps_illustrative_weights_illustrative(self) -> None:
         # 範例的權重是示範先驗；說成「發生機率已放進權重」會讓範例看似完成 FR-09
+        sample = read(SAMPLE)
         offenders = [
             line[:60]
-            for line in read(SAMPLE).splitlines()
+            for line in sample.splitlines()
             if re.search(r"發生(?:可能性|機率).{0,6}(?:放在|在|進).{0,10}權重", line)
             and not re.search(r"未另行估計|不代表", line)
         ]
         self.assertEqual(offenders, [])
+        # 機率面沒有可靠估計時，依 SSOT 8.4 以示範配置呈現，決策段要指名這個做法
+        response = next(line for line in sample.splitlines() if line.startswith("**財務品質警示的回應**"))
+        self.assertIn("8.4", response)
+
+    def test_sample_normal_rows_carry_their_benchmarks(self) -> None:
+        # 「正常」要有門檻所需的比較資料，缺了應標未查；否則缺資料會被當成安全訊號
+        quality = section(read(SAMPLE), "## 五、財務品質")
+        rows = {row[0].strip("*"): row for row in table_rows(quality)}
+        leverage = rows["負債比／流動比／利息保障／到期結構"]
+        for needed in ("同業", "5 年均值", "流動比", "利息保障", "到期"):
+            self.assertIn(needed, leverage[1])
+        self.assertIn("營收", rows["承諾與或有事項"][1])
+        response = next(line for line in read(SAMPLE).splitlines() if line.startswith("**財務品質警示的回應**"))
+        if "沒有未查項目" in response:
+            self.assertFalse([row[0] for row in rows.values() if "未查" in row[-1]])
 
     def test_unrated_company_still_gets_a_credit_assessment(self) -> None:
         # 「未取得評等」只說明沒有外部評等，信用風險仍要用其他訊號評估，取不到才標未查
