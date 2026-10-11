@@ -127,6 +127,7 @@ research-report-kit/
     │   ├── references/
     │   │   ├── expectations-and-decisions.md   # 方法論單一來源：預期差、報酬、R/R、決策
     │   │   ├── valuation-paths.md              # 模型路由與計算口徑（折現配對、股權橋接、fade）
+    │   │   ├── pre-entry-balance-sheet-screen.md  # 建倉／加碼前資產負債表與表外風險快篩
     │   │   ├── prepublish-checklist.md         # 發布前內容層適用性檢查
     │   │   └── calibration-and-governance.md   # 常數怎麼校準、規則怎麼退役、退役表
     │   └── scripts/valuation_math.py           # 上述公式的可測試實作
