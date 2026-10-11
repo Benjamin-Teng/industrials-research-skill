@@ -244,7 +244,14 @@ class TestPreEntryScreenContract(unittest.TestCase):
         """Briefing 不得因刪節而遺失快篩結果與決策影響。"""
         output_skill = read(OUTPUT / "SKILL.md")
         briefing = output_skill.split("### Briefing", 1)[1].split("### ⚠️ 刪節後處理", 1)[0]
-        for requirement in ("S1–S6", "未覆蓋", "最脆弱", "決策影響"):
+        for requirement in (
+            "S1–S6",
+            "未覆蓋",
+            "最脆弱",
+            "決策影響",
+            "一句判定依據",
+            "inline 來源／日期",
+        ):
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, briefing)
 
@@ -254,6 +261,31 @@ class TestPreEntryScreenContract(unittest.TestCase):
         for requirement in ("建倉前快篩", "S1", "S6", "N/A", "最脆弱"):
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, template)
+
+        chapter_five = template.index("## 五、")
+        screen = template.index("### 5.1 建倉前快篩")
+        governance = template.index("### 5.2 治理與籌碼面")
+        chapter_six = template.index("## 六、")
+        self.assertLess(chapter_five, screen)
+        self.assertLess(screen, governance)
+        self.assertLess(governance, chapter_six)
+
+    def test_sotp_summary_rows_stay_inside_sotp_table(self) -> None:
+        """新增章節不得切斷 SOTP 表頭與彙總列。"""
+        template = read(TEMPLATES / "A-single-stock.md")
+        sotp = template.split("### 6.1 分部加總", 1)[1].split("### 6.2 週期常態化", 1)[0]
+        header = sotp.index("| 分部 |")
+        subtotal = sotp.index("| 小計 |")
+        adjusted = sotp.index("| **調整後 `EV_enterprise`** |")
+        self.assertLess(header, subtotal)
+        self.assertLess(subtotal, adjusted)
+
+    def test_template_reuses_s3_measure_instead_of_legacy_total(self) -> None:
+        """模板不得以未限定期間的承諾總額另設一套門檻。"""
+        template = read(TEMPLATES / "A-single-stock.md")
+        self.assertNotIn("承諾總額 > 一年營收", template)
+        self.assertIn("24 個月未入帳固定承諾現值年化", template)
+        self.assertIn("承諾調整後淨負債", template)
 
     def test_s3_defines_comparable_commitment_measure(self) -> None:
         """S3 不得把不同期間與重複認列的承諾直接相加後套紅燈。"""
