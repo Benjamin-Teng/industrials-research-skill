@@ -31,6 +31,12 @@ SCRIPTS = PLUGIN / "skills" / "equity-valuation-discipline" / "scripts"
 VALUATION = PLUGIN / "skills" / "equity-valuation-discipline"
 OUTPUT = PLUGIN / "skills" / "research-report-output"
 
+
+def has_positive_clause(text: str, clause: str) -> bool:
+    """方向性 clause 必須緊接句界，前面加「禁止／不得」不得誤判通過。"""
+    normalized = text.replace("**", "")
+    return re.search(rf"(?:^|[。；：，])\s*{re.escape(clause)}", normalized) is not None
+
 # 上層目錄含連字號，不是合法 package 名稱；沿用 test_valuation_math.py 的載入方式。
 _spec = importlib.util.spec_from_file_location("valuation_math", SCRIPTS / "valuation_math.py")
 assert _spec is not None and _spec.loader is not None
@@ -322,15 +328,16 @@ class TestPreEntryScreenContract(unittest.TestCase):
     def test_s3_requires_unique_classification_and_incremental_exposure(self) -> None:
         """同一底層現金流不得跨來源或固定／或有分類重複計入。"""
         screen = read(VALUATION / "references" / "pre-entry-balance-sheet-screen.md")
-        s3_section = screen.split("| S3 |", 1)[1].split("| S4 |", 1)[0]
+        s3_section = screen.split("| S3 |", 1)[1].split("| S4 |", 1)[0].replace("**", "")
         for requirement in (
-            "按合約與**底層現金流**跨來源去重",
-            "固定承諾或或有曝險中**只能歸類一次**",
-            "保證等或有義務",
-            "只計固定承諾未涵蓋的增額曝險",
+            "先按合約與底層現金流跨來源去重",
+            "每筆義務在固定承諾或或有曝險中只能歸類一次",
+            "保證等或有義務列觸發條件、最大曝險與情境機率，且只計固定承諾未涵蓋的增額曝險",
         ):
             with self.subTest(requirement=requirement):
-                self.assertIn(requirement, s3_section)
+                self.assertTrue(has_positive_clause(s3_section, requirement))
+                negated = s3_section.replace(requirement, f"禁止{requirement}", 1)
+                self.assertFalse(has_positive_clause(negated, requirement))
 
     def test_template_and_sample_map_consequences_and_probabilities_together(self) -> None:
         """每個適用輸出須在同一規則段同時交代後果與機率的去向。"""
@@ -338,20 +345,36 @@ class TestPreEntryScreenContract(unittest.TestCase):
             (
                 TEMPLATES / "A-single-stock.md",
                 "> **任一項觸發警示的處理**",
-                ("具體經濟後果", "放入適用情境", "發生機率", "權重"),
+                (
+                    "先辨識具體經濟後果，放入適用情境的營收、利潤率、現金流、融資或稀釋假設",
+                    "再把發生機率放入 6.5 的權重",
+                ),
             ),
             (
                 SAMPLE,
                 "> **資本強度警示的處理**",
-                ("後果已放入", "熊情境淨利率", "發生可能性", "熊情境權重"),
+                (
+                    "資本支出轉嫁不如預期的後果已放入 6.5 熊情境淨利率",
+                    "發生可能性另進熊情境權重",
+                ),
             ),
         )
         for path, anchor, requirements in contracts:
             text = read(path)
-            paragraph = text.split(anchor, 1)[1].split("\n\n", 1)[0]
+            paragraph = text.split(anchor, 1)[1].split("\n\n", 1)[0].replace("**", "")
             for requirement in requirements:
                 with self.subTest(path=path.name, requirement=requirement):
-                    self.assertIn(requirement, paragraph)
+                    self.assertTrue(has_positive_clause(paragraph, requirement))
+                    negated = paragraph.replace(requirement, f"不得{requirement}", 1)
+                    self.assertFalse(has_positive_clause(negated, requirement))
+
+    def test_prepublish_dashboard_uses_s3_outputs(self) -> None:
+        """發布清單不得以未分類的承諾總額取代 S3 單一計量輸出。"""
+        checklist = read(VALUATION / "references" / "prepublish-checklist.md")
+        dashboard = checklist.split("### 26. 儀表板對照", 1)[1].split("### 27.", 1)[0]
+        self.assertNotIn("承諾總額", dashboard)
+        self.assertIn("24 個月固定承諾現值年化 ÷ 一年營收", dashboard)
+        self.assertIn("承諾調整後淨負債 ÷ EBITDA", dashboard)
 
     def test_active_markdown_has_no_probability_only_risk_rule(self) -> None:
         """有效文件不得要求風險只改機率而排除情境內的經濟後果。"""
