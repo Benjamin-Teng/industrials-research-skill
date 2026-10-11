@@ -347,11 +347,19 @@ class TestPreEntryMinimumCheck(unittest.TestCase):
     def test_financial_route_swaps_in_its_own_indicators(self) -> None:
         # 銀行與保險套一般企業的槓桿與資本強度沒有經濟意義；改看路由表為該路徑列出的指標
         route = next(row for row in table_rows(self.paths_text) if row[0] == "`financial_equity`")
-        rule = next(line for line in self.check.splitlines() if "`financial_equity`" in line)
+        rule = next(line for line in self.check.splitlines() if line.startswith("- 走 `financial_equity`"))
+        quick = next(row for row in self.check.splitlines() if row.startswith("> **建倉前最低檢查（金融業）**"))
+        fields = [field.split("＿", 1)[0] for field in quick.split("：", 1)[1].split("。", 1)[0].split("｜")]
+        self.assertIn("第 1、3 項", rule)
         self.assertIn("不適用", rule)
         for indicator in ("監理資本", "資產品質"):
             self.assertIn(indicator, rule)
             self.assertIn(indicator, route[-1])
+            self.assertIn(indicator, fields)
+        # 表外承諾、信用與質押對金融業同樣有意義，規則與快速格式都要保留
+        self.assertIn("第 2 項照常", rule)
+        for kept in ("承諾", "信用", "質押"):
+            self.assertIn(kept, fields)
 
     def test_quick_format_lists_every_item(self) -> None:
         line = next(row for row in self.check.splitlines() if row.startswith("> **建倉前最低檢查**"))
