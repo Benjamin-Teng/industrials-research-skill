@@ -287,6 +287,30 @@ class TestPreEntryScreenContract(unittest.TestCase):
         self.assertIn("24 個月未入帳固定承諾現值年化", template)
         self.assertIn("承諾調整後淨負債", template)
 
+    def test_outputs_do_not_copy_the_decision_routing_table(self) -> None:
+        """範例與模板不得重抄可能落後 SSOT 的 actionable_candidate 條件。"""
+        copied_route = "預期差、驗證路徑、成本後報酬與使用者風險政策**均**通過"
+        for path in (*TEMPLATES.glob("*.md"), SAMPLE):
+            with self.subTest(path=path.name):
+                self.assertNotIn(copied_route, read(path))
+
+    def test_active_markdown_has_no_legacy_s3_measure(self) -> None:
+        """所有有效文件只能引用 S3 的 24 個月單一計量契約。"""
+        forbidden = (
+            "承諾總額 ÷ `EV_enterprise`",
+            "承諾總額 > 一年營收",
+            "未來 5 年：採購承諾",
+        )
+        offenders: list[str] = []
+        for path in MARKDOWN_FILES:
+            if path.name == "CHANGELOG.md":
+                continue
+            text = read(path)
+            for phrase in forbidden:
+                if phrase in text:
+                    offenders.append(f"{path.relative_to(PLUGIN)}: {phrase}")
+        self.assertEqual(offenders, [], "仍有舊 S3 計量契約：\n" + "\n".join(offenders))
+
     def test_s3_defines_comparable_commitment_measure(self) -> None:
         """S3 不得把不同期間與重複認列的承諾直接相加後套紅燈。"""
         screen = read(VALUATION / "references" / "pre-entry-balance-sheet-screen.md")
