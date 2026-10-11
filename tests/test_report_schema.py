@@ -28,6 +28,10 @@ PLUGIN = ROOT / "plugins" / "research-report-kit"
 TEMPLATES = PLUGIN / "skills" / "research-report-output" / "templates"
 SAMPLE = PLUGIN / "examples" / "sample-report.md"
 SCRIPTS = PLUGIN / "skills" / "equity-valuation-discipline" / "scripts"
+REFERENCES = PLUGIN / "skills" / "equity-valuation-discipline" / "references"
+VALUATION_SKILL = PLUGIN / "skills" / "equity-valuation-discipline" / "SKILL.md"
+OUTPUT_SKILL = PLUGIN / "skills" / "research-report-output" / "SKILL.md"
+LOCALIZATION = PLUGIN / "skills" / "research-report-output" / "references" / "market-localization.md"
 
 # 上層目錄含連字號，不是合法 package 名稱；沿用 test_valuation_math.py 的載入方式。
 _spec = importlib.util.spec_from_file_location("valuation_math", SCRIPTS / "valuation_math.py")
@@ -68,6 +72,13 @@ RETIRED_PATTERNS = {
     r"min\(.*Kelly": "退役|不再|取消",
     r"衍生\s*P/NOPAT": "退役|不再|取消|不是",
     r"基礎折讓": "退役|不再|取消",
+    # 退役表 2.2「財務品質警示只能調機率」的各種寫法；後果要進情境，機率才進權重
+    r"只(?:能|准)?調機率": "舊|退役|取代|不得只|未只|後果進情境",
+    r"由\**情境機率\**承接": "舊|退役",
+    r"情境機率\**表達": "舊|退役",
+    r"不得再砍營收": "舊|退役",
+    r"反映(?:在|於).{0,12}情境機率": "舊|退役",
+    r"只以.{0,8}權重表達": "舊|退役",
 }
 
 MARKDOWN_FILES = sorted(PLUGIN.rglob("*.md"))
@@ -86,6 +97,32 @@ def front_matter(path: Path) -> dict:
 
 def report_files() -> list[Path]:
     return sorted(TEMPLATES.glob("*.md")) + [SAMPLE]
+
+
+def section(text: str, heading: str) -> str:
+    """回傳 ``heading`` 那一行之後、到下一個同級或更高級標題之前的內容。"""
+    lines = text.splitlines()
+    start = lines.index(heading)
+    level = len(heading) - len(heading.lstrip("#"))
+    for end in range(start + 1, len(lines)):
+        stripped = lines[end].lstrip()
+        if stripped.startswith("#") and len(stripped) - len(stripped.lstrip("#")) <= level:
+            return "\n".join(lines[start + 1 : end])
+    return "\n".join(lines[start + 1 :])
+
+
+def table_rows(text: str) -> list[list[str]]:
+    """抽出 Markdown 表格的每一列（含表頭，略過分隔列），各格去除前後空白。"""
+    rows: list[list[str]] = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not (stripped.startswith("|") and stripped.endswith("|")):
+            continue
+        cells = [cell.strip() for cell in stripped[1:-1].split("|")]
+        if all(re.fullmatch(r":?-{3,}:?", cell) for cell in cells):
+            continue
+        rows.append(cells)
+    return rows
 
 
 class TestFrontMatterSchema(unittest.TestCase):
@@ -262,6 +299,180 @@ class TestTableWidth(unittest.TestCase):
                 if columns > 7:
                     offenders.append(f"{path.relative_to(PLUGIN)}:{lineno}  {columns} 欄")
         self.assertEqual(offenders, [], "表格超過 7 欄：\n" + "\n".join(offenders))
+
+
+class TestPreEntryMinimumCheck(unittest.TestCase):
+    """建倉／加碼前的最低檢查，以及決策段對財務品質警示的逐項回應。
+
+    最低檢查只是既有檢核項的子集，不得自帶門檻；這裡驗的是引用關係接得上、
+    被否決的提案沒有回來，而不只是關鍵字在不在。
+    """
+
+    paths_text: ClassVar[str]
+    check: ClassVar[str]
+    quality_rules: ClassVar[dict[str, str]]
+    localization: ClassVar[dict[str, list[str]]]
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.paths_text = read(REFERENCES / "valuation-paths.md")
+        cls.check = section(cls.paths_text, "### 5.2 建倉／加碼前的最低檢查")
+        quality_table = table_rows(section(cls.paths_text, "### 5.1 檢核項與警示門檻"))
+        cls.quality_rules = {row[0]: row[1] for row in quality_table[1:]}
+        cls.localization = {row[0]: row for row in table_rows(read(LOCALIZATION))}
+
+    def test_every_item_points_to_an_existing_definition(self) -> None:
+        items = table_rows(self.check)[1:]
+        self.assertEqual(len(items), 5)
+        for _number, item, source in items:
+            refs = re.findall(r"「([^」]+)」", source)
+            self.assertTrue(refs, f"{item} 沒有標出處")
+            known = self.quality_rules if source.startswith("5.1") else self.localization
+            for ref in refs:
+                self.assertIn(ref, known, f"{item} 引用的檢核項不存在：{ref}")
+
+    def test_minimum_check_sets_no_threshold_of_its_own(self) -> None:
+        # 比較符號、帶單位的數字或「逾 N」一出現，就是在出處之外另抄了一份門檻
+        body = "\n".join(line.removeprefix("> ") for line in self.check.splitlines())
+        found = re.findall(r"[<>≤≥]|\d+(?:\.\d+)?\s*(?:[×%]|倍|天|個月|年)|逾\s*\d", body)
+        self.assertEqual(found, [])
+
+    def test_missing_benchmark_is_marked_unchecked(self) -> None:
+        # 比較基準取不到時若暫判警示，體質乾淨的公司會被誤報；暫判正常則會漏報
+        clause = next(line for line in self.check.splitlines() if line.startswith("- 查不到的項目"))
+        self.assertIn("未查", clause)
+        self.assertRegex(clause, r"⛔.*暫判警示.*暫判正常")
+        # 證據只有一家公司，依治理 4.1 只用於最低檢查；5.1 全表是否比照列在觀察區
+        self.assertNotIn("暫判警示", section(self.paths_text, "### 5.1 檢核項與警示門檻"))
+        governance = section(read(REFERENCES / "calibration-and-governance.md"), "### 4.5 觀察區")
+        self.assertIn("5.1 全表", governance)
+
+    def test_sample_keeps_illustrative_weights_illustrative(self) -> None:
+        # 範例的權重是示範先驗；說成「發生機率已放進權重」會讓範例看似完成 FR-09
+        sample = read(SAMPLE)
+        offenders = [
+            line[:60]
+            for line in sample.splitlines()
+            if re.search(r"發生(?:可能性|機率).{0,6}(?:放在|在|進).{0,10}權重", line)
+            and not re.search(r"未另行估計|不代表", line)
+        ]
+        self.assertEqual(offenders, [])
+        # 6.7 的每一組配置都必須是示範性質（SSOT 8.3）
+        rows = table_rows(section(sample, "### 6.7 示範機率與期望價差報酬"))
+        configs = [row for row in rows if re.fullmatch(r"[A-Z]", row[0])]
+        self.assertEqual([row[0] for row in configs], ["A", "B", "C"])
+        for row in configs:
+            self.assertEqual(row[1], "`illustrative`", f"配置 {row[0]} 的機率性質不是 illustrative")
+        # 機率面沒有可靠估計時，依 SSOT 8.4 以示範配置呈現，配置 A 的 E[R_H] 不作正式預期報酬
+        response = next(line for line in sample.splitlines() if line.startswith("**財務品質警示的回應**"))
+        self.assertIn("8.4", response)
+        self.assertIn("不作正式預期報酬", response)
+
+    def test_sample_normal_rows_carry_their_benchmarks(self) -> None:
+        # 「正常」要有門檻所需的比較資料，缺了應標未查；否則缺資料會被當成安全訊號
+        quality = section(read(SAMPLE), "## 五、財務品質")
+        rows = {row[0].strip("*"): row for row in table_rows(quality)}
+        # 槓桿列的四個子項各自要有同業與自身歷史兩種基準，不能只靠其中一項帶過
+        leverage = rows["負債比／流動比／利息保障／到期結構"][1]
+        for name in ("負債比", "流動比", "利息保障", "到期"):
+            part = next(item for item in leverage.split("；") if name in item)
+            self.assertIn("同業中位", part, f"{name} 缺同業比較")
+            self.assertIn("自身 5 年均值", part, f"{name} 缺自身歷史比較")
+        self.assertIn("營收", rows["承諾與或有事項"][1])
+        response = next(line for line in read(SAMPLE).splitlines() if line.startswith("**財務品質警示的回應**"))
+        if "沒有未查項目" in response:
+            self.assertFalse([row[0] for row in rows.values() if "未查" in row[-1]])
+
+    def test_unrated_company_still_gets_a_credit_assessment(self) -> None:
+        # 「未取得評等」只說明沒有外部評等，信用風險仍要用其他訊號評估，取不到才標未查
+        rule = next(line for line in self.check.splitlines() if "未取得評等" in line)
+        clause = rule.split("未取得評等", 1)[1]
+        for signal in ("利差", "借款利率", "未查"):
+            self.assertIn(signal, clause)
+
+    def test_financial_route_swaps_in_its_own_indicators(self) -> None:
+        # 銀行與保險套一般企業的槓桿與資本強度沒有經濟意義；改看路由表為該路徑列出的指標
+        route = next(row for row in table_rows(self.paths_text) if row[0] == "`financial_equity`")
+        rule = next(line for line in self.check.splitlines() if line.startswith("- 走 `financial_equity`"))
+        quick = next(row for row in self.check.splitlines() if row.startswith("> **建倉前最低檢查（金融業）**"))
+        fields = [field.split("＿", 1)[0] for field in quick.split("：", 1)[1].split("。", 1)[0].split("｜")]
+        self.assertIn("第 1、3 項", rule)
+        self.assertIn("不適用", rule)
+        for indicator in ("監理資本", "資產品質"):
+            self.assertIn(indicator, rule)
+            self.assertIn(indicator, route[-1])
+            self.assertIn(indicator, fields)
+        # 表外承諾、信用與質押對金融業同樣有意義，規則與快速格式都要保留
+        self.assertIn("第 2 項照常", rule)
+        for kept in ("承諾", "信用", "質押"):
+            self.assertIn(kept, fields)
+
+    def test_quick_format_lists_every_item(self) -> None:
+        line = next(row for row in self.check.splitlines() if row.startswith("> **建倉前最低檢查**"))
+        fields = line.split("：", 1)[1].split("。", 1)[0].split("｜")
+        labels = [field.split("＿", 1)[0] for field in fields]
+        items = [row[1] for row in table_rows(self.check)[1:]]
+        self.assertEqual(len(labels), len(items))
+        for label, item in zip(labels, items):
+            self.assertIn(label, item, f"快速格式的「{label}」對不到表格同位置的「{item}」")
+
+    def test_commitment_rule_keeps_the_total_measure(self) -> None:
+        rule = self.quality_rules["承諾與或有事項"]
+        self.assertIn("總額 > 一年營收", rule)
+        self.assertNotIn("24 個月", rule)
+        # 不採納的短窗口提案要留在治理文件，擋住同一提案再被提一次
+        governance = section(read(REFERENCES / "calibration-and-governance.md"), "### 4.5 觀察區")
+        self.assertRegex(governance, r"24 個月.*現值")
+
+    def test_decision_section_answers_each_warning(self) -> None:
+        rules = section(
+            read(REFERENCES / "expectations-and-decisions.md"),
+            "## 11. 決策：條件門檻，不設萬能分數（FR-10）",
+        )
+        template = section(read(TEMPLATES / "A-single-stock.md"), "## 十、Recommendations")
+        self.assertIn("逐項回應", rules)
+        self.assertIn("valuation-paths.md", rules)
+        response = next(line for line in template.splitlines() if line.startswith("**財務品質警示的回應**"))
+        # 模板與第 11 節同一口徑：同一傳導鏈的警示合併回應，避免機率重複計入；
+        # 未查的項目要在決策段列為待補資料，並判斷是否構成核心資料缺失
+        for text in (rules, response):
+            for requirement in ("只記一次", "未查", "待補資料", "核心資料缺失"):
+                self.assertIn(requirement, text)
+        # 回應是揭露要求，不是另一道自動改寫 decision_status 的燈號 gate
+        self.assertNotRegex(rules + template, r"紅燈|快篩")
+
+    def test_us_pledge_source_matches_between_reference_and_template(self) -> None:
+        governance_table = section(read(TEMPLATES / "A-single-stock.md"), "### 5.2 治理與籌碼面")
+        template = {row[0]: row for row in table_rows(governance_table)}
+        dashboard = next(
+            line
+            for line in read(TEMPLATES / "A-single-stock.md").splitlines()
+            if line.startswith("| 【US】Form 4")
+        )
+        for cell in (self.localization["內部人訊號"][2], template["內部人"][2], dashboard):
+            self.assertIn("質押", cell)
+            self.assertIn("DEF 14A", cell)
+
+    def test_report_tables_use_the_5_1_row_name(self) -> None:
+        # 列名與 5.1 不同步時，深度報告會漏掉 5.1 有、模板沒有的子項（例如到期結構）
+        name = "負債比／流動比／利息保障／到期結構"
+        self.assertIn(name, self.quality_rules)
+        for path in (TEMPLATES / "A-single-stock.md", SAMPLE):
+            rows = {row[0] for row in table_rows(section(read(path), "## 五、財務品質"))}
+            self.assertIn(name, rows, f"{path.name} 的財務品質表沒有與 5.1 同名的列")
+
+    def test_entry_briefing_keeps_the_minimum_check(self) -> None:
+        briefing = section(read(OUTPUT_SKILL), "### Briefing（摘要，≤3 頁）").splitlines()
+        keep = next(line for line in briefing if line.startswith("**保留**"))
+        drop = next(line for line in briefing if line.startswith("**刪去**"))
+        self.assertIn("5.2", keep)
+        self.assertIn("未查項目的處置", keep)
+        self.assertIn("建倉前最低檢查", drop.split("⛔", 1)[1])
+
+    def test_entry_requests_trigger_the_valuation_skill(self) -> None:
+        description = front_matter(VALUATION_SKILL)["description"]
+        for word in ("建倉", "加碼", "要不要買"):
+            self.assertIn(word, description)
 
 
 if __name__ == "__main__":

@@ -55,6 +55,16 @@ Linux／macOS 把 `.venv/Scripts/` 換成 `.venv/bin/`，去掉 `.exe`。
    **自變數收斂**與**殘差達標**兩關，且要能分辨「沒偵測到」「未收斂」「區域未被有效評估」。
    ⛔ 不得因為殘差小就宣稱參數被識別出來——估值模型在最適值附近常常平坦，那是假精確的來源。
 
+## 方法論規則的增修
+
+新增或修改方法論規則時，依 `calibration-and-governance.md` 4.1 附上證據：案例或來源、
+回溯影響、半年檢驗條件。單一案例的發現先記進 4.5「觀察區」，達到升級條件再修法。
+
+盲測是取得證據的方法：讓不知情的 agent 拿新舊兩版 skill 回答同一個問題，再依事先寫好的
+評分表計分。做法、已知的坑與各次結果的彙總放在 repo 根目錄的 `evals/blind-tests/`，
+原始資料放在維護者本機的 `docs/blind-tests/`。plugin 的打包範圍是
+`plugins/research-report-kit/`，markdownlint 的範圍見上方「品質門檻」。
+
 ## 版本與發布
 
 `plugins/research-report-kit/CHANGELOG.md` 是變更紀錄。版本號有三處必須同步
