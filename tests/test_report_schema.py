@@ -369,9 +369,11 @@ class TestPreEntryMinimumCheck(unittest.TestCase):
         self.assertIn("逐項回應", rules)
         self.assertIn("valuation-paths.md", rules)
         response = next(line for line in template.splitlines() if line.startswith("**財務品質警示的回應**"))
-        # 模板與第 11 節同一口徑：同一傳導鏈的警示合併回應，避免機率重複計入
+        # 模板與第 11 節同一口徑：同一傳導鏈的警示合併回應，避免機率重複計入；
+        # 未查的項目要在決策段列為待補資料，並判斷是否構成核心資料缺失
         for text in (rules, response):
-            self.assertIn("只記一次", text)
+            for requirement in ("只記一次", "未查", "待補資料", "核心資料缺失"):
+                self.assertIn(requirement, text)
         # 回應是揭露要求，不是另一道自動改寫 decision_status 的燈號 gate
         self.assertNotRegex(rules + template, r"紅燈|快篩")
 
@@ -400,6 +402,7 @@ class TestPreEntryMinimumCheck(unittest.TestCase):
         keep = next(line for line in briefing if line.startswith("**保留**"))
         drop = next(line for line in briefing if line.startswith("**刪去**"))
         self.assertIn("5.2", keep)
+        self.assertIn("未查項目的處置", keep)
         self.assertIn("建倉前最低檢查", drop.split("⛔", 1)[1])
 
     def test_entry_requests_trigger_the_valuation_skill(self) -> None:

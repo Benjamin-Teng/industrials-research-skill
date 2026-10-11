@@ -31,7 +31,8 @@
 - `equity-valuation-discipline/SKILL.md`：description 補上建倉、加碼、要不要買等觸發詞；
   第一步之後指向最低檢查，8.2 指向警示回應。
 - `research-report-output/SKILL.md`：新建倉或加碼的 Briefing 必須保留最低檢查與警示回應。
-- A 模板第十章：新增「財務品質警示的回應」段，新建倉或加碼時必填。
+- A 模板第十章：新增「財務品質警示的回應」段，新建倉或加碼時必填；涵蓋警示的回應，以及
+  最低檢查「未查」項目的待補資料與「核心資料缺失」判斷。發布前檢查清單與 Briefing 保留清單同步。
 - `prepublish-checklist.md` 第 10 項補一條檢查。
 - `equity-valuation-discipline/agents/openai.yaml`：short_description 補上建倉前最低檢查。
 
