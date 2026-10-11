@@ -344,6 +344,13 @@ class TestPreEntryMinimumCheck(unittest.TestCase):
         self.assertIn("未查", clause)
         self.assertRegex(clause, r"⛔.*暫判警示.*暫判正常")
 
+    def test_unrated_company_still_gets_a_credit_assessment(self) -> None:
+        # 「未取得評等」只說明沒有外部評等，信用風險仍要用其他訊號評估，取不到才標未查
+        rule = next(line for line in self.check.splitlines() if "未取得評等" in line)
+        clause = rule.split("未取得評等", 1)[1]
+        for signal in ("利差", "借款利率", "未查"):
+            self.assertIn(signal, clause)
+
     def test_financial_route_swaps_in_its_own_indicators(self) -> None:
         # 銀行與保險套一般企業的槓桿與資本強度沒有經濟意義；改看路由表為該路徑列出的指標
         route = next(row for row in table_rows(self.paths_text) if row[0] == "`financial_equity`")
