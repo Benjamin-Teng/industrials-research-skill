@@ -394,6 +394,17 @@ class TestPreEntryScreenContract(unittest.TestCase):
         self.assertIn("比率＋燈號", template_dashboard)
         self.assertIn("倍數／不適用＋燈號", template_dashboard)
 
+    def test_s3_dashboard_requirement_matches_fast_screen_scope(self) -> None:
+        """純產業與無加碼結論報告不得被公司層級 S3 儀表板阻擋。"""
+        checklist = read(VALUATION / "references" / "prepublish-checklist.md")
+        dashboard = checklist.split("### 26. 儀表板對照", 1)[1].split("### 27.", 1)[0]
+        self.assertIn("符合第 28 項適用情境", dashboard)
+        self.assertIn("純產業研究或已持有且無加碼結論者免列 S3 兩列", dashboard)
+
+        industry_template = read(TEMPLATES / "B-industry-supplychain.md")
+        self.assertNotIn("24 個月固定承諾現值年化 ÷ 一年營收", industry_template)
+        self.assertNotIn("承諾調整後淨負債 ÷ EBITDA", industry_template)
+
     def test_active_markdown_has_no_probability_only_risk_rule(self) -> None:
         """有效文件不得要求風險只改機率而排除情境內的經濟後果。"""
         forbidden = (
