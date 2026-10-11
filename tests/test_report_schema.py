@@ -323,9 +323,35 @@ class TestPreEntryScreenContract(unittest.TestCase):
         """同一底層現金流不得跨來源或固定／或有分類重複計入。"""
         screen = read(VALUATION / "references" / "pre-entry-balance-sheet-screen.md")
         s3_section = screen.split("| S3 |", 1)[1].split("| S4 |", 1)[0]
-        for requirement in ("底層現金流", "只能歸類一次", "未涵蓋的增額曝險"):
+        for requirement in (
+            "按合約與**底層現金流**跨來源去重",
+            "固定承諾或或有曝險中**只能歸類一次**",
+            "保證等或有義務",
+            "只計固定承諾未涵蓋的增額曝險",
+        ):
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, s3_section)
+
+    def test_template_and_sample_map_consequences_and_probabilities_together(self) -> None:
+        """每個適用輸出須在同一規則段同時交代後果與機率的去向。"""
+        contracts = (
+            (
+                TEMPLATES / "A-single-stock.md",
+                "> **任一項觸發警示的處理**",
+                ("具體經濟後果", "放入適用情境", "發生機率", "權重"),
+            ),
+            (
+                SAMPLE,
+                "> **資本強度警示的處理**",
+                ("後果已放入", "熊情境淨利率", "發生可能性", "熊情境權重"),
+            ),
+        )
+        for path, anchor, requirements in contracts:
+            text = read(path)
+            paragraph = text.split(anchor, 1)[1].split("\n\n", 1)[0]
+            for requirement in requirements:
+                with self.subTest(path=path.name, requirement=requirement):
+                    self.assertIn(requirement, paragraph)
 
     def test_active_markdown_has_no_probability_only_risk_rule(self) -> None:
         """有效文件不得要求風險只改機率而排除情境內的經濟後果。"""
