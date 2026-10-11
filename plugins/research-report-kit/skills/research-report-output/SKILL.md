@@ -105,14 +105,14 @@ metadata:
 
 須逐條掃描刪除：①框架標籤（`★A1`–`★A7`、`◇B1`–`◇B4` 及章節標題中的括號標註）；②框架引用句（「依框架 2.X」「規範第 N 章」「框架 vX.Y」）；③方法論補充段（改為直述結論）；④框架降級說明（改為直述理由）；⑤規範版本聲明；⑥自查清單引用；⑦強制處置的框架出處（保留處置本身）；⑧Caveats 中的方法論路徑描述（保留資料缺口本身）。
 
-**保留**：所有數字、表格、結論、資料層級標籤、來源清單、KPI 卡、bull/bear/caveat 區塊內容本身。A 型（`methodology_version: expectations-v1`）另須保留：模型依賴（走哪條估值路徑）、機率主觀性（示範機率的 `illustrative`／`subjective_evidence_based`／`empirically_calibrated` 標記）、資料缺口、時間假設（`holding_horizon_months`／`forecast_horizon_years`／價格反映收斂係數）、R/R 與示範機率表的示範標籤、價格假設（進場基準、日期、盤別）、機率來源與計算限制——刪內部方法論編號不等於可以移除這些揭露。
+**保留**：所有數字、表格、結論、資料層級標籤、來源清單、KPI 卡、bull/bear/caveat 區塊內容本身。A 型（`methodology_version: expectations-v1`）另須保留：模型依賴（走哪條估值路徑）、機率主觀性（示範機率的 `illustrative`／`subjective_evidence_based`／`empirically_calibrated` 標記）、資料缺口、時間假設（`holding_horizon_months`／`forecast_horizon_years`／價格反映收斂係數）、R/R 與示範機率表的示範標籤、價格假設（進場基準、日期、盤別）、機率來源與計算限制，以及適用時的建倉前快篩（S1–S6 狀態、未覆蓋項目、`N/A` 理由與替代指標、最脆弱的一環、對 `decision_status` 的決策影響）——刪內部方法論編號不等於可以移除這些揭露。
 
 ### Briefing（摘要，≤3 頁）
 
 結論速覽版，約 2,000–2,500 中文字。觸發：「簡介」「briefing」「摘要」「重點速覽」「summary」「3 頁」。命名加 `_brief` 後綴。`type` 欄位後加「（Briefing）」。
 
-**保留**：TL;DR（含 KPI 卡，刪推導表）、Key Findings（數據明細欄只留 1–2 項）、個人判斷與市場定價落差（核心命題一列）、估值結論（只留情境表 ＋ Reverse DCF 一行）、**R/R（至少牛／熊與基準／熊兩種）＋ 示範機率表（至少三組）＋ 每組一句解讀**（A 型不得刪，見 `expectations-and-decisions.md` 第 7、8 節）、Recommendations（`decision_status`／`rating` ＋ 加減碼訊號各前 2 項）、核心風險三點各一行。
-**刪去**：市場共識基線拆解細節（留分歧一句）、事業結構全文、供應鏈全文（留一行定位句）、交叉驗證細節、敏感度矩陣（留排序第一名一句）、催化劑表（留下一個關鍵觀察時點一行）、命題監控儀表板、Caveats 全文、來源清單。⛔ 篇幅不足時優先縮減背景敘述，**不得刪除機率性質標記或成本／股利缺口揭露**。
+**保留**：TL;DR（含 KPI 卡，刪推導表）、Key Findings（數據明細欄只留 1–2 項）、個人判斷與市場定價落差（核心命題一列）、估值結論（只留情境表 ＋ Reverse DCF 一行）、**R/R（至少牛／熊與基準／熊兩種）＋ 示範機率表（至少三組）＋ 每組一句解讀**（A 型不得刪，見 `expectations-and-decisions.md` 第 7、8 節）、Recommendations（`decision_status`／`rating` ＋ 加減碼訊號各前 2 項）、核心風險三點各一行。建倉／加碼 Briefing 另須保留**建倉前快篩摘要**：S1–S6 狀態、未覆蓋項目、`N/A` 理由與替代指標、最脆弱的一環及對 `decision_status` 的決策影響。
+**刪去**：市場共識基線拆解細節（留分歧一句）、事業結構全文、供應鏈全文（留一行定位句）、交叉驗證細節、敏感度矩陣（留排序第一名一句）、催化劑表（留下一個關鍵觀察時點一行）、命題監控儀表板、Caveats 全文、來源清單。⛔ 篇幅不足時優先縮減背景敘述，**不得刪除機率性質標記、成本／股利缺口揭露或上述建倉前快篩摘要**。
 
 ### ⚠️ 刪節後處理（External 與 Briefing 共用）
 

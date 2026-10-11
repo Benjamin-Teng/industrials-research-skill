@@ -28,6 +28,8 @@ PLUGIN = ROOT / "plugins" / "research-report-kit"
 TEMPLATES = PLUGIN / "skills" / "research-report-output" / "templates"
 SAMPLE = PLUGIN / "examples" / "sample-report.md"
 SCRIPTS = PLUGIN / "skills" / "equity-valuation-discipline" / "scripts"
+VALUATION = PLUGIN / "skills" / "equity-valuation-discipline"
+OUTPUT = PLUGIN / "skills" / "research-report-output"
 
 # 上層目錄含連字號，不是合法 package 名稱；沿用 test_valuation_math.py 的載入方式。
 _spec = importlib.util.spec_from_file_location("valuation_math", SCRIPTS / "valuation_math.py")
@@ -225,6 +227,41 @@ class TestSampleReportMatchesComputedValues(unittest.TestCase):
         """FR-07：禁止把 V0/P0 − 1 稱為持有期報酬。"""
         forbidden = re.compile(r"V0\s*/\s*P0\s*[−-]\s*1\s*[＝=]?\s*(持有期|預期)報酬")
         self.assertIsNone(forbidden.search(self.text))
+
+
+class TestPreEntryScreenContract(unittest.TestCase):
+    """建倉前快篩須跨 SSOT、輸出模式與模板維持同一份行為契約。"""
+
+    def test_ssot_blocks_red_screen_without_policy_override(self) -> None:
+        """次級 reference 不得獨占紅燈時的 decision_status 路由。"""
+        ssot = read(VALUATION / "references" / "expectations-and-decisions.md")
+        decision_section = ssot.split("## 11. 決策", 1)[1].split("## 12. 部位計算", 1)[0]
+        for requirement in ("建倉前快篩", "🔴", "使用者風險政策", "不得僅因"):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, decision_section)
+
+    def test_briefing_preserves_pre_entry_decision_evidence(self) -> None:
+        """Briefing 不得因刪節而遺失快篩結果與決策影響。"""
+        output_skill = read(OUTPUT / "SKILL.md")
+        briefing = output_skill.split("### Briefing", 1)[1].split("### ⚠️ 刪節後處理", 1)[0]
+        for requirement in ("S1–S6", "未覆蓋", "最脆弱", "決策影響"):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, briefing)
+
+    def test_single_stock_template_collects_pre_entry_screen(self) -> None:
+        """完整 A 型報告須實際提供快篩輸入位置，而非只靠 reference。"""
+        template = read(TEMPLATES / "A-single-stock.md")
+        for requirement in ("建倉前快篩", "S1", "S6", "N/A", "最脆弱"):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, template)
+
+    def test_s3_defines_comparable_commitment_measure(self) -> None:
+        """S3 不得把不同期間與重複認列的承諾直接相加後套紅燈。"""
+        screen = read(VALUATION / "references" / "pre-entry-balance-sheet-screen.md")
+        s3_section = screen.split("| S3 |", 1)[1].split("| S4 |", 1)[0]
+        for requirement in ("未來 24 個月", "排除已入帳", "現值", "情境機率"):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, s3_section)
 
 
 class TestRetiredRulesAreNotActiveInstructions(unittest.TestCase):
