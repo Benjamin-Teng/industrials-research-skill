@@ -339,6 +339,13 @@ class TestPreEntryScreenContract(unittest.TestCase):
                 negated = s3_section.replace(requirement, f"禁止{requirement}", 1)
                 self.assertFalse(has_positive_clause(negated, requirement))
 
+    def test_s3_handles_nonpositive_ebitda_boundary(self) -> None:
+        """EBITDA 非正數時不得以負倍數逃過正的承諾調整後淨負債。"""
+        screen = read(VALUATION / "references" / "pre-entry-balance-sheet-screen.md")
+        s3_section = screen.split("| S3 |", 1)[1].split("| S4 |", 1)[0]
+        self.assertIn("EBITDA ≤ 0 時不得計算倍數", s3_section)
+        self.assertIn("承諾調整後淨負債為正時直接列為 🔴", s3_section)
+
     def test_template_and_sample_map_consequences_and_probabilities_together(self) -> None:
         """每個適用輸出須在同一規則段同時交代後果與機率的去向。"""
         contracts = (
@@ -373,8 +380,19 @@ class TestPreEntryScreenContract(unittest.TestCase):
         checklist = read(VALUATION / "references" / "prepublish-checklist.md")
         dashboard = checklist.split("### 26. 儀表板對照", 1)[1].split("### 27.", 1)[0]
         self.assertNotIn("承諾總額", dashboard)
-        self.assertIn("24 個月固定承諾現值年化 ÷ 一年營收", dashboard)
-        self.assertIn("承諾調整後淨負債 ÷ EBITDA", dashboard)
+        template = read(TEMPLATES / "A-single-stock.md")
+        template_dashboard = template.split("## 十一、命題監控儀表板", 1)[1].split(
+            "## 十二、", 1
+        )[0]
+        for output in (
+            "24 個月固定承諾現值年化 ÷ 一年營收",
+            "承諾調整後淨負債 ÷ EBITDA",
+        ):
+            with self.subTest(output=output):
+                self.assertIn(output, dashboard)
+                self.assertIn(output, template_dashboard)
+        self.assertIn("比率＋燈號", template_dashboard)
+        self.assertIn("倍數／不適用＋燈號", template_dashboard)
 
     def test_active_markdown_has_no_probability_only_risk_rule(self) -> None:
         """有效文件不得要求風險只改機率而排除情境內的經濟後果。"""
