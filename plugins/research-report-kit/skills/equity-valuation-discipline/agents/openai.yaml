@@ -1,6 +1,6 @@
 interface:
   display_name: "Equity Valuation Discipline"
-  short_description: "價格隱含預期與預期差、模型路由、內在價值／期末價格／持有期報酬分離、R/R 與決策門檻"
+  short_description: "價格隱含預期與預期差、模型路由、內在價值／期末價格／持有期報酬分離、R/R、建倉前最低檢查與決策門檻"
   default_prompt: "Use $equity-valuation-discipline to read the expectations priced in, build an expectations gap ledger, and evaluate reward/risk over a stated holding period."
 
 policy:
