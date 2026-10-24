@@ -526,5 +526,50 @@ class TestArchetypeRouting(unittest.TestCase):
             self.assertIn(word, body)
 
 
+D_CHAPTERS = (
+    "## 一、TL;DR", "## 二、研究契約與資料時點", "## 三、營收來源與商業模式",
+    "## 四、單位經濟", "## 五、逐營收來源 SWOT", "## 六、產業鏈與利潤池",
+    "## 七、同業與替代方案", "## 八、產業結構與護城河", "## 九、交接給 Layer 4",
+    "## 十、Caveats 與來源追蹤",
+)
+FRONT = re.compile(r"^---\n.*?\n---\n", re.DOTALL)
+# 設計 5.3 第 1–4 項的字面；KPI 卡與骨架內文共用這一份
+RED_LINE_TERMS = ("股價", "現價", "市價", "市值", "目標價", "內在價值", "估值倍數", "本益比", "P/E",
+                  "殖利率", "EPS", "每股", "價格隱含", "預期報酬", "R/R", "E[R_H]", "示範機率")
+
+
+class TestDTemplate(unittest.TestCase):
+    def body(self):
+        return FRONT.sub("", read(D_TEMPLATE), count=1)
+
+    def test_chapters_in_order(self):
+        text = self.body()
+        positions = [text.index(h) for h in D_CHAPTERS]
+        self.assertEqual(positions, sorted(positions))
+
+    def test_chapters_point_to_their_steps(self):
+        text = self.body()
+        for n, chapter in enumerate(D_CHAPTERS[1:9], start=1):
+            self.assertIn(f"<!-- 方法：business-industry-method.md 2.{n} -->", section(text, chapter))
+
+    def test_tables_use_fixed_headers(self):
+        text = self.body()
+        self.assertIn("| 象限 | 議題 | 機制 | 影響的損益項目與方向 | 數字＋出處＋期間 | 比較對象／觸發條件與時間窗 | 循環或結構 |", text)
+        self.assertIn("| 環節 | 具名公司 | 角色 | 利潤率或定價權事實 | 證據標示 |", text)
+        self.assertRegex(text, r"(?m)^\| 實體 \|")
+
+    def test_template_body_has_no_valuation_slots(self):
+        text = self.body()
+        for word in (*RED_LINE_TERMS, "price_asof"):
+            self.assertNotIn(word, text)
+        self.assertIsNone(re.search(r"\brating\b", text))
+
+    def test_layer1_kpi_cards_are_business_only(self):
+        kpi = front_matter(D_TEMPLATE)["kpi"]
+        blob = " ".join(f"{k.get('label', '')} {k.get('value', '')} {k.get('note', '')}" for k in kpi)
+        for word in RED_LINE_TERMS:
+            self.assertNotIn(word, blob)
+
+
 if __name__ == "__main__":
     unittest.main()
