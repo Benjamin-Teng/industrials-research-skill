@@ -44,12 +44,14 @@ metadata:
 
 ### SEC 文件全文
 
-WebFetch 一次只讀到 10-K／10-Q 的前段，MD&A 與附註常被截斷，所以用指令下載全文，轉成純文字後分段讀或用 grep 找附註。
+WebFetch 一次只讀到 10-K／10-Q 的前段，MD&A 與附註常被截斷，所以用指令下載全文，轉成純文字後分段讀或用 grep 找附註。美股本土公司申報 10-K，外國發行人（例如 ARM、台積電）申報 20-F，樣板取清單中最新的一份 10-K 或 20-F。
 
 - User-Agent 的唯一來源是環境變數 `SEC_USER_AGENT`，指令直接讀它，值留在環境變數裡。格式依 SEC〈Accessing EDGAR Data〉的範例：`Sample Company Name AdminContact@<sample company domain>.com`。
-- PowerShell 的 `-UserAgent` 預設會驗證 product token 格式，SEC 的聯絡字串格式通不過，錯誤訊息還會回顯完整的值，所以樣板加 `-SkipHeaderValidation`。
+- PowerShell 樣板需要 PowerShell 7 以上：`-UserAgent` 預設會驗證 product token 格式，SEC 的聯絡字串通不過，錯誤訊息還會回顯完整的值，所以樣板加 `-SkipHeaderValidation`，而 Windows PowerShell 5.1 沒有這個參數。樣板開頭先檢查，不支援就停止，改用 bash 樣板（Git Bash 或 WSL）或下節的網頁工具退路。
 - 請求速率上限是每秒 10 次請求（SEC 公告）；樣板每次請求之間等 1 秒。
 - 端點：`data.sec.gov/submissions/CIK` 加 10 碼補零的 CIK 取 filing 清單 JSON（路徑格式由實測支持）；`www.sec.gov/Archives/edgar/data/` 底下取申報文件。
+- 原始檔存在目前工作目錄下的 `sec_raw/`，留在工作區內。
+- 清單裡找不到 10-K 或 20-F，或 accession、主文件欄位是空的，樣板印出提示後停在那裡，不下載任何文件。
 - 先只檢查環境變數有沒有設定：
 
 ```bash
@@ -64,34 +66,46 @@ bash 樣板，依序做四件事：下載 filing 清單 JSON、下載主文件�
 
 ```bash
 CIK10=0001664703                 # 10 碼補零的 CIK（範例）
-D=$(mktemp -d)
-curl -sS -A "$SEC_USER_AGENT" -w '%{http_code}\n' -o "$D/sub.json" "https://data.sec.gov/submissions/CIK$CIK10.json"
+mkdir -p sec_raw
+curl -sS -A "$SEC_USER_AGENT" -w '%{http_code}\n' -o sec_raw/sub.json "https://data.sec.gov/submissions/CIK$CIK10.json"
 sleep 1
-# 清單裡的 form、accessionNumber、primaryDocument 三個陣列同序，用位置對齊
-pick() { grep -o "\"$1\":\[[^]]*\]" "$D/sub.json" | head -1 | sed 's/^[^[]*\[//; s/\]$//' | tr -d '"' | tr ',' '\n'; }
-N=$(pick form | grep -n -m1 '^10-K$' | cut -d: -f1)
-ACC=$(pick accessionNumber | sed -n "${N}p")
-DOC=$(pick primaryDocument | sed -n "${N}p")
-curl -sS -A "$SEC_USER_AGENT" -w '%{http_code}\n' -o "$D/doc.htm" "https://www.sec.gov/Archives/edgar/data/$((10#$CIK10))/${ACC//-/}/$DOC"
-pandoc -f html -t plain --wrap=none "$D/doc.htm" -o "$D/doc.txt"
-grep -n -i "item 7" "$D/doc.txt" | head
+# 清單裡的 form、accessionNumber、primaryDocument 三個陣列同序（新到舊），用位置對齊
+pick() { grep -o "\"$1\":\[[^]]*\]" sec_raw/sub.json | head -1 | sed 's/^[^[]*\[//; s/\]$//' | tr -d '"' | tr ',' '\n'; }
+N=$(pick form | grep -n -m1 -E '^(10-K|20-F)$' | cut -d: -f1)
+ACC=; DOC=
+if [ -n "$N" ]; then ACC=$(pick accessionNumber | sed -n "${N}p"); DOC=$(pick primaryDocument | sed -n "${N}p"); fi
+if [ -z "$ACC" ] || [ -z "$DOC" ]; then
+  echo "找不到 10-K／20-F，改走『沒有 SEC_USER_AGENT 時』的退路，取不到的段落標未查到"
+else
+  curl -sS -A "$SEC_USER_AGENT" -w '%{http_code}\n' -o sec_raw/doc.htm "https://www.sec.gov/Archives/edgar/data/$((10#$CIK10))/${ACC//-/}/$DOC"
+  pandoc -f html -t plain --wrap=none sec_raw/doc.htm -o sec_raw/doc.txt
+  grep -n -i "item 7" sec_raw/doc.txt | head
+fi
 ```
 
-PowerShell 樣板，步驟相同：
+PowerShell 樣板，步驟與停止條件相同：
 
 ```powershell
 $cik10 = '0001664703'            # 10 碼補零的 CIK（範例）
-$d = New-Item -ItemType Directory -Path (Join-Path ([IO.Path]::GetTempPath()) ([guid]::NewGuid()))
-$r = Invoke-WebRequest -Uri "https://data.sec.gov/submissions/CIK$cik10.json" -UserAgent $env:SEC_USER_AGENT -SkipHeaderValidation -OutFile "$d/sub.json" -PassThru
-$r.StatusCode
-Start-Sleep -Seconds 1
-$f = (Get-Content "$d/sub.json" -Raw | ConvertFrom-Json).filings.recent
-$i = [array]::IndexOf($f.form, '10-K')
-$u = "https://www.sec.gov/Archives/edgar/data/$([int64]$cik10)/$($f.accessionNumber[$i] -replace '-','')/$($f.primaryDocument[$i])"
-$r = Invoke-WebRequest -Uri $u -UserAgent $env:SEC_USER_AGENT -SkipHeaderValidation -OutFile "$d/doc.htm" -PassThru
-$r.StatusCode
-pandoc -f html -t plain --wrap=none "$d/doc.htm" -o "$d/doc.txt"
-Select-String -Path "$d/doc.txt" -Pattern 'Item 7' | Select-Object -First 5
+if (-not (Get-Command Invoke-WebRequest).Parameters.ContainsKey('SkipHeaderValidation')) {
+  '需要 PowerShell 7 以上；Windows PowerShell 5.1 請改用 bash 樣板（Git Bash 或 WSL），或走網頁工具退路'
+} else {
+  New-Item -ItemType Directory -Force sec_raw | Out-Null
+  $r = Invoke-WebRequest -Uri "https://data.sec.gov/submissions/CIK$cik10.json" -UserAgent $env:SEC_USER_AGENT -SkipHeaderValidation -OutFile sec_raw/sub.json -PassThru
+  $r.StatusCode
+  Start-Sleep -Seconds 1
+  $f = (Get-Content sec_raw/sub.json -Raw | ConvertFrom-Json).filings.recent
+  $i = (0..($f.form.Count - 1) | Where-Object { $f.form[$_] -in '10-K', '20-F' } | Select-Object -First 1)
+  if ($null -eq $i -or -not $f.accessionNumber[$i] -or -not $f.primaryDocument[$i]) {
+    '找不到 10-K／20-F，改走『沒有 SEC_USER_AGENT 時』的退路，取不到的段落標未查到'
+  } else {
+    $u = "https://www.sec.gov/Archives/edgar/data/$([int64]$cik10)/$($f.accessionNumber[$i] -replace '-','')/$($f.primaryDocument[$i])"
+    $r = Invoke-WebRequest -Uri $u -UserAgent $env:SEC_USER_AGENT -SkipHeaderValidation -OutFile sec_raw/doc.htm -PassThru
+    $r.StatusCode
+    pandoc -f html -t plain --wrap=none sec_raw/doc.htm -o sec_raw/doc.txt
+    Select-String -Path sec_raw/doc.txt -Pattern 'Item 7' | Select-Object -First 5
+  }
+}
 ```
 
 純文字很長，用 `grep -n` 或 `Select-String` 找到附註的行號，再用 `sed -n '起,迄p'` 或 `Get-Content -Skip` 分段讀。
