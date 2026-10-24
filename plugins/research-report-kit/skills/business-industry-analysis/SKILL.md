@@ -68,9 +68,9 @@ bash 樣板，依序做四件事：下載 filing 清單 JSON、下載主文件�
 ```bash
 CIK10=0001664703                 # 10 碼補零的 CIK（範例）
 sec_fetch() {
-  mkdir -p sec_raw
   local D code rc N ACC DOC
-  D=$(mktemp -d sec_raw/run.XXXXXX)
+  mkdir -p sec_raw && D=$(mktemp -d sec_raw/run.XXXXXX)
+  if [ -z "$D" ] || [ ! -d "$D" ]; then echo "建立工作目錄失敗"; return 1; fi
   code=$(curl -sS --fail -A "$SEC_USER_AGENT" -w '%{http_code}' -o "$D/sub.json" "https://data.sec.gov/submissions/CIK$CIK10.json"); rc=$?
   if [ "$rc" -ne 0 ] || [ "$code" != 200 ]; then echo "下載失敗：filing 清單"; return 1; fi
   sleep 1
@@ -97,8 +97,11 @@ $cik10 = '0001664703'            # 10 碼補零的 CIK（範例）
   if (-not (Get-Command Invoke-WebRequest).Parameters.ContainsKey('SkipHeaderValidation')) {
     '需要 PowerShell 7 以上；Windows PowerShell 5.1 請改用 bash 樣板（Git Bash 或 WSL），或走網頁工具退路'; return
   }
-  New-Item -ItemType Directory -Force sec_raw | Out-Null
-  $d = New-Item -ItemType Directory -Path (Join-Path 'sec_raw' ([guid]::NewGuid()))
+  try {
+    New-Item -ItemType Directory -Force sec_raw -ErrorAction Stop | Out-Null
+    $d = New-Item -ItemType Directory -Path (Join-Path 'sec_raw' ([guid]::NewGuid())) -ErrorAction Stop
+  } catch { '建立工作目錄失敗'; return }
+  if (-not $d -or -not (Test-Path -LiteralPath $d.FullName -PathType Container)) { '建立工作目錄失敗'; return }
   try { $r = Invoke-WebRequest -Uri "https://data.sec.gov/submissions/CIK$cik10.json" -UserAgent $env:SEC_USER_AGENT -SkipHeaderValidation -OutFile "$d/sub.json" -PassThru -ErrorAction Stop } catch { '下載失敗：filing 清單'; return }
   if ($r.StatusCode -ne 200) { '下載失敗：filing 清單'; return }
   Start-Sleep -Seconds 1
