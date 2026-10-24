@@ -3,7 +3,7 @@
 ## v1.6.0 — 〈發布日〉
 
 新增**企業與產業分析（Layer 1）**：第五個 skill `business-industry-analysis`，回答「這家公司靠什麼賺錢、
-產業利潤由誰掌握」，**不評價股價**，不給估值、目標價、報酬風險比與買賣判斷。
+產業利潤由誰掌握」，**不評價股價**，不給估值、目標價、報酬風險比與買賣判斷（完整範圍見 `business-industry-method.md` 第四章）。
 
 起因是研究架構需要一層先於估值的業務理解：沒有提估值的單一個股請求，過去直接走 A 型個股深度研究，
 被迫在業務還沒釐清時就進入估值。Layer 1 把業務與產業結構獨立出來，結論以「最關鍵的業務變數與待驗證問題」
@@ -13,6 +13,8 @@
 
 - **`business-industry-analysis` skill**：`SKILL.md` 管觸發、與其他 skill 的分工、流程摘要、資料取得與
   交付前的內容層檢查；`agents/openai.yaml` 為 Codex 介面。不依賴估值 skill 的任何檔案也能完整運作。
+  Windows 取得 SEC 文件的樣板：PowerShell 7 的 `Invoke-WebRequest` 需加 `-SkipHeaderValidation`，
+  否則 header 驗證失敗時會回顯聯絡信箱；Windows PowerShell 5.1 沒有此參數，樣板會停止並指向 bash 路徑。
 - **`references/business-industry-method.md`（`business-industry-v1`，Layer 1 方法論單一來源）**：
   範圍、八個步驟（研究契約與資料時點、營收來源重建與商業模式類型、單位經濟量尺、逐營收來源 SWOT、
   縱向產業鏈與利潤池、橫向同業與替代方案、產業結構與護城河、業務交接）、商業模式類型對量尺的路由表、
@@ -22,32 +24,23 @@
 - **路由規則**：沒有要求估值、目標價、報酬風險比或買賣判斷的單一個股研究請求，內容層走
   `business-industry-analysis`、格式層走 D 骨架；要求估值或買賣判斷時仍走 A 型。
   `research-report-output` 的 SKILL.md、`output-spec.md` 與 `market-localization.md` 同步 D 型規則；
-  A 模板第四章改為引用 D 型報告；B、C 模板與 `product-cycle-rotation` 中指估值驗證的「深度研究」
+  同一標的已有 D 型報告時，A 模板第四章直接引用；B、C 模板與 `product-cycle-rotation` 中指估值驗證的「深度研究」
   改為明指 A 型。
 - **`SEC_USER_AGENT` 設定說明**：`customize-your-framework.md` 第六節說明 SEC 文件全文下載所需的環境變數
   與設定方式；plugin README 的「資料源」一節同步。
-- **新測試**：`tests/test_business_industry_skill.py`（方法檔、SKILL.md、D 骨架、路由文字的結構測試）；
+- **新測試**：`tests/test_business_industry_skill.py`（方法論檔、SKILL.md、D 骨架、路由文字的結構測試）；
   `tests/test_report_schema.py` 的 front matter 檢查依 `methodology_version` 分流，並加入 D 型守門；
   `tests/test_plugin_compatibility.py` 的 skill 清單加入第五個。
 - 根 README 與 plugin README：skill 數量、觸發詞、`怎麼用` 範例、目錄結構樹與資料源說明同步。
 - `AGENTS.md`：方法論改為兩份單一來源（估值、Layer 1），規則增修依方法論分流。
 
-### 修正
-
-- **Windows 取得 SEC 文件的樣板**：PowerShell 7 的 `Invoke-WebRequest` 需加 `-SkipHeaderValidation`，
-  否則 User-Agent 的 header 驗證失敗時，錯誤訊息會回顯聯絡信箱。Windows PowerShell 5.1 沒有此參數，
-  樣板會停止並指向 bash 路徑。
-- **設計文件與研究附件的案例數字不一致（6 處）**：方法檔一律以研究附件為準——台積電 HPC 占比 57.6%、
-  MCD 直營門市毛利占比 9.3%、BRK 的 McLane 與 Pilot 營收 25.3%／稅前 1.7%、BE 的 GAAP RPO、
-  Lamb Weston 對 MCD 15%、營收來源重建規則的觸發公司為 9 家。
-
 ### 不變
 
 - 估值方法論與估值 skill 的 description 不變。
 - Codex `defaultPrompt` 的三筆文字不變；第 1 筆（台積電個股深度研究報告）在新路由下改走 D 型，正好當作示範。
-- 估值 skill `calibration-and-governance.md` 4.2 的升版節奏不適用於 Layer 1（使用者 2026-10-24 決定）。
+- 估值 skill `calibration-and-governance.md` 4.2 的升版節奏不適用於 Layer 1（維護者決定）。本版不修訂估值方法論的任何規則；Layer 1 另訂每季至多一代方法論（`business-industry-method.md` 6.5）。
 - `expectations-and-decisions.md` 第 4 行只把「三份報告模板」改成「A／B／C 三份報告模板」。這是範圍字樣，
-  不是規則變更（使用者 2026-10-24 同意）。
+  不是規則變更（維護者同意）。
 
 ### 治理附件（Layer 1）
 
@@ -55,9 +48,9 @@
 
 1. **案例與來源**：
    - **規則判定表**：2026-10-24 判定，門檻為「至少兩個獨立案例出現同一失效模式，或一個理論／實證來源；
-     兩者都沒有的單一案例進觀察區」。使用者決定的框架（逐營收來源 SWOT、六塊、不評價股價的紅線、交接只談業務、
+     兩者都沒有的單一案例進觀察區」。維護者決定的框架（逐營收來源 SWOT、六塊、不評價股價的紅線、交接只談業務、
      樣本外驗收）本身的定義與必要結構，判為「設計要求」，不受證據門檻管。共 42 條編號規則（R1.1–R8.3 共 37 條，加
-     RD.1–RD.5）；R5.7 與 R8.4 改寫為方法檔第一章的範圍說明，不編號。案例欄的名稱是研究附件中的公司與個案。
+     RD.1–RD.5）；R5.7 與 R8.4 改寫為 `business-industry-method.md` 第一章「定位與範圍」的範圍說明，不編號。案例取自開發組九家的研究紀錄（保存在維護者本機）。
      「部分核實」的文獻只在已核實部分涵蓋規則主張時才算。
 
    | 編號 | 規則 | 案例 | 文獻 | 判定 |
@@ -85,17 +78,17 @@
    | R5.2 | 下游兩層 | BE、MCD、CRWD、富喬 | — | 規則（案例） |
    | R5.3 | 上游範圍（平台主、人才與工具、燃料、資本財） | CRWD、BE、ARM、晶心科 | — | 規則（案例） |
    | R5.4 | 分潤層 | MCD、BRK | — | 規則（案例） |
-   | R5.6 | 利潤池四步＋跨期＋降級 | 允許降級成質化：CRWD、ARM、晶心科；跨期：富喬、高明鐵 | A7 Gadiesh & Gilbert（已核實）；A9 Porter 2008 完整循環（已核實部分） | 規則（文獻） |
+   | R5.6 | 利潤池四步＋跨期＋降級 | 允許降級成質化：CRWD、ARM、晶心科；跨期：富喬、高明鐵 | Gadiesh & Gilbert（1998，已核實）；Porter（2008）完整循環（已核實部分） | 規則（文獻） |
    | R5.8 | 交易對手申報反查 | MCD、台積電 | — | 規則（案例） |
-   | R6.1 | 同業依來源或類型分組、標分析者建構 | 高明鐵、CRWD、富喬、BE、台積電、ARM、晶心科、BRK | A8 Porter 2008（已核實） | 規則（案例） |
+   | R6.1 | 同業依來源或類型分組、標分析者建構 | 高明鐵、CRWD、富喬、BE、台積電、ARM、晶心科、BRK | Porter（2008，已核實） | 規則（案例） |
    | R6.2 | 定義差異與不可比欄、期間與單位對齊 | CRWD、MCD、台積電、ARM／晶心科、高明鐵 | — | 規則（案例） |
    | R6.3 | 替代方案五層 | BRK、BE、台積電（另有高明鐵、ARM、晶心科、CRWD、富喬觸發個別層） | — | 規則（案例） |
-   | R7.1 | 先定產業邊界再談集中度與五力 | MCD、富喬、台積電、ARM、晶心科、高明鐵 | A8 Porter 2008（已核實） | 規則（案例） |
-   | R7.2 | 以「有無進入障礙」為產業結構的核心問題 | — | A10 Greenwald & Kahn（部分核實：出版社簡介） | 規則（文獻） |
-   | R7.3 | Morningstar 五類＋Helmer 補足 | — | A1 Morningstar 五類（部分核實）；A2 Helmer Benefit／Barrier（已核實） | 規則（文獻） |
+   | R7.1 | 先定產業邊界再談集中度與五力 | MCD、富喬、台積電、ARM、晶心科、高明鐵 | Porter（2008，已核實） | 規則（案例） |
+   | R7.2 | 以「有無進入障礙」為產業結構的核心問題 | — | Greenwald & Kahn（2005，部分核實：出版社簡介） | 規則（文獻） |
+   | R7.3 | Morningstar 五類＋Helmer 補足 | — | Morningstar 五類（經 Mauboussin & Callahan 2024 轉述，部分核實）；Helmer《7 Powers》Benefit／Barrier（已核實） | 規則（文獻） |
    | R7.4 | 公司主張與可驗證證據分開＋窗口關閉指標 | CRWD、高明鐵、富喬、BE、晶心科 | — | 規則（案例） |
    | R7.5 | 週期依來源分開 | BRK、台積電、ARM、晶心科、富喬 | — | 規則（案例） |
-   | R7.6 | 循環高點不當結構 | 富喬、高明鐵 | A9 Porter 2008 完整循環（已核實部分） | 規則（文獻） |
+   | R7.6 | 循環高點不當結構 | 富喬、高明鐵 | Porter（2008）完整循環（已核實部分） | 規則（文獻） |
    | R8.1 | 一至三個主導業務變數 | — | — | 規則（設計要求） |
    | R8.2 | 指標、資料源、待驗證問題、資料缺口 | — | — | 規則（設計要求） |
    | R8.3 | 交接只談業務 | — | — | 規則（設計要求） |
@@ -106,7 +99,7 @@
    | RD.5 | 官方簡報優先於第三方逐字稿 | CRWD | — | 規則（沿用 repo 規則） |
 
    - **觀察區清單**：單一案例或沒有案例的項目。R3.6、R4.2、R4.7、R5.5、R6.4、RD.6 原列規則，判定後改列觀察區，
-     分別對應 OB-2、OB-6、OB-8、OB-4、OB-7、OB-5。
+     分別對應 OB-2、OB-6、OB-8、OB-4、OB-7、OB-5。OB-3 由 R5.3 的資本財與耗材分表拆出。
 
    | 編號 | 項目名 | 適用步驟 | 案例 | 判定 |
    |---|---|---|---|---|
@@ -123,8 +116,8 @@
      開發組九家為回歸檢查。
 2. **回溯影響**：
    - 沒有提估值的單一個股請求，過去走 A 型，之後走 D 型。
-   - A 型第四章改為引用 D 型報告。
-   - B 骨架與 `product-cycle-rotation` 的交接字樣，由「深度研究」改為明指 A 型。
+   - 同一標的已有 D 型報告時，A 型第四章直接引用。
+   - B、C 骨架與 `product-cycle-rotation` 的交接字樣，由「深度研究」改為明指 A 型。
    - repo 沒有歷史 Layer 1 報告，比照 v1.5.0 以新舊版盲測代替回溯對照。
 3. **半年檢驗條件**（2027-04，和 v1.5.0 的半年檢驗同時進行）：
    - 升降級只依樣本外三家，加上半年內至少一個新案例；開發組九家重跑只當回歸檢查。

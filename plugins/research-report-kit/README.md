@@ -4,7 +4,7 @@
 
 台股與美股共用同一套骨架——只換資料源與籌碼欄位，不為單一市場另建流程。
 
-> **English summary**: A Claude plugin for institutional-style equity and industry research. Enforces dual `.md` + PDF delivery, a readability rule set for data-dense writing, and an expectations-driven research workflow: read the expectations priced in, build a falsifiable expectations-gap ledger, keep present intrinsic value / holding-period price / holding-period return strictly separate, state reward-risk and illustrative-probability expected values, and route decisions through conditional thresholds rather than a fixed margin of safety. Content is in Traditional Chinese; the methodology layer is designed to be replaced with your own.
+> **English summary**: A Claude plugin for institutional-style equity and industry research. Includes business and industry analysis that explains how a company makes money and who captures its industry's profit, without valuing the stock. Enforces dual `.md` + PDF delivery, a readability rule set for data-dense writing, and an expectations-driven research workflow: read the expectations priced in, build a falsifiable expectations-gap ledger, keep present intrinsic value / holding-period price / holding-period return strictly separate, state reward-risk and illustrative-probability expected values, and route decisions through conditional thresholds rather than a fixed margin of safety. Content is in Traditional Chinese; the methodology layer is designed to be replaced with your own.
 
 ---
 
@@ -77,7 +77,7 @@ apt-get install -y pandoc fonts-noto-cjk      # 或 brew install pandoc
 
 MCP 連上之後不需改任何設定。
 
-SEC 文件全文下載需要環境變數 `SEC_USER_AGENT`，設定方式見 `customize-your-framework.md` 第六節。
+SEC 文件全文下載需要環境變數 `SEC_USER_AGENT`，設定方式見 `skills/research-report-output/references/customize-your-framework.md` 第六節。
 
 ---
 

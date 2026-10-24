@@ -66,7 +66,7 @@ codex plugin add research-report-kit@research-tools
 
 ### 使用方式
 
-- **自動觸發（主要）**：不必打任何指令——只要對話講到研究報告、估值、產業輪動、查股價，Claude Code 或 Codex 會依 skill 的 `description` 自動載入。
+- **自動觸發（主要）**：不必打任何指令——只要對話講到研究報告、商業模式、產業結構、估值、產業輪動、查股價，Claude Code 或 Codex 會依 skill 的 `description` 自動載入。
 - **Claude Code 手動觸發**：`/research-report-output`（依環境亦可能顯示為 `/research-report-kit:research-report-output`）。
 - **Codex 手動觸發**：`$research-report-output`。其餘四個 skill 同理。
 
