@@ -347,8 +347,11 @@ RULE_LINE = re.compile(r"^- \*\*((?:R\d|RD)\.\d+)\*\*(.*)$", re.MULTILINE)
 #: ID 之後恰好一個半形空白、非空正文，再以完整的證據欄結尾
 RULE_FORMAT = re.compile(r"^ (\S.*?)（證據：(.*?)；文獻：(.*)）$")
 EVIDENCE_TAIL = re.compile(r"（證據：(.*?)；文獻：(.*)）$")
-#: 外部 URL 在空白、Markdown 的 ) ] >、引號或中文標點之前結束，以免跨過後面的本機路徑
-URL = re.compile(r"https?://[^\s)\]>\"'，。、；：）」』]+")
+#: 外部 URL 只吃 RFC 3986 的 ASCII 字元扣掉 ) ] ' * 與 [；空白、非 ASCII 字元（中文、全形標點、
+#: 零寬空白）、反引號、| { } < > " 一律結束，以免跨過後面的本機路徑。
+#: 已知限制：URL 後直接接 . , ; : ! ? & ~ ( 再接路徑時會一起被剝掉（例：`https://a.com/x.docs/y`）；
+#: 這些字元本來就能合法出現在 URL 內，regex 分辨不出來。
+URL = re.compile(r"https?://[A-Za-z0-9\-._~:/?#@!$&+,;=%(]+")
 ROUTING_HEADER = ("類型", "適用量尺", "不適用的量尺", "公司自定義 KPI 的處理", "開發組案例")
 #: 只存在於維護者本機、不隨 plugin 發布的路徑與檔名
 UNSHIPPED_PATHS = ("frameworks.md", "rule-evidence", "primary-sources", "docs/", ".superpowers")
@@ -474,12 +477,18 @@ class TestEightSteps(unittest.TestCase):
         self.assertEqual(local_path_hits("見 docs/superpowers/specs/x.md"), ["docs/"])
 
     def test_url_stripping_stops_at_markdown_and_cjk_punctuation(self) -> None:
-        adjacent = "[來源](https://example.com/docs/)，另見[內部](docs/superpowers/specs/x.md)"
-        after_period = "見 https://example.com/a。docs/superpowers/specs/x.md"
-        external_only = "見 [SEC](https://www.sec.gov/about/offices/ocie/docs/) 與 <https://example.com/docs/>"
-        self.assertIn("docs/", local_path_hits(adjacent))
-        self.assertIn("docs/", local_path_hits(after_period))
-        self.assertEqual(local_path_hits(external_only), [])
+        cases = (
+            ("[來源](https://example.com/docs/)，另見[內部](docs/superpowers/specs/x.md)", ["docs/"]),
+            ("見 https://example.com/a。docs/superpowers/specs/x.md", ["docs/"]),
+            ("見 [SEC](https://www.sec.gov/about/offices/ocie/docs/) 與 <https://example.com/docs/>", []),
+            # inline code 不受 markdownlint MD034 檢查，反引號緊貼 URL 的寫法最容易出現
+            ("`https://a.com/docs/`與`docs/superpowers/specs/x.md`與`https://b.com/docs/`", ["docs/"]),
+            ("見 https://example.com/a與frameworks.md", ["frameworks.md"]),
+            ("“https://example.com/a”docs/superpowers/specs/x.md", ["docs/"]),
+        )
+        for text, expected in cases:
+            with self.subTest(text=text):
+                self.assertEqual(local_path_hits(text), expected)
 
 
 class TestArchetypeRouting(unittest.TestCase):
