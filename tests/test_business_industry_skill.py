@@ -347,7 +347,8 @@ RULE_LINE = re.compile(r"^- \*\*((?:R\d|RD)\.\d+)\*\*(.*)$", re.MULTILINE)
 #: ID 之後恰好一個半形空白、非空正文，再以完整的證據欄結尾
 RULE_FORMAT = re.compile(r"^ (\S.*?)（證據：(.*?)；文獻：(.*)）$")
 EVIDENCE_TAIL = re.compile(r"（證據：(.*?)；文獻：(.*)）$")
-URL = re.compile(r"https?://\S+")
+#: 外部 URL 在空白、Markdown 的 ) ] >、引號或中文標點之前結束，以免跨過後面的本機路徑
+URL = re.compile(r"https?://[^\s)\]>\"'，。、；：）」』]+")
 ROUTING_HEADER = ("類型", "適用量尺", "不適用的量尺", "公司自定義 KPI 的處理", "開發組案例")
 #: 只存在於維護者本機、不隨 plugin 發布的路徑與檔名
 UNSHIPPED_PATHS = ("frameworks.md", "rule-evidence", "primary-sources", "docs/", ".superpowers")
@@ -471,6 +472,14 @@ class TestEightSteps(unittest.TestCase):
     def test_local_path_guard_ignores_external_urls(self) -> None:
         self.assertEqual(local_path_hits("見 https://www.sec.gov/about/offices/ocie/docs/ 的說明"), [])
         self.assertEqual(local_path_hits("見 docs/superpowers/specs/x.md"), ["docs/"])
+
+    def test_url_stripping_stops_at_markdown_and_cjk_punctuation(self) -> None:
+        adjacent = "[來源](https://example.com/docs/)，另見[內部](docs/superpowers/specs/x.md)"
+        after_period = "見 https://example.com/a。docs/superpowers/specs/x.md"
+        external_only = "見 [SEC](https://www.sec.gov/about/offices/ocie/docs/) 與 <https://example.com/docs/>"
+        self.assertIn("docs/", local_path_hits(adjacent))
+        self.assertIn("docs/", local_path_hits(after_period))
+        self.assertEqual(local_path_hits(external_only), [])
 
 
 class TestArchetypeRouting(unittest.TestCase):
