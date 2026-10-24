@@ -85,7 +85,7 @@
    | R6.3 | 替代方案五層 | BRK、BE、台積電（另有高明鐵、ARM、晶心科、CRWD、富喬觸發個別層） | — | 規則（案例） |
    | R7.1 | 先定產業邊界再談集中度與五力 | MCD、富喬、台積電、ARM、晶心科、高明鐵 | Porter（2008，已核實） | 規則（案例） |
    | R7.2 | 以「有無進入障礙」為產業結構的核心問題 | — | Greenwald & Kahn（2005，部分核實：出版社簡介） | 規則（文獻） |
-   | R7.3 | Morningstar 五類＋Helmer 補足 | — | Morningstar 五類（經 Mauboussin & Callahan 2024 轉述，部分核實）；Helmer《7 Powers》Benefit／Barrier（已核實） | 規則（文獻） |
+   | R7.3 | Morningstar 五類＋Helmer 補足 | — | Morningstar 五類（經 Mauboussin & Callahan 2024 轉述，部分核實）；Helmer Benefit／Barrier（作者受訪逐字稿，已核實） | 規則（文獻） |
    | R7.4 | 公司主張與可驗證證據分開＋窗口關閉指標 | CRWD、高明鐵、富喬、BE、晶心科 | — | 規則（案例） |
    | R7.5 | 週期依來源分開 | BRK、台積電、ARM、晶心科、富喬 | — | 規則（案例） |
    | R7.6 | 循環高點不當結構 | 富喬、高明鐵 | Porter（2008）完整循環（已核實部分） | 規則（文獻） |
