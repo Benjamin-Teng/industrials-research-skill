@@ -1,7 +1,7 @@
 # 研究報告輸出規範（格式與交付標準）
 
 > **版本**：v2.0（發布版）　|　**適用**：企業與產業研究、個股深度研究、產業／供應鏈研究、輪動掃描週報，**台股與美股共用同一套骨架**
-> **本文件管的是「格式與交付」，不是「研究內容」**：內容對錯看方法論文件（`equity-valuation-discipline` 或你自己的框架），長什麼樣、怎麼交、怎麼歸檔看本文件。
+> **本文件管的是「格式與交付」，不是「研究內容」**：內容對錯看方法論文件（A 型看 `equity-valuation-discipline`，D 型看 `business-industry-analysis`，或你自己的框架），長什麼樣、怎麼交、怎麼歸檔看本文件。
 > **回報語言**：繁體中文（專有名詞、財務科目、公司代號保留原文）。
 
 ---
@@ -300,7 +300,7 @@ playwright install chromium
 每份報告必跑。內容層檢查清單依類型區分：A 型見 `equity-valuation-discipline` 的 `references/prepublish-checklist.md`；D 型見 `business-industry-analysis` 的「交付前內容層檢查」。
 
 1. `.md` 與 `.pdf` 皆已產出，PDF 由該 md 直接生成，未手改。
-2. front matter 必填欄位齊全（含 `market`、`framework` 版本、`methodology_version`、`research_question`、`as_of`）；KPI 卡 3–5 張且與內文數字一致、未知項未填零；價格均有幣別前綴與「數值＋日期＋盤別」三件套。D 型：front matter 依 D 骨架、只用 D 骨架欄位、KPI 卡只放業務指標、`disclaimer` 用 D 骨架版本。
+2. A／B／C 型：front matter 必填欄位齊全（含 `market`、`framework` 版本、`methodology_version`、`research_question`、`as_of`）；KPI 卡 3–5 張且與內文數字一致、未知項未填零；價格均有幣別前綴與「數值＋日期＋盤別」三件套。D 型：front matter 依 D 骨架、只用 D 骨架欄位、KPI 卡只放業務指標、`disclaimer` 用 D 骨架版本。
 2.1 D 型不適用。`rating` 與 `decision_status` 一致（見第二章 2.2）；提出 edge 結論者 `edge_status` 已填且不高於 `hypothesis_only`，除非補齊對應證據。
 3. 檔名符合第一章規則；版本語意正確（結論改變＝主版號進位）；輸出模式後綴正確。
 4. 抽查 PDF：封面資訊正確、目錄無斷字、寬表未溢出版面（**欄數 >7 已拆表**）、頁碼正常、提示框顏色語意正確。

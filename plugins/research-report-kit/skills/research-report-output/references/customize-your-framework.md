@@ -130,13 +130,15 @@ MCP 連上之後不需要改任何設定；SEC 全文下載另需設定環境變
 
 SEC 要求程式化下載時在請求標頭宣告 User-Agent。指令樣板在 `business-industry-analysis` 的 SKILL.md，樣板只讀這個環境變數，值不寫進任何檔案。
 
+這個值由使用者自己在終端機或設定檔中輸入。AI 代理檢查到 missing 時，走 business-industry-analysis 的退路並回報，不代為設定、也不使用對話中出現的任何 email 或姓名。
+
 1. **格式範例**：照 SEC〈Accessing EDGAR Data〉頁面原文：`Sample Company Name AdminContact@<sample company domain>.com`，換成你自己的名稱與聯絡信箱。
-2. **Windows**：在 PowerShell 執行 `[Environment]::SetEnvironmentVariable("SEC_USER_AGENT", "<名稱與聯絡信箱>", "User")`，或在 cmd 執行 `setx SEC_USER_AGENT "<名稱與聯絡信箱>"`。兩者都只對之後新開的程序生效，設完要重開 Claude Code、Codex 與 VS Code（對 Claude Code 與 Codex 屬推論）。
-3. **WSL**：把 `export SEC_USER_AGENT="<名稱與聯絡信箱>"` 寫進 `~/.bashrc`。Windows 與 WSL 之間是否經 `WSLENV` 傳遞：待查證。
+2. **Windows**：在 PowerShell 執行 `[Environment]::SetEnvironmentVariable("SEC_USER_AGENT", "<名稱與聯絡信箱>", "User")`，或在 cmd 執行 `setx SEC_USER_AGENT "<名稱與聯絡信箱>"`。`setx` 的官方說明是只對之後新開的命令視窗生效；`SetEnvironmentVariable` 的生效時機屬推論，視同相同。設完要重開 Claude Code、Codex 與 VS Code（屬推論，官方文件未針對這幾個程式另述）。
+3. **WSL**：把 `export SEC_USER_AGENT="<名稱與聯絡信箱>"` 寫進 `~/.bashrc`（bash 官方說明：互動式非登入 shell 讀 `~/.bashrc`；登入 shell 讀 `~/.bash_profile`、`~/.bash_login`、`~/.profile` 中第一個存在者）。`export` 的語法與行為、Windows 與 WSL 之間是否經 `WSLENV` 傳遞，都待查證。
 4. **PowerShell 版本**：樣板裡的 `Invoke-WebRequest` 需要 PowerShell 7 的 `-SkipHeaderValidation`；Windows PowerShell 5.1 沒有這個參數，改用 SKILL.md 的 bash 樣板（Git Bash 或 WSL）。
-5. **確認方式**：只檢查有沒有設定，不印出值。
+5. **確認方式**：只檢查有沒有設定，不印出值。要在新開的視窗確認；在設定時的同一個視窗確認會顯示 missing。
    - PowerShell：`if ($env:SEC_USER_AGENT) {'set'} else {'missing'}`
    - bash：`[ -n "$SEC_USER_AGENT" ] && echo set || echo missing`
-6. **各宿主的設定鍵名**：
-   - Claude Code：settings.json 的 env 鍵，格式 `{"env": {"SEC_USER_AGENT": "<名稱與聯絡信箱>"}}`。
-   - Codex：`shell_environment_policy`，其中 `inherit`、`set`、`ignore_default_excludes` 已核實；`filters` 待查證。
+6. **各宿主的設定位置**：
+   - Claude Code：寫在使用者層級、不進版控的 settings 檔，路徑是 `~/.claude/settings.json`（Windows 為 `%USERPROFILE%\.claude\settings.json`，依 Claude Code 官方 settings 文件）；不要寫進專案共用的 `.claude/settings.json`。格式：`{"env": {"SEC_USER_AGENT": "<名稱與聯絡信箱>"}}`。
+   - Codex：預設是否把 SEC_USER_AGENT 傳給子程序待查證；shell_environment_policy 的子鍵 inherit、set、ignore_default_excludes 依官方設定參考；其餘子鍵待查證。

@@ -46,6 +46,10 @@ UA_FORMS = (
     '[ -n "$SEC_USER_AGENT" ] && echo set || echo missing',
     "if ($env:SEC_USER_AGENT) {'set'} else {'missing'}",
 )
+UA_READ = re.compile(
+    r"\$\{?(env:)?SEC_USER_AGENT|%SEC_USER_AGENT%|GetEnvironmentVariable\(\s*[\"']SEC_USER_AGENT"
+    r"|(?<!Set-Item )(?<!New-Item )env:SEC_USER_AGENT"
+)
 UA_PRINT = re.compile(r"(echo|printf|Write-Output|Write-Host)\s+[^|;&\n]*\$\{?(env:)?SEC_USER_AGENT")
 UA_BARE = re.compile(r"^\s*[\"']?\$\{?(env:)?SEC_USER_AGENT\}?[\"']?\s*$")
 DEBUG_DUMP = re.compile(r"^\s*(set -x|Set-PSDebug|printenv|env\s*$|Get-ChildItem\s+env:)")
@@ -108,7 +112,7 @@ def inline_code(text: str) -> list[str]:
 
 def assert_no_ua_exposure(case: unittest.TestCase, lines: list[str], allowed: tuple[str, ...] = UA_FORMS) -> None:
     for line in lines:
-        if "SEC_USER_AGENT" in line and "$" in line:  # 不含 $ 的是變數名稱或設定式，不會展開值
+        if UA_READ.search(line):  # 設定式（SetEnvironmentVariable、setx、export）不讀值，不算
             case.assertTrue(any(f in line for f in allowed), line)
             case.assertIsNone(UA_PRINT.search(line), line)
             case.assertIsNone(UA_BARE.search(line), line)
@@ -182,10 +186,20 @@ class TestHelpers(unittest.TestCase):
             'curl -sSv -A "$SEC_USER_AGENT" u',
             "set -x",
             "printenv",
+            "echo %SEC_USER_AGENT%",
+            '[Environment]::GetEnvironmentVariable("SEC_USER_AGENT","User")',
+            "Get-Item env:SEC_USER_AGENT",
         ):
             with self.subTest(bad=bad), self.assertRaises(AssertionError, msg=bad):
                 assert_no_ua_exposure(self, [bad])
         assert_no_ua_exposure(self, ['curl -sS -A "$SEC_USER_AGENT" u | grep -v x'])
+        for ok in (
+            '[Environment]::SetEnvironmentVariable("SEC_USER_AGENT", "x", "User")',
+            'setx SEC_USER_AGENT "x"',
+            'export SEC_USER_AGENT="x"',
+        ):
+            with self.subTest(ok=ok):
+                assert_no_ua_exposure(self, [ok])
 
 
 class TestMethodSingleSource(unittest.TestCase):
@@ -681,6 +695,7 @@ class TestOutputSkillRouting(unittest.TestCase):
             self.assertIn(phrase, a)
         for phrase in ("值不值得買", "要不要賣"):
             self.assertNotIn(phrase, d)
+        self.assertIn("沒有明確要求", d)
 
     def test_briefing_has_d_rules_after_a_rules(self):
         body = section(read(OUTPUT_SKILL), "### Briefing（摘要，≤3 頁）")
@@ -717,7 +732,16 @@ class TestOutputSkillRouting(unittest.TestCase):
         body = section(read(CUSTOMIZE), "## 六、資料源 MCP（選配）")
         self.assertIn("SEC_USER_AGENT", body)
         self.assertIn("{'set'} else {'missing'}", body)
+        self.assertIn('[ -n "$SEC_USER_AGENT" ] && echo set || echo missing', body)
+        for word in ("由使用者自己", "不代為設定", "不要寫進專案共用的 `.claude/settings.json`"):
+            self.assertIn(word, body)
         assert_no_ua_exposure(self, code_lines(body) + inline_code(body))
+
+    def test_output_spec_d_chapters_match_d_template(self):
+        body = section(read(OUTPUT_SPEC), "### D 型｜企業與產業研究報告（`methodology_version: business-industry-v1`）")
+        listed = re.findall(r"^\d+\. \*\*(.+?)\*\*", body, re.MULTILINE)
+        titles = [re.sub(r"^## [一二三四五六七八九十]+、", "", h) for h in re.findall(r"^## .+$", read(D_TEMPLATE), re.MULTILINE)]
+        self.assertEqual(listed, titles)
 
 
 class TestValuationHandoffWording(unittest.TestCase):
@@ -727,6 +751,7 @@ class TestValuationHandoffWording(unittest.TestCase):
             with self.subTest(path.name):
                 self.assertNotIn("深度研究", text)
                 self.assertNotIn("深度報告", text)
+                self.assertNotIn("深度框架", text)
                 self.assertIn("A 型估值研究", text)
 
     def test_a_template_chapter_4_cites_d_report(self):
