@@ -7,9 +7,12 @@
 `research-report-kit` —— 一個同時封裝成 Claude Code plugin 與 Codex plugin 的投資研究工具組。
 內容是**方法論文件與報告模板**（繁體中文），加上一支支撐它們的數值核心。
 
-方法論的**單一來源**是
-`plugins/research-report-kit/skills/equity-valuation-discipline/references/expectations-and-decisions.md`。
-公式、符號與口徑一律以該檔為準；其他檔案引用它，**不得另抄一份變體**。
+方法論有兩份**單一來源**：
+
+- 估值：`plugins/research-report-kit/skills/equity-valuation-discipline/references/expectations-and-decisions.md`
+- Layer 1 企業與產業分析：`plugins/research-report-kit/skills/business-industry-analysis/references/business-industry-method.md`
+
+兩份各自的公式、符號、口徑與規則，以各自的檔案為準；其他檔案只引用，不另抄變體。
 文件與程式若不一致，以文件的定義為準、修程式。
 
 ## 在唯讀沙箱裡怎麼跑驗證（重要）
@@ -57,8 +60,10 @@ Linux／macOS 把 `.venv/Scripts/` 換成 `.venv/bin/`，去掉 `.exe`。
 
 ## 方法論規則的增修
 
-新增或修改方法論規則時，依 `calibration-and-governance.md` 4.1 附上證據：案例或來源、
-回溯影響、半年檢驗條件。單一案例的發現先記進 4.5「觀察區」，達到升級條件再修法。
+新增或修改方法論規則時，依方法論分流，都要附上證據：案例或來源、回溯影響、半年檢驗條件。
+
+- 估值：依 `calibration-and-governance.md` 4.1。單一案例的發現先記進 4.5「觀察區」，達到升級條件再修法。
+- Layer 1 企業與產業分析：依方法檔第六章。
 
 盲測是取得證據的方法：讓不知情的 agent 拿新舊兩版 skill 回答同一個問題，再依事先寫好的
 評分表計分。做法、已知的坑與各次結果的彙總放在 repo 根目錄的 `evals/blind-tests/`，

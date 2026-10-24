@@ -1,7 +1,7 @@
 # 預期差、報酬與決策（方法論單一來源）
 
 > **本檔的定位**：`expectations-v1` 方法論所有公式、符號與口徑的**單一來源**。
-> SKILL.md、三份報告模板、`examples/sample-report.md` 一律**引用本檔**，不得另抄一份變體。
+> SKILL.md、A／B／C 三份報告模板、`examples/sample-report.md` 一律**引用本檔**，不得另抄一份變體。
 > 數值實作見 `../scripts/valuation_math.py`；文件與程式若不一致，以本檔的定義為準、修程式。
 
 `methodology_version: expectations-v1`

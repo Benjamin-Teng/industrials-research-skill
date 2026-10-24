@@ -13,11 +13,12 @@
 | Skill | 管什麼 | 什麼時候會自己跳出來 |
 |---|---|---|
 | **`research-report-output`** | 格式與交付：檔名、front matter、章節骨架、F1–F5 排版鐵則、PDF 產檔、輸出模式 | 「寫一份研究報告」「做個股深度研究」「幫我出 PDF 版報告」 |
+| **`business-industry-analysis`** | 企業與產業分析：營收來源與單位經濟、逐營收來源 SWOT、產業鏈與利潤池、同業替代與護城河；不評價股價 | 「個股深度研究」「幫我研究」「商業模式」「營收拆解」「單位經濟」「護城河」「產業鏈上下游」「利潤池」「這家公司靠什麼賺錢」 |
 | **`equity-valuation-discipline`** | 內容紀律：價格隱含預期與預期差、模型路由、三種價值／報酬分離、R/R 與示範機率、決策門檻、發布前檢查 | 「DCF」「SOTP」「目標價」「reverse DCF」「預期差」「R/R」「這檔值不值得買」 |
 | **`product-cycle-rotation`** | 產業掃描：product cycle 五問、T-18～T+6 時間軸、channel check SOP、催化劑框架 | 「誰受惠」「design win」「BOM 拆解」「供應鏈輪動」 |
 | **`price-routing`** | 取價路由：偵測可用行情工具 → 依市場選路 → 沒有 MCP 時退回 yfinance | 任何需要股價的場景 |
 
-四個 skill 可以分開用。只想要排版與產檔的人，把後三個刪掉也能運作。
+五個 skill 可以分開用。只想要排版與產檔的人，把後四個刪掉也能運作。
 
 ---
 
@@ -74,7 +75,9 @@ apt-get install -y pandoc fonts-noto-cjk      # 或 brew install pandoc
 - 台股資料源 MCP（股價、月營收、三大法人、融資融券）
 - 券商 MCP（美股即時報價、歷史價、選擇權）
 
-連上之後不需改任何設定。
+MCP 連上之後不需改任何設定。
+
+SEC 文件全文下載需要環境變數 `SEC_USER_AGENT`，設定方式見 `customize-your-framework.md` 第六節。
 
 ---
 
@@ -83,9 +86,10 @@ apt-get install -y pandoc fonts-noto-cjk      # 或 brew install pandoc
 直接說要什麼就好：
 
 ```text
-幫我做一份 XXXX 的個股深度研究報告
+幫我搞懂 XXXX 的業務與產業
 把這個產業的供應鏈拆一拆，看誰受惠
 這檔現在的估值合理嗎
+幫我做 XXXX 的估值，算目標價與 R/R
 出一份這週的輪動掃描週報
 剛剛那份報告出一個 external 版給別人看
 ```
@@ -119,9 +123,13 @@ research-report-kit/
     │   │   ├── formatting-rules.md        # F1–F5 完整版（正反例）
     │   │   ├── market-localization.md     # 台股／美股對照 ＋ 三個真差異
     │   │   └── customize-your-framework.md # 怎麼換成你自己的方法論
-    │   ├── templates/{A,B,C}-*.md         # 個股／產業／週報三型骨架
+    │   ├── templates/{A,B,C,D}-*.md       # 個股／產業／週報／企業與產業四型骨架
     │   ├── scripts/md2pdf.py
     │   └── assets/report.css
+    ├── business-industry-analysis/
+    │   ├── SKILL.md
+    │   ├── agents/openai.yaml
+    │   └── references/business-industry-method.md  # Layer 1 方法論單一來源
     ├── equity-valuation-discipline/
     │   ├── SKILL.md
     │   ├── references/
