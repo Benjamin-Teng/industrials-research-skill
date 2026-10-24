@@ -533,9 +533,26 @@ D_CHAPTERS = (
     "## 十、Caveats 與來源追蹤",
 )
 FRONT = re.compile(r"^---\n.*?\n---\n", re.DOTALL)
-# 設計 5.3 第 1–4 項的字面；KPI 卡與骨架內文共用這一份
-RED_LINE_TERMS = ("股價", "現價", "市價", "市值", "目標價", "內在價值", "估值倍數", "本益比", "P/E",
-                  "殖利率", "EPS", "每股", "價格隱含", "預期報酬", "R/R", "E[R_H]", "示範機率")
+# 方法檔 4.2 的完整清單：由 RED_LINE_ITEMS 攤平（去掉兩個描述語），再加上骨架常見的同義寫法；
+# KPI 卡、front matter 與骨架內文共用這一份
+_DESCRIPTORS = ("媒體標題中的股價敘事", "以價格衍生的量法")
+RED_LINE_TERMS = (
+    *(w for group in RED_LINE_ITEMS for w in group if w not in _DESCRIPTORS),
+    "現價", "市價", "本益比", "P/E", "每股", "價格隱含", "E[R_H]", "price_asof",
+)
+RATING = re.compile(r"\brating\b", re.ASCII)
+LAYER1_MARKER = re.compile(r"<!-- 方法：business-industry-method\.md 2\.(\d) -->")
+
+
+def string_values(node):
+    if isinstance(node, str):
+        yield node
+    elif isinstance(node, dict):
+        for v in node.values():
+            yield from string_values(v)
+    elif isinstance(node, list):
+        for v in node:
+            yield from string_values(v)
 
 
 class TestDTemplate(unittest.TestCase):
@@ -560,15 +577,53 @@ class TestDTemplate(unittest.TestCase):
 
     def test_template_body_has_no_valuation_slots(self):
         text = self.body()
-        for word in (*RED_LINE_TERMS, "price_asof"):
+        for word in RED_LINE_TERMS:
             self.assertNotIn(word, text)
-        self.assertIsNone(re.search(r"\brating\b", text))
+        self.assertIsNone(RATING.search(text))
+
+    def test_layer1_front_matter_has_no_red_line_terms(self):
+        blob = " ".join(string_values(front_matter(D_TEMPLATE)))
+        for word in RED_LINE_TERMS:
+            self.assertNotIn(word, blob)
+        self.assertIsNone(RATING.search(blob))
 
     def test_layer1_kpi_cards_are_business_only(self):
         kpi = front_matter(D_TEMPLATE)["kpi"]
         blob = " ".join(f"{k.get('label', '')} {k.get('value', '')} {k.get('note', '')}" for k in kpi)
         for word in RED_LINE_TERMS:
             self.assertNotIn(word, blob)
+        self.assertIsNone(RATING.search(blob))
+
+    def test_entity_role_matrix_has_seven_columns(self):
+        rows = [r for r in self.body().splitlines() if r.startswith("| 實體 |")]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(len(table_cells(rows[0])), 7)
+
+    def test_step_markers_appear_once_right_after_heading(self):
+        text = self.body()
+        self.assertEqual(len(LAYER1_MARKER.findall(text)), 8)
+        for n, chapter in enumerate(D_CHAPTERS[1:9], start=1):
+            lines = text.splitlines()
+            nxt = next(ln for ln in lines[lines.index(chapter) + 1:] if ln.strip())
+            self.assertEqual(nxt, f"<!-- 方法：business-industry-method.md 2.{n} -->")
+            self.assertEqual(text.count(nxt), 1)
+
+    def test_no_unshipped_local_paths(self):
+        self.assertEqual(local_path_hits(read(D_TEMPLATE)), [])
+
+    def test_reference_practices_are_marked_optional(self):
+        text = self.body()
+        refs = [ln for ln in text.splitlines() if "參考做法見" in ln]
+        self.assertTrue(refs)
+        for n in range(1, 9):
+            self.assertIn(f"方法檔參考做法見 6.3 OB-{n}", text)
+        for line in refs:
+            self.assertIn("方法檔參考做法見 6.3 OB-", line)
+            self.assertIn("選填", line)
+        tows = [ln for ln in text.splitlines() if "TOWS" in ln and ln.startswith("#")]
+        self.assertTrue(tows)
+        for line in tows:
+            self.assertIn("選用", line)
 
 
 if __name__ == "__main__":
