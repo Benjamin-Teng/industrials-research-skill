@@ -342,9 +342,12 @@ APPROVED_RULES = dict(zip(STEP_HEADINGS, (
 ), strict=True))
 #: 判定為觀察區或範圍說明的空號，不得以規則行出現
 RESERVED_GAPS = ("R3.6", "R4.2", "R4.7", "R5.5", "R5.7", "R6.4", "R8.4")
-STEP_RULE = re.compile(r"^- \*\*(R\d\.\d+)\*\*", re.MULTILINE)
-RULE_LINE = re.compile(r"^- \*\*((?:R\d|RD)\.\d+)\*\* (.*)$", re.MULTILINE)
+#: 凡以 `- **R<n>.<n>**` 或 `- **RD.<n>**` 開頭的行都是規則行；ID 之後的內容另由 RULE_FORMAT 驗
+RULE_LINE = re.compile(r"^- \*\*((?:R\d|RD)\.\d+)\*\*(.*)$", re.MULTILINE)
+#: ID 之後恰好一個半形空白、非空正文，再以完整的證據欄結尾
+RULE_FORMAT = re.compile(r"^ (\S.*?)（證據：(.*?)；文獻：(.*)）$")
 EVIDENCE_TAIL = re.compile(r"（證據：(.*?)；文獻：(.*)）$")
+URL = re.compile(r"https?://\S+")
 ROUTING_HEADER = ("類型", "適用量尺", "不適用的量尺", "公司自定義 KPI 的處理", "開發組案例")
 #: 只存在於維護者本機、不隨 plugin 發布的路徑與檔名
 UNSHIPPED_PATHS = ("frameworks.md", "rule-evidence", "primary-sources", "docs/", ".superpowers")
@@ -354,18 +357,30 @@ def rule_problems(text: str) -> list[str]:
     """檢查各步驟的規則 ID 與核准清單完全相等、空號沒有寫回、每條規則行的證據欄完整。"""
     problems: list[str] = []
     for heading, approved in APPROVED_RULES.items():
-        ids = STEP_RULE.findall(section(text, heading))
+        ids = step_rule_ids(section(text, heading))
         if sorted(ids) != sorted(approved):
             problems.append(f"{heading} 的規則 ID 是 {ids}")
     every = sorted(r for rules in APPROVED_RULES.values() for r in rules)
-    if sorted(STEP_RULE.findall(text)) != every:
+    found = step_rule_ids(text)
+    if sorted(found) != every:
         problems.append("全檔的 R 規則 ID 與核准清單不符")
-    problems.extend(f"空號 {gap} 被寫回" for gap in RESERVED_GAPS if gap in STEP_RULE.findall(text))
-    for rule_id, body in RULE_LINE.findall(text):
-        match = EVIDENCE_TAIL.search(body)
-        if not match or not match.group(1).strip() or not match.group(2).strip():
-            problems.append(f"{rule_id} 的證據欄不完整")
+    problems.extend(f"空號 {gap} 被寫回" for gap in RESERVED_GAPS if gap in found)
+    for rule_id, rest in RULE_LINE.findall(text):
+        match = RULE_FORMAT.match(rest)
+        if not match or not all(group.strip() for group in match.groups()):
+            problems.append(f"{rule_id} 的正文或證據欄不完整")
     return problems
+
+
+def step_rule_ids(text: str) -> list[str]:
+    """步驟規則（R<n>.<n>）的 ID；與證據檢查共用 RULE_LINE 的判定。"""
+    return [rule_id for rule_id, _ in RULE_LINE.findall(text) if not rule_id.startswith("RD")]
+
+
+def local_path_hits(text: str) -> list[str]:
+    """先剝掉外部 URL，再回傳 text 中出現的未發布路徑。"""
+    local = URL.sub("", text)
+    return [token for token in UNSHIPPED_PATHS if token in local]
 
 
 def table_cells(row: str) -> list[str]:
@@ -421,7 +436,7 @@ class TestEightSteps(unittest.TestCase):
         for heading in STEP_HEADINGS:
             body = section(text, heading)
             mutated = text
-            for line in (ln for ln in body.splitlines() if STEP_RULE.match(ln)):
+            for line in (ln for ln in body.splitlines() if RULE_LINE.match(ln)):
                 mutated = mutated.replace(line + "\n", "", 1)
             with self.subTest(drop_all_rules=heading):
                 self.assertNotEqual(rule_problems(mutated), [])
@@ -438,13 +453,24 @@ class TestEightSteps(unittest.TestCase):
             for kind, bad in (("evidence_blank", emptied), ("literature_removed", no_literature)):
                 with self.subTest(**{kind: line[:12]}):
                     self.assertNotEqual(rule_problems(text.replace(line, bad, 1)), [])
+        for line in (m.group(0) for m in RULE_LINE.finditer(text)):
+            head = line[: line.index("** ") + 2]
+            for kind, bad in (
+                ("id_only", head),
+                ("tab_separator", head + "\t" + line[len(head) + 1:]),
+                ("no_separator", head + line[len(head) + 1:]),
+            ):
+                with self.subTest(**{kind: head}):
+                    self.assertNotEqual(rule_problems(text.replace(line, bad, 1)), [])
 
     def test_method_and_skill_ship_no_local_paths(self) -> None:
         for path in (METHOD, SKILL):
-            text = read(path)
-            for token in UNSHIPPED_PATHS:
-                with self.subTest(file=path.name, token=token):
-                    self.assertFalse(token in text, f"{path.name} 含有 {token}")
+            with self.subTest(file=path.name):
+                self.assertEqual(local_path_hits(read(path)), [])
+
+    def test_local_path_guard_ignores_external_urls(self) -> None:
+        self.assertEqual(local_path_hits("見 https://www.sec.gov/about/offices/ocie/docs/ 的說明"), [])
+        self.assertEqual(local_path_hits("見 docs/superpowers/specs/x.md"), ["docs/"])
 
 
 class TestArchetypeRouting(unittest.TestCase):
