@@ -65,6 +65,11 @@ Linux／macOS 把 `.venv/Scripts/` 換成 `.venv/bin/`，去掉 `.exe`。
 原始資料放在維護者本機的 `docs/blind-tests/`。plugin 的打包範圍是
 `plugins/research-report-kit/`，markdownlint 的範圍見上方「品質門檻」。
 
+## 盲測資料的讀取範圍
+
+`docs/blind-tests/` 存放樣本外名單、評分表與受測輸出，只有盲測保管員讀。
+實作、審查與 Codex review 的讀取範圍是 `plugins/`、`tests/`、`evals/`、`docs/superpowers/` 與根目錄文件。
+
 ## 版本與發布
 
 `plugins/research-report-kit/CHANGELOG.md` 是變更紀錄。版本號有三處必須同步
