@@ -317,5 +317,58 @@ class TestSkillEntry(unittest.TestCase):
         self.assertIn("\n## 交付前內容層檢查\n", read(SKILL))
 
 
+STEP_HEADINGS = (
+    "### 2.1 步驟 1：研究契約與資料時點疊加", "### 2.2 步驟 2：重建營收來源並指派商業模式類型",
+    "### 2.3 步驟 3：依類型選單位經濟量尺", "### 2.4 步驟 4：逐營收來源 SWOT",
+    "### 2.5 步驟 5：縱向產業鏈與利潤池", "### 2.6 步驟 6：橫向同業與替代方案",
+    "### 2.7 步驟 7：產業結構與護城河", "### 2.8 步驟 8：交接給 Layer 4",
+)
+ARCHETYPES = (
+    "設備製造與專案", "訂閱軟體", "加盟與不動產", "保險", "受管制公用事業",
+    "網絡型基礎設施", "IP 授權", "接單製造服務（晶圓代工）", "規格型材料",
+    "商品型材料", "零組件", "配銷", "控股母公司的資本配置",
+)
+
+
+class TestEightSteps(unittest.TestCase):
+    def test_every_step_has_rules_or_reference_practice(self):
+        text = read(METHOD)
+        for heading in STEP_HEADINGS:
+            self.assertRegex(section(text, heading),
+                             r"(?m)^(- \*\*R\d\.\d+\*\*|參考做法見 6\.3 OB-\d+)", heading)
+
+    def test_every_rule_carries_evidence(self):
+        lines = re.findall(r"^- \*\*(?:R\d\.\d+|RD\.\d+)\*\*.*$", read(METHOD), re.MULTILINE)
+        self.assertGreater(len(lines), 20)
+        for line in lines:
+            self.assertIn("（證據：", line)
+
+    def test_rule_ids_are_unique(self):
+        ids = re.findall(r"^- \*\*((?:R\d|RD)\.\d+|OB-\d+)\*\*", read(METHOD), re.MULTILINE)
+        self.assertEqual(len(ids), len(set(ids)))
+
+    def test_handoff_caps_dominant_variables(self):
+        self.assertRegex(section(read(METHOD), "### 2.8 步驟 8：交接給 Layer 4"), r"(一至三|1[–-]3) ?個")
+
+
+class TestArchetypeRouting(unittest.TestCase):
+    def rows(self):
+        body = section(read(METHOD), "### 3.1 路由表")
+        return [r for r in body.splitlines() if r.startswith("|") and "---" not in r]
+
+    def test_routing_table_lists_development_archetypes(self):
+        cells = [r.split("|")[1].strip() for r in self.rows()[1:]]
+        self.assertEqual(sorted(cells), sorted(ARCHETYPES))
+
+    def test_routing_table_names_inapplicable_scales(self):
+        for col in ("適用量尺", "不適用的量尺", "公司自定義 KPI"):
+            self.assertIn(col, self.rows()[0])
+
+    def test_off_table_procedure_defines_its_own_scale(self):
+        body = section(read(METHOD), "### 3.2 表外類型的通用程序")
+        for word in ("表外類型", "定價與認列機制", "定義依據"):
+            self.assertIn(word, body)
+
+
 if __name__ == "__main__":
     unittest.main()
