@@ -25,6 +25,8 @@
 | 監控儀表板資料源 | MOPS、TWSE OpenAPI、行情 API | SEC EDGAR、財報彙整站 API、行情 API、第三方效能／價格量測 API |
 | 短線催化劑主力 | 月營收開獎（每月 10 日） | 財報季＋高頻報價＋原廠 keynote／Investor Day＋**鎖定期解禁日** |
 
+SEC 全文的程式化下載與 User-Agent 設定見 customize-your-framework.md 第六節；指令樣板在 business-industry-analysis 的 SKILL.md。
+
 ---
 
 ## 二、三個**真正的方法論差異**

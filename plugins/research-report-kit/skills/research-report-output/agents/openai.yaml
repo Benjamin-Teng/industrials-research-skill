@@ -1,7 +1,7 @@
 interface:
   display_name: "Research Report Output"
-  short_description: "產出機構風投資研究報告，含個人判斷與市場定價落差、R/R，同時交付 .md 與 .pdf"
-  default_prompt: "Use $research-report-output to write an equity or industry research report delivered as md and PDF."
+  short_description: "產出機構風投資研究報告（企業與產業研究、個股估值、產業供應鏈、輪動週報），同時交付 .md 與 .pdf"
+  default_prompt: "Use $research-report-output to write a company-and-industry, equity valuation, or industry research report delivered as md and PDF."
 
 policy:
   allow_implicit_invocation: true

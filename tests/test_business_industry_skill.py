@@ -666,5 +666,72 @@ class TestDTemplate(unittest.TestCase):
             self.assertIn("選用", line)
 
 
+class TestOutputSkillRouting(unittest.TestCase):
+    def routing_lines(self):
+        body = section(read(OUTPUT_SKILL), "## 工作流程")
+        d = next(l for l in body.splitlines() if "templates/D-business-industry.md" in l and "→" in l)
+        a = next(l for l in body.splitlines() if "templates/A-single-stock.md" in l and "→" in l)
+        return d, a
+
+    def test_routing_examples_cover_both_directions(self):
+        d, a = self.routing_lines()
+        for phrase in ("幫我研究", "個股深度研究", "前景如何", "供應鏈上下游分析"):
+            self.assertIn(phrase, d)
+        for phrase in ("值不值得買", "要不要賣", "目標價"):
+            self.assertIn(phrase, a)
+        for phrase in ("值不值得買", "要不要賣"):
+            self.assertNotIn(phrase, d)
+
+    def test_briefing_has_d_rules_after_a_rules(self):
+        body = section(read(OUTPUT_SKILL), "### Briefing（摘要，≤3 頁）")
+        self.assertLess(body.index("**保留**"), body.index("**D 型保留**"))
+        self.assertLess(body.index("**刪去**"), body.index("**D 型刪去**"))
+        line = next(l for l in body.splitlines() if l.startswith("**D 型保留**"))
+        for word in ("營收來源排序", "SWOT", "利潤分布", "交接變數"):
+            self.assertIn(word, line)
+
+    def test_external_mode_keeps_layer1_disclosures(self):
+        body = section(read(OUTPUT_SKILL), "### External（傳播）")
+        line = next(l for l in body.splitlines() if l.startswith("**D 型保留**"))
+        for word in ("business-industry-v1", "未揭露", "未查到", "未核對", "會計期間", "比較基準未查", "資料缺口"):
+            self.assertIn(word, line)
+
+    def test_iron_rule_5_replaces_price_date_for_d(self):
+        rules = section(read(OUTPUT_SKILL), "## 鐵則")
+        line = next(l for l in rules.splitlines() if l.lstrip().startswith("5. "))
+        self.assertIn("D 型", line)
+        self.assertIn("會計期間", line)
+
+    def test_output_spec_checklist_branches_for_d(self):
+        body = section(read(OUTPUT_SPEC), "## 八、發布前檢查清單（格式層）")
+        for word in ("D 型", "會計期間已標", "disclaimer", "business-industry-analysis",
+                     "查價日已標", "prepublish-checklist.md"):
+            self.assertIn(word, body)
+
+    def test_output_spec_has_d_skeleton_and_filename(self):
+        text = read(OUTPUT_SPEC)
+        self.assertIn("### D 型｜企業與產業研究報告", text)
+        self.assertIn("_企業與產業研究_v1.0_", text)
+
+    def test_customize_documents_sec_user_agent(self):
+        body = section(read(CUSTOMIZE), "## 六、資料源 MCP（選配）")
+        self.assertIn("SEC_USER_AGENT", body)
+        self.assertIn("{'set'} else {'missing'}", body)
+        assert_no_ua_exposure(self, code_lines(body) + inline_code(body))
+
+
+class TestValuationHandoffWording(unittest.TestCase):
+    def test_handoffs_name_a_type_explicitly(self):
+        for path in (TEMPLATES / "B-industry-supplychain.md", TEMPLATES / "C-rotation-weekly.md", PCR_SKILL):
+            text = read(path)
+            with self.subTest(path.name):
+                self.assertNotIn("深度研究", text)
+                self.assertNotIn("深度報告", text)
+                self.assertIn("A 型估值研究", text)
+
+    def test_a_template_chapter_4_cites_d_report(self):
+        self.assertIn("D 型", section(read(TEMPLATES / "A-single-stock.md"), "## 四、事業結構與供應鏈"))
+
+
 if __name__ == "__main__":
     unittest.main()
