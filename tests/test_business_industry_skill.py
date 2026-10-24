@@ -329,6 +329,68 @@ ARCHETYPES = (
     "商品型材料", "零組件", "配銷", "控股母公司的資本配置",
 )
 
+#: 逐步鎖定核准的規則 ID（依規則證據判定表）；新增、刪除或改號都要先改這裡
+APPROVED_RULES = dict(zip(STEP_HEADINGS, (
+    ("R1.1", "R1.2", "R1.3"),
+    ("R2.1", "R2.2", "R2.3", "R2.4", "R2.5"),
+    ("R3.1", "R3.2", "R3.3", "R3.4", "R3.5"),
+    ("R4.1", "R4.3", "R4.4", "R4.5", "R4.6", "R4.8"),
+    ("R5.1", "R5.2", "R5.3", "R5.4", "R5.6", "R5.8"),
+    ("R6.1", "R6.2", "R6.3"),
+    ("R7.1", "R7.2", "R7.3", "R7.4", "R7.5", "R7.6"),
+    ("R8.1", "R8.2", "R8.3"),
+), strict=True))
+#: 判定為觀察區或範圍說明的空號，不得以規則行出現
+RESERVED_GAPS = ("R3.6", "R4.2", "R4.7", "R5.5", "R5.7", "R6.4", "R8.4")
+STEP_RULE = re.compile(r"^- \*\*(R\d\.\d+)\*\*", re.MULTILINE)
+RULE_LINE = re.compile(r"^- \*\*((?:R\d|RD)\.\d+)\*\* (.*)$", re.MULTILINE)
+EVIDENCE_TAIL = re.compile(r"（證據：(.*?)；文獻：(.*)）$")
+ROUTING_HEADER = ("類型", "適用量尺", "不適用的量尺", "公司自定義 KPI 的處理", "開發組案例")
+#: 只存在於維護者本機、不隨 plugin 發布的路徑與檔名
+UNSHIPPED_PATHS = ("frameworks.md", "rule-evidence", "primary-sources", "docs/", ".superpowers")
+
+
+def rule_problems(text: str) -> list[str]:
+    """檢查各步驟的規則 ID 與核准清單完全相等、空號沒有寫回、每條規則行的證據欄完整。"""
+    problems: list[str] = []
+    for heading, approved in APPROVED_RULES.items():
+        ids = STEP_RULE.findall(section(text, heading))
+        if sorted(ids) != sorted(approved):
+            problems.append(f"{heading} 的規則 ID 是 {ids}")
+    every = sorted(r for rules in APPROVED_RULES.values() for r in rules)
+    if sorted(STEP_RULE.findall(text)) != every:
+        problems.append("全檔的 R 規則 ID 與核准清單不符")
+    problems.extend(f"空號 {gap} 被寫回" for gap in RESERVED_GAPS if gap in STEP_RULE.findall(text))
+    for rule_id, body in RULE_LINE.findall(text):
+        match = EVIDENCE_TAIL.search(body)
+        if not match or not match.group(1).strip() or not match.group(2).strip():
+            problems.append(f"{rule_id} 的證據欄不完整")
+    return problems
+
+
+def table_cells(row: str) -> list[str]:
+    return [c.strip() for c in row.strip().split("|")[1:-1]]
+
+
+def routing_problems(body: str) -> list[str]:
+    """檢查路由表表頭、類型清單，以及每列恰好 5 欄且沒有空欄。"""
+    rows = [r for r in body.splitlines() if r.startswith("|") and "---" not in r]
+    if not rows:
+        return ["沒有路由表"]
+    problems: list[str] = []
+    if table_cells(rows[0]) != list(ROUTING_HEADER):
+        problems.append("表頭不符")
+    names: list[str] = []
+    for row in rows[1:]:
+        cells = table_cells(row)
+        names.append(cells[0] if cells else "")
+        if len(cells) != len(ROUTING_HEADER):
+            problems.append(f"{names[-1]} 有 {len(cells)} 欄")
+        problems.extend(f"{names[-1]} 第 {n} 欄是空的" for n, c in enumerate(cells, 1) if not c)
+    if sorted(names) != sorted(ARCHETYPES):
+        problems.append("類型清單不符")
+    return problems
+
 
 class TestEightSteps(unittest.TestCase):
     def test_every_step_has_rules_or_reference_practice(self):
@@ -350,6 +412,40 @@ class TestEightSteps(unittest.TestCase):
     def test_handoff_caps_dominant_variables(self):
         self.assertRegex(section(read(METHOD), "### 2.8 步驟 8：交接給 Layer 4"), r"(一至三|1[–-]3) ?個")
 
+    def test_rules_match_approved_list_with_complete_evidence(self) -> None:
+        self.assertEqual(rule_problems(read(METHOD)), [])
+
+    def test_rule_guard_catches_each_mutation(self) -> None:
+        text = read(METHOD)
+        self.assertEqual(rule_problems(text), [])
+        for heading in STEP_HEADINGS:
+            body = section(text, heading)
+            mutated = text
+            for line in (ln for ln in body.splitlines() if STEP_RULE.match(ln)):
+                mutated = mutated.replace(line + "\n", "", 1)
+            with self.subTest(drop_all_rules=heading):
+                self.assertNotEqual(rule_problems(mutated), [])
+        for gap in RESERVED_GAPS:
+            anchor = next(ln for ln in text.splitlines() if ln.startswith(f"- **R{gap[1]}."))
+            mutated = text.replace(anchor, f"{anchor}\n- **{gap}** 寫回（證據：無；文獻：無）", 1)
+            with self.subTest(write_back=gap):
+                self.assertNotEqual(rule_problems(mutated), [])
+        for line in (m.group(0) for m in RULE_LINE.finditer(text)):
+            match = EVIDENCE_TAIL.search(line)
+            assert match, line
+            emptied = line[: match.start(1)] + " " + line[match.end(1):]
+            no_literature = line[: match.start()] + f"（證據：{match.group(1)}）"
+            for kind, bad in (("evidence_blank", emptied), ("literature_removed", no_literature)):
+                with self.subTest(**{kind: line[:12]}):
+                    self.assertNotEqual(rule_problems(text.replace(line, bad, 1)), [])
+
+    def test_method_and_skill_ship_no_local_paths(self) -> None:
+        for path in (METHOD, SKILL):
+            text = read(path)
+            for token in UNSHIPPED_PATHS:
+                with self.subTest(file=path.name, token=token):
+                    self.assertFalse(token in text, f"{path.name} 含有 {token}")
+
 
 class TestArchetypeRouting(unittest.TestCase):
     def rows(self):
@@ -363,6 +459,22 @@ class TestArchetypeRouting(unittest.TestCase):
     def test_routing_table_names_inapplicable_scales(self):
         for col in ("適用量尺", "不適用的量尺", "公司自定義 KPI"):
             self.assertIn(col, self.rows()[0])
+
+    def test_routing_rows_have_five_filled_columns(self) -> None:
+        self.assertEqual(routing_problems(section(read(METHOD), "### 3.1 路由表")), [])
+
+    def test_routing_guard_catches_blank_or_missing_cells(self) -> None:
+        body = section(read(METHOD), "### 3.1 路由表")
+        self.assertEqual(routing_problems(body), [])
+        for row in self.rows()[1:]:
+            name = table_cells(row)[0]
+            for n in range(len(ROUTING_HEADER)):
+                parts = row.split("|")
+                blank = "|".join([*parts[: n + 1], " ", *parts[n + 2:]])
+                dropped = "|".join([*parts[: n + 1], *parts[n + 2:]])
+                for kind, bad in (("blank", blank), ("dropped", dropped)):
+                    with self.subTest(row=name, column=n + 1, kind=kind):
+                        self.assertNotEqual(routing_problems(body.replace(row, bad, 1)), [])
 
     def test_off_table_procedure_defines_its_own_scale(self):
         body = section(read(METHOD), "### 3.2 表外類型的通用程序")
