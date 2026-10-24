@@ -1,0 +1,7 @@
+interface:
+  display_name: "Business Industry Analysis"
+  short_description: "企業與產業分析：營收來源與單位經濟、逐來源 SWOT、產業鏈與利潤池、同業替代與護城河，不評價股價"
+  default_prompt: "Use $business-industry-analysis to explain how a company makes money and who captures its industry's profit, without valuing the stock."
+
+policy:
+  allow_implicit_invocation: true

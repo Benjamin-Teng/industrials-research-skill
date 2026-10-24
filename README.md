@@ -31,6 +31,7 @@ $skill-installer 請從 https://github.com/Benjamin-Teng/industrials-research-sk
 $skill-installer 請從 https://github.com/Benjamin-Teng/industrials-research-skill/tree/main/plugins/research-report-kit/skills/equity-valuation-discipline 安裝 equity-valuation-discipline skill
 $skill-installer 請從 https://github.com/Benjamin-Teng/industrials-research-skill/tree/main/plugins/research-report-kit/skills/product-cycle-rotation 安裝 product-cycle-rotation skill
 $skill-installer 請從 https://github.com/Benjamin-Teng/industrials-research-skill/tree/main/plugins/research-report-kit/skills/price-routing 安裝 price-routing skill
+$skill-installer 請從 https://github.com/Benjamin-Teng/industrials-research-skill/tree/main/plugins/research-report-kit/skills/business-industry-analysis 安裝 business-industry-analysis skill
 ```
 
 同意下載後開啟新對話，輸入 `/skills` 應該看到剛裝的 skill；若沒出現，重新載入 VS Code。
