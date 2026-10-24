@@ -13,7 +13,7 @@ Markdown 需以 YAML front matter 開頭（欄位見 SKILL.md）：
     ---
     title: 〈公司名〉〈代號〉個股深度研究報告
     subtitle: 一句話講清楚核心論點與方法
-    type: 個股深度研究            # 個股深度研究 / 產業供應鏈研究 / 輪動掃描週報／企業與產業研究
+    type: 個股深度研究            # 個股深度研究 / 產業供應鏈研究 / 輪動掃描週報 / 企業與產業研究
     ticker: TWSE:0000
     version: v1.0
     date: 2026-08-06

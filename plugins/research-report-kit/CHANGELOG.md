@@ -23,7 +23,7 @@
   `{公司名＋代號}_企業與產業研究_{版本}_{YYYYMMDD}.md／.pdf`。
 - **路由規則**：沒有要求估值、目標價、報酬風險比或買賣判斷的單一個股研究請求，內容層走
   `business-industry-analysis`、格式層走 D 骨架；要求估值或買賣判斷時仍走 A 型。
-  `research-report-output` 的 SKILL.md、`output-spec.md` 與 `market-localization.md` 同步 D 型規則；
+  `research-report-output` 的 SKILL.md 與 `output-spec.md` 同步 D 型規則，`market-localization.md` 補上 SEC 下載的指引；
   同一標的已有 D 型報告時，A 模板第四章直接引用；B、C 模板與 `product-cycle-rotation` 中指估值驗證的「深度研究」
   改為明指 A 型。
 - **`SEC_USER_AGENT` 設定說明**：`customize-your-framework.md` 第六節說明 SEC 文件全文下載所需的環境變數
