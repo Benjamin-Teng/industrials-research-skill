@@ -594,6 +594,46 @@ class TestDTemplate(unittest.TestCase):
             self.assertNotIn(word, blob)
         self.assertIsNone(RATING.search(blob))
 
+    def test_layer1_front_matter_raw_text_has_no_red_line_terms(self):
+        raw = read(D_TEMPLATE).partition("\n---\n")[0]
+        for word in RED_LINE_TERMS:
+            self.assertNotIn(word, raw)
+        self.assertIsNone(RATING.search(raw))
+
+    def test_entity_role_matrix_roles_are_verbatim(self):
+        row = next(r for r in self.body().splitlines() if r.startswith("| 實體 |"))
+        self.assertEqual(table_cells(row), ["實體", "供應商", "客戶", "通路", "競爭者", "資金方", "互補者"])
+
+    def first_content_line(self, chapter, after_marker=True):
+        lines = section(self.body(), chapter).splitlines()
+        lines = [ln for ln in lines if ln.strip() and not (after_marker and ln.startswith("<!-- 方法："))]
+        return lines[0]
+
+    def test_chapters_open_with_conclusion_slot(self):
+        for chapter in ("## 五、逐營收來源 SWOT", "## 六、產業鏈與利潤池", "## 十、Caveats 與來源追蹤"):
+            with self.subTest(chapter):
+                self.assertTrue(self.first_content_line(chapter).startswith("〈本節結論一句"))
+
+    def test_profit_pool_opens_with_conclusion(self):
+        first = self.first_content_line("### 6.5 利潤池")
+        self.assertTrue(first.startswith("結論："))
+        self.assertIn("未扣資本成本", first)
+
+    def test_evidence_cells_use_tag_spans(self):
+        self.assertIn('<span class="tag l1">', self.body())
+        self.assertNotIn("| `l1` |", self.body())
+
+    def test_swot_comparison_fallback_and_profit_sharing_layer(self):
+        text = self.body()
+        swot = [ln for ln in text.splitlines() if ln.startswith(("| S |", "| W |"))]
+        self.assertTrue(swot)
+        for line in swot:
+            self.assertIn("比較基準未查", line)
+        self.assertIn("**分潤層**", section(text, "## 六、產業鏈與利潤池"))
+
+    def test_rule_ids_name_the_method_file(self):
+        self.assertIsNone(re.search(r"（R[0-9D]", self.body()))
+
     def test_entity_role_matrix_has_seven_columns(self):
         rows = [r for r in self.body().splitlines() if r.startswith("| 實體 |")]
         self.assertEqual(len(rows), 1)
@@ -619,7 +659,7 @@ class TestDTemplate(unittest.TestCase):
             self.assertIn(f"方法檔參考做法見 6.3 OB-{n}", text)
         for line in refs:
             self.assertIn("方法檔參考做法見 6.3 OB-", line)
-            self.assertIn("選填", line)
+            self.assertIn("（選填，", line)
         tows = [ln for ln in text.splitlines() if "TOWS" in ln and ln.startswith("#")]
         self.assertTrue(tows)
         for line in tows:
