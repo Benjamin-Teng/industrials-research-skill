@@ -116,28 +116,29 @@ def assert_no_ua_exposure(case: unittest.TestCase, lines: list[str], allowed: tu
         case.assertIsNone(CURL_VERBOSE.search(line), line)
 
 
+#: 設計 5.3 的五條禁令，逐條列出全部獨立禁止項
 RED_LINE_ITEMS = (
-    ("股價", "市值", "估值倍數", "目標價", "內在價值", "預期報酬", "殖利率"),
+    ("股價", "市值", "估值倍數", "目標價", "內在價值", "預期報酬", "股利殖利率"),
     ("EPS", "每股股利", "每股淨值"),
     ("買進", "賣出", "加減碼", "持有", "便宜", "低估", "值得買", "已反映"),
     ("價格隱含預期", "R/R", "示範機率", "決策狀態", "評等"),
-    ("媒體標題中的股價敘事", "漲停", "以價格衍生的量法", "市值占比"),
+    ("媒體標題中的股價敘事", "漲停", "股價飆漲", "以價格衍生的量法", "市值占比", "市值遷移"),
 )
-#: (第一欄關鍵詞, 「不寫」欄必含的禁止詞)
+#: (第一欄關鍵詞, 「不寫」欄的全部獨立禁止項)
 RED_LINE_BOUNDARY = (
-    ("被投資公司", "評價"),
-    ("股權換訂單", "履約價"),
-    ("募資", "發行價"),
-    ("庫藏股", "低估"),
-    ("股東回饋", "殖利率"),
-    ("業務報酬指標", "股價"),
-    ("資本成本", "WACC"),
-    ("前瞻目標", "估值"),
+    ("被投資公司", ("對其價格的評價",)),
+    ("股權換訂單", ("履約價", "與市價的比較")),
+    ("募資", ("發行價", "每股溢價")),
+    ("庫藏股", ("是否被低估",)),
+    ("股東回饋", ("每股股利", "殖利率")),
+    ("業務報酬指標", ("連結到股價",)),
+    ("資本成本", ("自算 WACC", "以超額報酬推估價值")),
+    ("前瞻目標", ("當成事實", "推到估值")),
 )
 
 
 def red_line_problems(body_42: str, body_43: str) -> list[str]:
-    """檢查 4.2 五條禁令各自的必要內容，與 4.3 八列「不寫」欄的關鍵禁止詞。"""
+    """檢查 4.2 五條禁令與 4.3 八列「不寫」欄是否各自帶齊全部禁止項。"""
     problems: list[str] = []
     items = re.findall(r"^\d+\. (.*)$", body_42, re.MULTILINE)
     if len(items) != len(RED_LINE_ITEMS):
@@ -148,12 +149,12 @@ def red_line_problems(body_42: str, body_43: str) -> list[str]:
     if len(rows) != len(RED_LINE_BOUNDARY):
         problems.append(f"邊界表列數 {len(rows)}")
     cells = [[c.strip() for c in r.strip("|").split("|")] for r in rows]
-    for key, word in RED_LINE_BOUNDARY:
+    for key, words in RED_LINE_BOUNDARY:
         match = [c for c in cells if len(c) == 3 and key in c[0]]
         if len(match) != 1:
             problems.append(f"邊界表找不到唯一的「{key}」列")
-        elif not match[0][2] or word not in match[0][2]:
-            problems.append(f"「{key}」列的不寫欄缺「{word}」")
+            continue
+        problems.extend(f"「{key}」列的不寫欄缺「{w}」" for w in words if w not in match[0][2])
     return problems
 
 
@@ -204,26 +205,30 @@ class TestMethodSingleSource(unittest.TestCase):
         )
         self.assertEqual(problems, [])
 
-    def test_red_line_check_catches_mutations(self) -> None:
+    def test_red_line_check_catches_every_single_item_removal(self) -> None:
         text = read(METHOD)
         b42 = section(text, "### 4.2 報告中不出現的內容")
         b43 = section(text, "### 4.3 只陳述事實與機制的邊界情況")
-        lines = b42.splitlines()
-        first = next(i for i, ln in enumerate(lines) if ln.startswith("1. "))
-        weakened = "\n".join([*lines[:first], "1. 可自由提供目標價", *lines[first + 1 :]])
-        dropped = "\n".join(ln for ln in lines if not ln.startswith("5. "))
-        row = next(r for r in b43.splitlines() if "發行價" in r)
-        cells = row.split("|")
-        cells[3] = " 無限制 "
-        loosened = b43.replace(row, "|".join(cells))
-        self.assertNotEqual(loosened, b43)
-        for label, args in (
-            ("第1條弱化", (weakened, b43)),
-            ("刪一條禁令", (dropped, b43)),
-            ("不寫欄改無限制", (b42, loosened)),
-        ):
-            with self.subTest(label):
-                self.assertNotEqual(red_line_problems(*args), [])
+        self.assertEqual(red_line_problems(b42, b43), [])
+        for n, words in enumerate(RED_LINE_ITEMS, 1):
+            line = next(ln for ln in b42.splitlines() if ln.startswith(f"{n}. "))
+            for word in words:
+                with self.subTest(item=n, word=word):
+                    self.assertIn(word, line)
+                    mutated = b42.replace(line, line.replace(word, "", 1))
+                    self.assertNotEqual(red_line_problems(mutated, b43), [])
+        for key, words in RED_LINE_BOUNDARY:
+            row = next(r for r in b43.splitlines() if r.startswith("|") and key in r.split("|")[1])
+            for word in words:
+                with self.subTest(row=key, word=word):
+                    cells = row.split("|")
+                    self.assertIn(word, cells[3])
+                    cells[3] = cells[3].replace(word, "", 1)
+                    mutated = b43.replace(row, "|".join(cells))
+                    self.assertNotEqual(red_line_problems(b42, mutated), [])
+        self.assertNotEqual(red_line_problems("\n".join(b42.splitlines()[:-2]), b43), [])
+        loosened = b43.replace(next(r for r in b43.splitlines() if "發行價" in r), "| 募資 | x | 無限制 |")
+        self.assertNotEqual(red_line_problems(b42, loosened), [])
 
     def test_red_line_is_defined_once(self) -> None:
         for phrase in ("媒體標題中的股價敘事", "以價格衍生的量法"):

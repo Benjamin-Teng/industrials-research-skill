@@ -50,7 +50,8 @@ WebFetch 一次只讀到 10-K／10-Q 的前段，MD&A 與附註常被截斷，�
 - PowerShell 樣板需要 PowerShell 7 以上：`-UserAgent` 預設會驗證 product token 格式，SEC 的聯絡字串通不過，錯誤訊息還會回顯完整的值，所以樣板加 `-SkipHeaderValidation`，而 Windows PowerShell 5.1 沒有這個參數。樣板開頭先檢查，不支援就停止，改用 bash 樣板（Git Bash 或 WSL）或下節的網頁工具退路。
 - 請求速率上限是每秒 10 次請求（SEC 公告）；樣板每次請求之間等 1 秒。
 - 端點：`data.sec.gov/submissions/CIK` 加 10 碼補零的 CIK 取 filing 清單 JSON（路徑格式由實測支持）；`www.sec.gov/Archives/edgar/data/` 底下取申報文件。
-- 原始檔存在目前工作目錄下的 `sec_raw/`，留在工作區內。
+- 原始檔存在目前工作目錄下的 `sec_raw/`，每次執行建一個新的子目錄，不沿用前次的檔案。
+- 每次下載都檢查成功與 HTTP 200，轉純文字也檢查結束狀態；任一步失敗就印「下載失敗：<步驟>」並停止，不讀其他目錄的舊檔。
 - 清單裡找不到 10-K 或 20-F，或 accession、主文件欄位是空的，樣板印出提示後停在那裡，不下載任何文件。
 - 先只檢查環境變數有沒有設定：
 
@@ -66,45 +67,53 @@ bash 樣板，依序做四件事：下載 filing 清單 JSON、下載主文件�
 
 ```bash
 CIK10=0001664703                 # 10 碼補零的 CIK（範例）
-mkdir -p sec_raw
-curl -sS -A "$SEC_USER_AGENT" -w '%{http_code}\n' -o sec_raw/sub.json "https://data.sec.gov/submissions/CIK$CIK10.json"
-sleep 1
-# 清單裡的 form、accessionNumber、primaryDocument 三個陣列同序（新到舊），用位置對齊
-pick() { grep -o "\"$1\":\[[^]]*\]" sec_raw/sub.json | head -1 | sed 's/^[^[]*\[//; s/\]$//' | tr -d '"' | tr ',' '\n'; }
-N=$(pick form | grep -n -m1 -E '^(10-K|20-F)$' | cut -d: -f1)
-ACC=; DOC=
-if [ -n "$N" ]; then ACC=$(pick accessionNumber | sed -n "${N}p"); DOC=$(pick primaryDocument | sed -n "${N}p"); fi
-if [ -z "$ACC" ] || [ -z "$DOC" ]; then
-  echo "找不到 10-K／20-F，改走『沒有 SEC_USER_AGENT 時』的退路，取不到的段落標未查到"
-else
-  curl -sS -A "$SEC_USER_AGENT" -w '%{http_code}\n' -o sec_raw/doc.htm "https://www.sec.gov/Archives/edgar/data/$((10#$CIK10))/${ACC//-/}/$DOC"
-  pandoc -f html -t plain --wrap=none sec_raw/doc.htm -o sec_raw/doc.txt
-  grep -n -i "item 7" sec_raw/doc.txt | head
-fi
+sec_fetch() {
+  mkdir -p sec_raw
+  local D code rc N ACC DOC
+  D=$(mktemp -d sec_raw/run.XXXXXX)
+  code=$(curl -sS --fail -A "$SEC_USER_AGENT" -w '%{http_code}' -o "$D/sub.json" "https://data.sec.gov/submissions/CIK$CIK10.json"); rc=$?
+  if [ "$rc" -ne 0 ] || [ "$code" != 200 ]; then echo "下載失敗：filing 清單"; return 1; fi
+  sleep 1
+  # 清單裡的 form、accessionNumber、primaryDocument 三個陣列同序（新到舊），用位置對齊
+  pick() { grep -o "\"$1\":\[[^]]*\]" "$D/sub.json" | head -1 | sed 's/^[^[]*\[//; s/\]$//' | tr -d '"' | tr ',' '\n'; }
+  N=$(pick form | grep -n -m1 -E '^(10-K|20-F)$' | cut -d: -f1)
+  if [ -n "$N" ]; then ACC=$(pick accessionNumber | sed -n "${N}p"); DOC=$(pick primaryDocument | sed -n "${N}p"); fi
+  if [ -z "$ACC" ] || [ -z "$DOC" ]; then
+    echo "找不到 10-K／20-F，改走『沒有 SEC_USER_AGENT 時』的退路，取不到的段落標未查到"; return 1
+  fi
+  code=$(curl -sS --fail -A "$SEC_USER_AGENT" -w '%{http_code}' -o "$D/doc.htm" "https://www.sec.gov/Archives/edgar/data/$((10#$CIK10))/${ACC//-/}/$DOC"); rc=$?
+  if [ "$rc" -ne 0 ] || [ "$code" != 200 ]; then echo "下載失敗：主文件"; return 1; fi
+  pandoc -f html -t plain --wrap=none "$D/doc.htm" -o "$D/doc.txt" || { echo "下載失敗：轉純文字"; return 1; }
+  echo "$D"; grep -n -i "item 7" "$D/doc.txt" | head
+}
+sec_fetch
 ```
 
 PowerShell 樣板，步驟與停止條件相同：
 
 ```powershell
 $cik10 = '0001664703'            # 10 碼補零的 CIK（範例）
-if (-not (Get-Command Invoke-WebRequest).Parameters.ContainsKey('SkipHeaderValidation')) {
-  '需要 PowerShell 7 以上；Windows PowerShell 5.1 請改用 bash 樣板（Git Bash 或 WSL），或走網頁工具退路'
-} else {
+& {
+  if (-not (Get-Command Invoke-WebRequest).Parameters.ContainsKey('SkipHeaderValidation')) {
+    '需要 PowerShell 7 以上；Windows PowerShell 5.1 請改用 bash 樣板（Git Bash 或 WSL），或走網頁工具退路'; return
+  }
   New-Item -ItemType Directory -Force sec_raw | Out-Null
-  $r = Invoke-WebRequest -Uri "https://data.sec.gov/submissions/CIK$cik10.json" -UserAgent $env:SEC_USER_AGENT -SkipHeaderValidation -OutFile sec_raw/sub.json -PassThru
-  $r.StatusCode
+  $d = New-Item -ItemType Directory -Path (Join-Path 'sec_raw' ([guid]::NewGuid()))
+  try { $r = Invoke-WebRequest -Uri "https://data.sec.gov/submissions/CIK$cik10.json" -UserAgent $env:SEC_USER_AGENT -SkipHeaderValidation -OutFile "$d/sub.json" -PassThru -ErrorAction Stop } catch { '下載失敗：filing 清單'; return }
+  if ($r.StatusCode -ne 200) { '下載失敗：filing 清單'; return }
   Start-Sleep -Seconds 1
-  $f = (Get-Content sec_raw/sub.json -Raw | ConvertFrom-Json).filings.recent
+  $f = (Get-Content "$d/sub.json" -Raw | ConvertFrom-Json).filings.recent
   $i = (0..($f.form.Count - 1) | Where-Object { $f.form[$_] -in '10-K', '20-F' } | Select-Object -First 1)
   if ($null -eq $i -or -not $f.accessionNumber[$i] -or -not $f.primaryDocument[$i]) {
-    '找不到 10-K／20-F，改走『沒有 SEC_USER_AGENT 時』的退路，取不到的段落標未查到'
-  } else {
-    $u = "https://www.sec.gov/Archives/edgar/data/$([int64]$cik10)/$($f.accessionNumber[$i] -replace '-','')/$($f.primaryDocument[$i])"
-    $r = Invoke-WebRequest -Uri $u -UserAgent $env:SEC_USER_AGENT -SkipHeaderValidation -OutFile sec_raw/doc.htm -PassThru
-    $r.StatusCode
-    pandoc -f html -t plain --wrap=none sec_raw/doc.htm -o sec_raw/doc.txt
-    Select-String -Path sec_raw/doc.txt -Pattern 'Item 7' | Select-Object -First 5
+    '找不到 10-K／20-F，改走『沒有 SEC_USER_AGENT 時』的退路，取不到的段落標未查到'; return
   }
+  $u = "https://www.sec.gov/Archives/edgar/data/$([int64]$cik10)/$($f.accessionNumber[$i] -replace '-','')/$($f.primaryDocument[$i])"
+  try { $r = Invoke-WebRequest -Uri $u -UserAgent $env:SEC_USER_AGENT -SkipHeaderValidation -OutFile "$d/doc.htm" -PassThru -ErrorAction Stop } catch { '下載失敗：主文件'; return }
+  if ($r.StatusCode -ne 200) { '下載失敗：主文件'; return }
+  pandoc -f html -t plain --wrap=none "$d/doc.htm" -o "$d/doc.txt"
+  if ($LASTEXITCODE -ne 0) { '下載失敗：轉純文字'; return }
+  $d.FullName
+  Select-String -Path "$d/doc.txt" -Pattern 'Item 7' | Select-Object -First 5
 }
 ```
 
