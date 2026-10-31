@@ -79,6 +79,10 @@ MCP 連上之後不需改任何設定。
 
 SEC 文件全文下載需要環境變數 `SEC_USER_AGENT`，設定方式見 `skills/research-report-output/references/customize-your-framework.md` 第六節。
 
+### 選用的外部 skill
+
+- [speak-human-tw](https://github.com/Raymondhou0917/speak-human-tw)：正文的台灣用語與標點校對。裝了就在產 PDF 前多一步校對，沒裝照常交付；版面仍以本 plugin 的 F-rules 為準。
+
 ---
 
 ## 怎麼用

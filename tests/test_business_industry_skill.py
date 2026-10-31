@@ -857,6 +857,33 @@ class TestOutputSkillRouting(unittest.TestCase):
                      "查價日已標", "prepublish-checklist.md"):
             self.assertIn(word, body)
 
+    def test_workflow_has_optional_proofreading_step_before_pdf(self):
+        body = section(read(OUTPUT_SKILL), "## 工作流程")
+        steps = re.findall(r"^(\d+)\. (.*)$", body, re.MULTILINE)
+        titles = [t for _, t in steps]
+        idx = next(i for i, t in enumerate(titles) if "中文用語校對" in t)
+        for word in ("選用", "speak-human-tw"):
+            self.assertIn(word, titles[idx])
+        self.assertLess(idx, next(i for i, t in enumerate(titles) if t.startswith("**產 PDF**")))
+        self.assertEqual([int(n) for n, _ in steps], list(range(1, len(steps) + 1)))
+        start = body.index(f"{steps[idx][0]}. ")
+        step_text = body[start:body.index(f"\n{steps[idx + 1][0]}. ", start)]
+        for word in ("選用", "F-rules", "降格式", "跳過確認、事後摘要"):
+            self.assertIn(word, step_text)
+
+    def test_output_spec_checklist_lists_optional_proofreading(self):
+        body = section(read(OUTPUT_SPEC), "## 八、發布前檢查清單（格式層）")
+        self.assertIn("（選用）已用 speak-human-tw 校對正文用語；版面仍以 F-rules 為準", body)
+
+    def test_readme_lists_speak_human_tw_as_optional_dependency(self):
+        text = read(PLUGIN / "README.md")
+        self.assertIn("https://github.com/Raymondhou0917/speak-human-tw", text)
+
+    def test_output_spec_workflow_step_citation_points_at_pdf_step(self):
+        steps = re.findall(r"^(\d+)\. \*\*(.+?)\*\*", section(read(OUTPUT_SKILL), "## 工作流程"), re.MULTILINE)
+        pdf_no = next(n for n, t in steps if t == "產 PDF")
+        self.assertIn(f"SKILL.md 工作流程第 {pdf_no} 步", read(OUTPUT_SPEC))
+
     def test_output_spec_has_d_skeleton_and_filename(self):
         text = read(OUTPUT_SPEC)
         self.assertIn("### D 型｜企業與產業研究報告", text)

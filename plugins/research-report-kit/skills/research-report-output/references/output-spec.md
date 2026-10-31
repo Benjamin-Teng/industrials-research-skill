@@ -255,7 +255,7 @@ D 型另有 Layer 1 專用標示，定義見 business-industry-analysis 的 `ref
 ```bash
 # 1) 依骨架寫好 報告.md（含 front matter）
 # 2) 產 PDF（同名 .pdf 落在同目錄）
-# $SKILL_DIR = research-report-output 這個 skill 的資料夾（見 SKILL.md 工作流程第 5 步）
+# $SKILL_DIR = research-report-output 這個 skill 的資料夾（見 SKILL.md 工作流程第 6 步）
 python3 "$SKILL_DIR/scripts/md2pdf.py" 報告.md
 
 # 3) 抽查排版（轉圖後目視檢查封面、表格跨頁、頁碼）
@@ -308,6 +308,7 @@ playwright install chromium
 6. **F-rules 六項自查（F-a 至 F-f）已逐條通過**（`formatting-rules.md`）。
 7. 資料源、籌碼欄位（D 型不適用）、信用評等欄位已依 `market` 換成對應版本，無台美混用。
 8. **刪節後處理**（External／Briefing）：章次已重編、子節已重編、交叉引用已同步。
+9. （選用）已用 speak-human-tw 校對正文用語；版面仍以 F-rules 為準。
 
 ---
 
