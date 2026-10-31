@@ -69,10 +69,61 @@ _SENTENCE_SPLIT = re.compile(r"[。！？]|[.!?](?=\s|$)")
 _DERIVATION = ("→", "＝", "=")
 
 _LIST_MARK = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+(?:\[[ xX]\]\s+)?")
-_FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
-_BLOCK_START = re.compile(r"^\s*(?:#{1,6}(?:\s|$)|>|(?:[-*+]|\d+[.)])\s)")
 _PIPE = re.compile(r"(?<!\\)\|")
 _SEPARATOR_CELL = re.compile(r"^:?-{1,}:?$")
+
+# --- 區塊邊界（CommonMark 0.31.2／GFM）------------------------------------------
+# 除清單項外，區塊開頭都限縮排 ≤3 空白；清單項允許任意縮排以涵蓋巢狀清單。
+_FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+_THEMATIC_BREAK = re.compile(
+    r"^ {0,3}(?:(?:-[ \t]*){3,}|(?:\*[ \t]*){3,}|(?:_[ \t]*){3,})$"
+)
+_SETEXT_UNDERLINE = re.compile(r"^ {0,3}(?:=+|-+)[ \t]*$")
+_ATX_HEADING = re.compile(r"^ {0,3}#{1,6}(?:[ \t]|$)")
+_BLOCKQUOTE = re.compile(r"^ {0,3}>")
+_HTML_BLOCK_TAGS = (
+    "address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup"
+    "|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame"
+    "|frameset|h[1-6]|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem"
+    "|nav|noframes|ol|optgroup|option|p|param|search|section|summary|table|tbody"
+    "|td|tfoot|th|thead|title|tr|track|ul"
+)
+# HTML 區塊第 1–6 型（可打斷段落者）；第 7 型不能打斷段落，不列入。
+_HTML_BLOCK = re.compile(
+    r"^ {0,3}(?:<(?:script|pre|style|textarea)(?:[ \t>]|$)"
+    r"|<!--|<\?|<![A-Za-z]|<!\[CDATA\["
+    rf"|</?(?:{_HTML_BLOCK_TAGS})(?:[ \t]|/?>|$))",
+    re.IGNORECASE,
+)
+
+
+def block_kind(line: str) -> str | None:
+    """回傳 line 開啟的區塊種類；不是區塊開頭時回傳 None。
+
+    種類：blank、fence、thematic、heading、quote、list、html。
+    順序有意義：分隔線先於清單項（「- - -」是分隔線）。
+    setext 標題底線要看上一行是不是段落，由 check_text 另行判斷。
+    """
+    if not line.strip():
+        return "blank"
+    if _FENCE.match(line):
+        return "fence"
+    if _THEMATIC_BREAK.match(line):
+        return "thematic"
+    if _ATX_HEADING.match(line):
+        return "heading"
+    if _BLOCKQUOTE.match(line):
+        return "quote"
+    if _LIST_MARK.match(line):
+        return "list"
+    if _HTML_BLOCK.match(line):
+        return "html"
+    return None
+
+
+def is_block_start(line: str) -> bool:
+    """line 是否開啟新區塊（因而結束進行中的表格或段落）。"""
+    return block_kind(line) is not None
 
 
 def count_numbers(
@@ -158,12 +209,26 @@ def _is_separator(cells: list[str]) -> bool:
     )
 
 
+def _table_starts(header: str, delimiter: str) -> bool:
+    """header＋delimiter 是否構成 GFM 表格開頭。
+
+    分隔列必須含管線、每格都是 :?-+:?，且欄數與表頭一致；
+    因此單獨的 --- 不會被當成分隔列（那是分隔線或 setext 底線）。
+    """
+    if not (_PIPE.search(header) and _PIPE.search(delimiter)):
+        return False
+    if is_block_start(header):
+        return False
+    cells = _split_cells(delimiter)
+    return _is_separator(cells) and len(cells) == len(_split_cells(header))
+
+
 def check_text(text: str) -> list[Hit]:
     lines = _blank_comments(text).splitlines()
     hits: list[Hit] = []
 
-    # 單位累積：(起始行號, [文字片段])
-    unit: tuple[int, list[str]] | None = None
+    # 單位累積：(起始行號, [文字片段], 種類 para／list)
+    unit: tuple[int, list[str], str] | None = None
 
     def flush() -> None:
         nonlocal unit
@@ -176,6 +241,13 @@ def check_text(text: str) -> list[Hit]:
                 )
         unit = None
 
+    def check_row(lineno: int, row: str) -> None:
+        for col, cell in enumerate(_split_cells(row)):
+            for part in re.split(r"<br\s*/?>", cell, flags=re.IGNORECASE):
+                n = count_numbers(part, serial_cell=(col == 0), in_cell=True)
+                if n >= 3:
+                    hits.append(Hit(lineno, "CELL", n, _snippet(part)))
+
     i = 0
     if lines and lines[0].strip() == "---":
         for j in range(1, len(lines)):
@@ -185,6 +257,7 @@ def check_text(text: str) -> list[Hit]:
 
     fence: tuple[str, int] | None = None  # 開啟中的 fence：(字元, 長度)
     in_table = False
+    in_quote = False  # blockquote 內：後續非區塊開頭的行是惰性續行，一併略過
     while i < len(lines):
         raw = lines[i]
         lineno = i + 1
@@ -201,50 +274,52 @@ def check_text(text: str) -> list[Hit]:
             ):
                 fence = None
             continue
-        opener = _FENCE.match(raw)
-        if opener:
-            flush()
-            in_table = False
-            fence = (opener.group(1)[0], len(opener.group(1)))
-            continue
-        if not stripped:
-            flush()
-            in_table = False
+
+        # setext 標題：段落下緊接 === 或 ---，整個段落成為標題，不計
+        if unit is not None and unit[2] == "para" and _SETEXT_UNDERLINE.match(raw):
+            unit = None
             continue
 
-        has_pipe = bool(_PIPE.search(stripped))
-        if not in_table and has_pipe and i < len(lines):
-            nxt = lines[i].strip()
-            if _PIPE.search(nxt) and _is_separator(_split_cells(nxt)):
-                flush()
-                in_table = True  # 本行是表頭，下一行是分隔列，兩者都略過
-                i += 1
-                continue
-        if in_table and not has_pipe and _BLOCK_START.match(raw):
+        kind = block_kind(raw)
+        if kind is not None:
+            # 任何區塊開頭都結束進行中的表格、段落與 blockquote
+            flush()
             in_table = False
-        if in_table or stripped.startswith("|"):
-            flush()
-            for col, cell in enumerate(_split_cells(stripped)):
-                for part in re.split(r"<br\s*/?>", cell, flags=re.IGNORECASE):
-                    n = count_numbers(part, serial_cell=(col == 0), in_cell=True)
-                    if n >= 3:
-                        hits.append(Hit(lineno, "CELL", n, _snippet(part)))
-            continue
-        if re.match(r"^#{1,6}(\s|$)", stripped) or stripped.startswith(">"):
-            flush()
-            continue
-        if re.fullmatch(r"(?:-\s*){3,}|(?:\*\s*){3,}|(?:_\s*){3,}", stripped):
-            flush()
+            in_quote = False
+            if kind == "fence":
+                opener = _FENCE.match(raw)
+                assert opener is not None
+                fence = (opener.group(1)[0], len(opener.group(1)))
+            elif kind == "quote":
+                in_quote = True
+            elif kind == "list":
+                marker = _LIST_MARK.match(raw)
+                assert marker is not None
+                unit = (lineno, [raw[marker.end() :]], "list")
+            elif kind == "html":
+                unit = (lineno, [stripped], "para")  # 標籤由 _EXCLUDE 去除，文字照計
+            # blank、thematic、heading：只當邊界，本行不計
             continue
 
-        marker = _LIST_MARK.match(raw)
-        if marker:
+        if in_table:
+            check_row(lineno, stripped)  # 無管線的缺欄資料列也留在表內
+            continue
+        if in_quote:
+            continue
+        if i < len(lines) and _table_starts(raw, lines[i]):
             flush()
-            unit = (lineno, [raw[marker.end() :]])
-        elif unit is not None:
+            in_table = True  # 本行是表頭，下一行是分隔列，兩者都略過
+            i += 1
+            continue
+        if stripped.startswith("|"):
+            flush()
+            check_row(lineno, stripped)
+            continue
+
+        if unit is not None:
             unit[1].append(stripped)
         else:
-            unit = (lineno, [stripped])
+            unit = (lineno, [stripped], "para")
     flush()
     hits.sort(key=lambda h: h.line)
     return hits

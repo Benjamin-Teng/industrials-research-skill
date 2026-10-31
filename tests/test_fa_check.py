@@ -345,3 +345,128 @@ def test_pipeless_short_row_stays_in_table() -> None:
 def test_table_ends_at_block_structure() -> None:
     text = "a | b\n--- | ---\nx | y\n# 標題\n" + _DENSE + "\n"
     assert _levels(text) == ["RED"]
+
+
+# --- 區塊邊界（CommonMark 0.31.2／GFM）--------------------------------------------
+
+_FIVE_LINES = "11% 12%\n" * 5  # 每行 2 個、合併 10 個 → 段落 RED
+
+
+def test_thematic_break_ends_table_codex_repro() -> None:
+    text = "a | b\n--- | ---\nx | y\n***\n" + _FIVE_LINES
+    assert [(h.line, h.level, h.numbers) for h in fa_check.check_text(text)] == [
+        (5, "RED", 10)
+    ]
+
+
+@pytest.mark.parametrize(
+    "boundary",
+    ["", "***", "---", "___", "* * *", " - - -", "   ***", "# 標題", "## 標題"],
+)
+def test_boundary_ends_table_then_paragraph_counts(boundary: str) -> None:
+    text = "a | b\n--- | ---\nx | y\n" + boundary + "\n" + _FIVE_LINES
+    assert [(h.line, h.level) for h in fa_check.check_text(text)] == [(5, "RED")]
+
+
+def test_blockquote_ends_table_even_with_pipe() -> None:
+    text = "a | b\n--- | ---\nx | y\n> 引述 | 11% 12% 13%\n"
+    assert fa_check.check_text(text) == []
+
+
+def test_list_item_ends_table() -> None:
+    text = "a | b\n--- | ---\nx | y\n- 項目 11.5% 與 12.5% 與 13.5%。再一句。\n"
+    assert [(h.line, h.level) for h in fa_check.check_text(text)] == [(4, "YELLOW")]
+
+
+def test_html_block_ends_table() -> None:
+    text = "a | b\n--- | ---\nx | y\n<div>\n" + _FIVE_LINES
+    assert [(h.line, h.level) for h in fa_check.check_text(text)] == [(4, "RED")]
+
+
+def test_fence_ends_table() -> None:
+    text = "a | b\n--- | ---\nx | y\n```\n11% 12% 13%\n```\n" + _FIVE_LINES
+    assert [(h.line, h.level) for h in fa_check.check_text(text)] == [(7, "RED")]
+
+
+def test_html_comment_ends_table() -> None:
+    text = "a | b\n--- | ---\nx | y\n<!-- 註 -->\n" + _FIVE_LINES
+    assert [(h.line, h.level) for h in fa_check.check_text(text)] == [(5, "RED")]
+
+
+_HALF = "指標 11% 12% 13% 14% 15%\n"  # 5 個、單句、短 → 單獨是 INFO；兩行合併 10 個 → RED
+
+
+def test_paragraph_without_boundary_merges() -> None:
+    assert _levels(_HALF + _HALF) == ["RED"]
+
+
+@pytest.mark.parametrize(
+    "boundary",
+    ["***", "___", "* * *", "- - -", "# 標題", "> 引述", "<div>", "<!-- 註 -->", "```"],
+)
+def test_boundary_ends_paragraph(boundary: str) -> None:
+    assert _levels(_HALF + boundary + "\n" + _HALF) == []
+
+
+def test_list_item_ends_paragraph() -> None:
+    assert _levels(_HALF + "- " + _HALF) == []
+
+
+@pytest.mark.parametrize("underline", ["---", "===", "-", "  ===  "])
+def test_setext_heading_not_counted(underline: str) -> None:
+    assert _levels(_DENSE + "\n" + underline + "\n") == []
+    # 多行段落整段成為標題
+    assert _levels(_HALF + _HALF + underline + "\n") == []
+
+
+@pytest.mark.parametrize("hr", ["***", "___", "- - -", "* * *"])
+def test_non_setext_break_keeps_paragraph(hr: str) -> None:
+    assert _levels(_DENSE + "\n" + hr + "\n") == ["RED"]
+
+
+def test_setext_after_list_item_is_thematic_break() -> None:
+    assert _levels("- " + _DENSE + "\n---\n") == ["RED"]
+
+
+def test_lone_dashes_under_pipe_line_is_setext_not_table() -> None:
+    assert fa_check.check_text("x 11% | 12% 13% 14%\n---\n") == []
+
+
+def test_separator_cell_count_must_match_header() -> None:
+    text = "a | b | c\n--- | ---\n11% 12% 13%\n"
+    assert all(h.level != "CELL" for h in fa_check.check_text(text))
+
+
+def test_blockquote_lazy_continuation_skipped() -> None:
+    assert _levels("> 引述\n" + _DENSE + "\n") == []
+    assert _levels("> 引述\n\n" + _DENSE + "\n") == ["RED"]
+
+
+@pytest.mark.parametrize(
+    ("line", "kind"),
+    [
+        ("", "blank"),
+        ("***", "thematic"),
+        ("   ***", "thematic"),
+        ("    ***", None),
+        ("- - -", "thematic"),
+        ("_ _ _", "thematic"),
+        ("--", None),
+        ("# 標題", "heading"),
+        ("#5 不是標題", None),
+        ("    # 縮排四格", None),
+        ("> 引述", "quote"),
+        ("- 項目", "list"),
+        ("  2. 項目", "list"),
+        ("```py", "fence"),
+        ("<!-- 註", "html"),
+        ("<div class='x'>", "html"),
+        ("</table>", "html"),
+        ("<span>行內</span>", None),
+        ("--- | ---", None),
+        ("一般文字", None),
+    ],
+)
+def test_block_kind(line: str, kind: str | None) -> None:
+    assert fa_check.block_kind(line) == kind
+    assert fa_check.is_block_start(line) is (kind is not None)
