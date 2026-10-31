@@ -48,7 +48,7 @@ metadata:
 
 | # | 檢查項 | 判定細則 |
 |---|---|---|
-| F-a | 段落或**表格儲存格**含 ≥3 個數字？ | 依嚴重度分級處理；表格格內多值 → 拆出數據明細欄 |
+| F-a | 段落或**表格儲存格**含 ≥3 個數字？ | 先跑 `scripts/fa_check.py`；依嚴重度分級處理；表格格內多值 → 拆出數據明細欄 |
 | F-b | 段落含 ≥2 粗體小標？ | 遮蓋測試：遮掉一個 bold，剩餘仍是完整論點 → 須拆 |
 | F-c | 有傳遞鏈／影響路徑描述？ | 套 F3 畫樹狀圖 |
 | F-d | 所有 >3 行表格前有 blockquote？ | **含連續表的第 2、3 張；含 F3 圖後摘要表** |
@@ -75,7 +75,7 @@ metadata:
    - 版面以 F-rules 為準：speak-human-tw 的「降格式」步驟（把表格、粗體、列表降回散文）不套用。
    - 報告由非互動流程產生時（例如 `claude -p`），採用它的「跳過確認、事後摘要」模式，摘要附在交付訊息裡。
    - 校對後的 md 若有改動，重跑一次 F-rules 自查再往下。
-6. **產 PDF**：
+6. **產 PDF**：先跑 `python3 "$SKILL_DIR/scripts/fa_check.py" 報告.md`，命中逐一依 F1 拆表或用 `<br>` 分行，直到 `0 hit(s)` 才產 PDF；環境沒有 Python 時改為逐段人工檢查。
 
    ```bash
    # $SKILL_DIR = 本 SKILL.md 所在的資料夾
@@ -212,4 +212,5 @@ kpi:
 | `references/customize-your-framework.md` | 如何接上你自己的方法論、改樣式、換免責標語 |
 | `templates/` | A／B／C／D 四型報告骨架模板 |
 | `scripts/md2pdf.py` | md → PDF 產檔器（md → pandoc → HTML → Playwright/Chromium → PDF） |
+| `scripts/fa_check.py` | F-a 數字密集檢查（段落與表格儲存格；產 PDF 前必跑） |
 | `assets/report.css` | PDF 版面樣式（A4、邊界 16mm、內文 10pt、表格 8.6pt、深藍 `#16324f` 主色） |
