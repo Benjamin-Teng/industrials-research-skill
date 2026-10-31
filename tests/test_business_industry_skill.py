@@ -330,6 +330,23 @@ class TestSkillEntry(unittest.TestCase):
     def test_content_checklist_heading_exists(self) -> None:
         self.assertIn("\n## 交付前內容層檢查\n", read(SKILL))
 
+    def test_content_checklist_covers_format_sourcing_tier_and_tw_sources(self) -> None:
+        checklist = read(SKILL).partition("\n## 交付前內容層檢查\n")[2]
+        for item in (
+            "- [ ] 格式層依 research-report-output 的 F-rules 自查（F-a 至 F-f）；數字密集的段落與表格儲存格已拆表或分行",
+            "- [ ] TL;DR、KPI 卡與每個表格儲存格的數字都寫出文件名與期間，不只放層級標籤",
+            "- [ ] `l3` 只做記錄與交叉比對，不支撐任何結論或基準假設；搜尋結果摘要最高標 `l2`，讀到原文才標 `l1`",
+            "- [ ] market 為 TW 時，申報文件以 MOPS、年報與 TWSE／TPEx 公告為主；同一公司另有 20-F 時只作交叉核對",
+        ):
+            with self.subTest(item[:20]):
+                self.assertIn(item, checklist)
+
+    def test_sec_section_cites_arm_only_and_keeps_tw_primary_source(self) -> None:
+        sec = section(read(SKILL), "### SEC 文件全文")
+        self.assertIn("外國發行人（例如 ARM）申報 20-F", sec)
+        self.assertNotIn("台積電", sec)
+        self.assertIn("在台股上市、同時申報 20-F 的公司，主要來源仍是 MOPS", sec)
+
 
 STEP_HEADINGS = (
     "### 2.1 步驟 1：研究契約與資料時點疊加", "### 2.2 步驟 2：重建營收來源並指派商業模式類型",
@@ -678,6 +695,84 @@ class TestDTemplate(unittest.TestCase):
         self.assertTrue(tows)
         for line in tows:
             self.assertIn("選用", line)
+
+
+class TestDTemplateFormatAndSourcing(unittest.TestCase):
+    """D 骨架對齊 F-rules 與數字出處：TL;DR 實績表、表格結論行、單格單數字、層級標籤後接文件名。"""
+
+    def body(self):
+        return FRONT.sub("", read(D_TEMPLATE), count=1)
+
+    def lines(self):
+        return self.body().splitlines()
+
+    def table_start(self, header_prefix):
+        lines = self.lines()
+        return next(i for i, ln in enumerate(lines) if ln.startswith(header_prefix))
+
+    def prev_nonblank(self, idx):
+        lines = self.lines()
+        j = idx - 1
+        while not lines[j].strip():
+            j -= 1
+        return lines[j]
+
+    def test_tldr_points_are_bold_conclusion_plus_support_with_number_cap(self):
+        tldr = section(self.body(), "## 一、TL;DR")
+        points = [ln for ln in tldr.splitlines() if ln.startswith("**")]
+        self.assertEqual(len(points), 2)
+        for p in points:
+            self.assertRegex(p, r"^\*\*[^*]+。\*\* 〈支撐句")
+            self.assertIn("至多 2 個數字；其餘數字放進下方實績表", p)
+
+    def test_tldr_has_four_column_results_table_with_conclusion(self):
+        idx = self.table_start("| 指標 | 數值 | 期間（起訖日） | 出處文件 |")
+        self.assertEqual(len(table_cells(self.lines()[idx])), 4)
+        self.assertTrue(self.prev_nonblank(idx).startswith("> **〈表格結論"))
+        text = self.body()
+        self.assertLess(text.index("## 一、TL;DR"), text.index("| 指標 | 數值 | 期間（起訖日） | 出處文件 |"))
+        self.assertLess(text.index("| 指標 | 數值 | 期間（起訖日） | 出處文件 |"), text.index("## 二、"))
+
+    def test_caveat_tables_have_conclusion_line_and_10_1_opens_with_slot(self):
+        for prefix in ("| 公司自述（出處） |", "| # | 文件或來源 |"):
+            with self.subTest(prefix):
+                idx = self.table_start(prefix)
+                self.assertTrue(self.prev_nonblank(idx).startswith("> **〈表格結論"))
+        first = next(ln for ln in section(self.body(), "### 10.1 公司自述與申報數據對帳").splitlines() if ln.strip())
+        self.assertTrue(first.startswith("〈"))
+        self.assertIn("結論", first)
+
+    def test_swot_number_column_demands_one_number_per_cell(self):
+        text = self.body()
+        self.assertIn("一格一個數字；多個數字以 `<br>` 分行，每行附出處", text)
+
+    def test_related_party_split_is_a_table(self):
+        idx = self.table_start("| 關係人 | 營收（期間） | 占比 | 剔除後成長 | 出處文件 |")
+        self.assertTrue(self.prev_nonblank(idx).startswith("> **〈表格結論"))
+        self.assertIn("無關係人交易", section(self.body(), "## 三、營收來源與商業模式"))
+
+    def test_working_capital_is_an_optional_table_citing_ob2(self):
+        idx = self.table_start("| 指標 | 本期（期間） | 基期（期間） | 出處文件 |")
+        self.assertTrue(self.prev_nonblank(idx).startswith("> **〈表格結論"))
+        lines = self.lines()
+        label = next(ln for ln in lines if ln.startswith("**營運資金**"))
+        self.assertIn("選填", label)
+        self.assertIn("6.3 OB-2", label)
+        rows = "\n".join(lines[idx:idx + 8])
+        for metric in ("應收天數", "存貨天數", "營業現金流", "淨利"):
+            self.assertIn(metric, rows)
+
+    def test_tag_spans_are_followed_by_document_and_period(self):
+        text = self.body()
+        spans = re.findall(r'<span class="tag l1">公司揭露</span>(.{0,12})', text)
+        self.assertTrue(spans)
+        for tail in spans:
+            self.assertTrue(tail.startswith("〈文件名與期間〉"), tail)
+
+    def test_kpi_notes_name_the_source(self):
+        for card in front_matter(D_TEMPLATE)["kpi"]:
+            with self.subTest(card["label"]):
+                self.assertIn("出處", str(card["note"]))
 
 
 class TestOutputSkillRouting(unittest.TestCase):

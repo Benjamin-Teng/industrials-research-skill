@@ -44,7 +44,7 @@ metadata:
 
 ### SEC 文件全文
 
-WebFetch 一次只讀到 10-K／10-Q 的前段，MD&A 與附註常被截斷，所以用指令下載全文，轉成純文字後分段讀或用 grep 找附註。美股本土公司申報 10-K，外國發行人（例如 ARM、台積電）申報 20-F，樣板取清單中最新的一份 10-K 或 20-F。
+WebFetch 一次只讀到 10-K／10-Q 的前段，MD&A 與附註常被截斷，所以用指令下載全文，轉成純文字後分段讀或用 grep 找附註。美股本土公司申報 10-K，外國發行人（例如 ARM）申報 20-F，樣板取清單中最新的一份 10-K 或 20-F。在台股上市、同時申報 20-F 的公司，主要來源仍是 MOPS。
 
 - User-Agent 的唯一來源是環境變數 `SEC_USER_AGENT`，指令直接讀它，值留在環境變數裡。格式依 SEC〈Accessing EDGAR Data〉的範例：`Sample Company Name AdminContact@<sample company domain>.com`。
 - PowerShell 樣板需要 PowerShell 7 以上：`-UserAgent` 預設會驗證 product token 格式，SEC 的聯絡字串通不過，錯誤訊息還會回顯完整的值，所以樣板加 `-SkipHeaderValidation`，而 Windows PowerShell 5.1 沒有這個參數。樣板開頭先檢查，不支援就停止，改用 bash 樣板（Git Bash 或 WSL）或下節的網頁工具退路。
@@ -151,3 +151,7 @@ $cik10 = '0001664703'            # 10 碼補零的 CIK（範例）
 - [ ] 已做公司自述與申報數據的對帳
 - [ ] 比較基準沒查到的，已標「比較基準未查」
 - [ ] 交接清單不含任何價格或估值數值
+- [ ] 格式層依 research-report-output 的 F-rules 自查（F-a 至 F-f）；數字密集的段落與表格儲存格已拆表或分行
+- [ ] TL;DR、KPI 卡與每個表格儲存格的數字都寫出文件名與期間，不只放層級標籤
+- [ ] `l3` 只做記錄與交叉比對，不支撐任何結論或基準假設；搜尋結果摘要最高標 `l2`，讀到原文才標 `l1`
+- [ ] market 為 TW 時，申報文件以 MOPS、年報與 TWSE／TPEx 公告為主；同一公司另有 20-F 時只作交叉核對
