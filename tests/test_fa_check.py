@@ -73,7 +73,7 @@ def test_counted_numbers(text: str, expected: int) -> None:
         "第 5.1 節",
         "資料層級 l1 l2 l3",
         "版本 v1.0",
-        "<span class=\"l2\" data-x=\"12\">標籤</span>",
+        '<span class="l2" data-x="12">標籤</span>',
         "網址 https://example.com/a/2024/123456",
         "腳註[12]",
     ],
@@ -216,3 +216,37 @@ def test_main_exit_codes(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> 
     assert out[-1] == "fa_check: 1 hit(s)"
 
     assert fa_check.main([str(tmp_path / "missing.md")]) == 2
+
+
+# --- 可見長度（是否跨行）------------------------------------------------------
+
+
+def test_long_single_sentence_four_numbers_yellow() -> None:
+    text = (
+        "- **應收與存貨絕對額擴大**：2026-06-30 應收帳款 494,992 仟元、存貨 670,624 仟元，"
+        "2025-12-31 分別為 230,652 與 473,101 仟元（合併資產負債表，`l1`）。"
+    )
+    assert fa_check.count_numbers(text) == 4
+    assert _levels(text) == ["YELLOW"]
+
+
+def test_short_single_sentence_four_numbers_info() -> None:
+    text = "營收 11.5% 毛利 12.5% 淨利 13.5% 現金 14.5%。"
+    assert fa_check.visible_length(text) <= fa_check.ONE_LINE_CHARS
+    assert _levels(text) == []
+
+
+def test_long_single_sentence_seven_numbers_orange() -> None:
+    text = "本季營收年增 11.5%、毛利率 12.5%、營業利益率 13.5%、淨利率 14.5%、存貨週轉 15.5 次、應收週轉 16.5 次、資本支出占比 17.5%。"
+    assert fa_check.count_numbers(text) == 7
+    assert fa_check.visible_length(text) > fa_check.ONE_LINE_CHARS
+    assert _levels(text) == ["ORANGE"]
+
+
+def test_visible_length_strips_markup() -> None:
+    assert (
+        fa_check.visible_length(
+            '**粗**`碼`<span class="x">字</span>[連結](http://a.b/c)'
+        )
+        == 5
+    )

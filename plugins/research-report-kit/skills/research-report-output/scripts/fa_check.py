@@ -91,17 +91,32 @@ class Hit:
     snippet: str
 
 
+# 一行 A4 PDF 約容納的字元數；未經校準的常數，用來近似「單位是否跨行」。
+ONE_LINE_CHARS = 50
+
+_MD_LINK = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
+_MD_MARKUP = re.compile(r"\*\*|__|`|<[^>]+>")
+
+
+def visible_length(text: str) -> int:
+    """去掉 Markdown 標記（粗體、反引號、HTML 標籤、連結網址）後的字元數。"""
+    text = _MD_LINK.sub(r"\1", text)
+    text = _MD_MARKUP.sub("", text)
+    return len("".join(text.split()))
+
+
 def _classify_paragraph(text: str) -> str:
     n = count_numbers(text)
     if n >= 10:
         return "RED"
     sentences = count_sentences(text)
+    multiline = visible_length(text) > ONE_LINE_CHARS
     if n >= 6:
-        if sentences <= 1 and not any(s in text for s in _DERIVATION):
+        if sentences <= 1 and not multiline and not any(s in text for s in _DERIVATION):
             return "INFO"
         return "ORANGE"
     if n >= 3:
-        return "YELLOW" if sentences >= 2 else "INFO"
+        return "YELLOW" if sentences >= 2 or multiline else "INFO"
     return "INFO"
 
 
