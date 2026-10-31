@@ -437,8 +437,17 @@ def test_separator_cell_count_must_match_header() -> None:
     assert all(h.level != "CELL" for h in fa_check.check_text(text))
 
 
-def test_blockquote_lazy_continuation_skipped() -> None:
-    assert _levels("> 引述\n" + _DENSE + "\n") == []
+@pytest.mark.parametrize("quote", ["> ## Risk summary", ">", "> ---"])
+def test_text_after_quote_line_counted(quote: str) -> None:
+    text = quote + "\n" + _FIVE_LINES
+    assert [(h.line, h.level, h.numbers) for h in fa_check.check_text(text)] == [
+        (2, "RED", 10)
+    ]
+
+
+def test_unprefixed_line_after_quoted_paragraph_counted() -> None:
+    # 刻意偏離 CommonMark 惰性續行：引述後沒有 > 的行另起段落計數
+    assert _levels("> 引述段落\n" + _DENSE + "\n") == ["RED"]
     assert _levels("> 引述\n\n" + _DENSE + "\n") == ["RED"]
 
 

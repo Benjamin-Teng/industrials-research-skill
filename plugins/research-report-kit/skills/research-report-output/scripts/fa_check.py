@@ -257,7 +257,6 @@ def check_text(text: str) -> list[Hit]:
 
     fence: tuple[str, int] | None = None  # 開啟中的 fence：(字元, 長度)
     in_table = False
-    in_quote = False  # blockquote 內：後續非區塊開頭的行是惰性續行，一併略過
     while i < len(lines):
         raw = lines[i]
         lineno = i + 1
@@ -282,29 +281,26 @@ def check_text(text: str) -> list[Hit]:
 
         kind = block_kind(raw)
         if kind is not None:
-            # 任何區塊開頭都結束進行中的表格、段落與 blockquote
+            # 任何區塊開頭都結束進行中的表格與段落
             flush()
             in_table = False
-            in_quote = False
             if kind == "fence":
                 opener = _FENCE.match(raw)
                 assert opener is not None
                 fence = (opener.group(1)[0], len(opener.group(1)))
-            elif kind == "quote":
-                in_quote = True
             elif kind == "list":
                 marker = _LIST_MARK.match(raw)
                 assert marker is not None
                 unit = (lineno, [raw[marker.end() :]], "list")
             elif kind == "html":
                 unit = (lineno, [stripped], "para")  # 標籤由 _EXCLUDE 去除，文字照計
-            # blank、thematic、heading：只當邊界，本行不計
+            # blank、thematic、heading、quote：只當邊界，本行不計。
+            # 刻意偏離 CommonMark：不做 blockquote 惰性續行，`>` 行之後沒有 `>` 的行
+            # 一律另起段落計數——檢查器寧可多報，也不要吞掉引述後的正文。
             continue
 
         if in_table:
             check_row(lineno, stripped)  # 無管線的缺欄資料列也留在表內
-            continue
-        if in_quote:
             continue
         if i < len(lines) and _table_starts(raw, lines[i]):
             flush()
