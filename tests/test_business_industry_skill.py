@@ -697,6 +697,36 @@ class TestDTemplate(unittest.TestCase):
             self.assertIn("選用", line)
 
 
+NL = chr(10)
+SWOT_NUMBER_RULE = "一格一個數字；多個數字以 `<br>` 分行，每行附出處"
+
+
+def swot_number_cell_problems(text: str, expected_tables: int) -> list[str]:
+    """逐張解析 SWOT 表（表頭含「數字＋出處＋期間」欄），檢查 S／W／O／T 每列該欄都含分行與出處指示。"""
+    lines = text.splitlines()
+    problems: list[str] = []
+    tables = 0
+    for n, ln in enumerate(lines):
+        header = table_cells(ln) if ln.startswith("|") else []
+        if "數字＋出處＋期間" not in header or header[0] != "象限":
+            continue
+        tables += 1
+        col = header.index("數字＋出處＋期間")
+        seen = []
+        for row in lines[n + 2:]:
+            if not row.startswith("|"):
+                break
+            cells = table_cells(row)
+            seen.append(cells[0])
+            if len(cells) != len(header) or SWOT_NUMBER_RULE not in cells[col]:
+                problems.append(f"表 {tables} 的 {cells[0]} 列缺數字欄指示")
+        if seen != ["S", "W", "O", "T"]:
+            problems.append(f"表 {tables} 的列為 {seen}")
+    if tables != expected_tables:
+        problems.append(f"SWOT 表數 {tables} != {expected_tables}")
+    return problems
+
+
 class TestDTemplateFormatAndSourcing(unittest.TestCase):
     """D 骨架對齊 F-rules 與數字出處：TL;DR 實績表、表格結論行、單格單數字、層級標籤後接文件名。"""
 
@@ -744,7 +774,16 @@ class TestDTemplateFormatAndSourcing(unittest.TestCase):
 
     def test_swot_number_column_demands_one_number_per_cell(self):
         text = self.body()
-        self.assertIn("一格一個數字；多個數字以 `<br>` 分行，每行附出處", text)
+        self.assertEqual(swot_number_cell_problems(text, expected_tables=2), [])
+        # 變異：清空任一張表任一列的指示都必須被抓到
+        lines = text.splitlines()
+        rows = [i for i, ln in enumerate(lines) if ln.startswith(("| S |", "| W |", "| O |", "| T |"))]
+        self.assertEqual(len(rows), 8)
+        for i in rows:
+            with self.subTest(row=i):
+                mutated = lines.copy()
+                mutated[i] = mutated[i].replace(SWOT_NUMBER_RULE, "")
+                self.assertTrue(swot_number_cell_problems(NL.join(mutated), expected_tables=2))
 
     def test_related_party_split_is_a_table(self):
         idx = self.table_start("| 關係人 | 營收（期間） | 占比 | 剔除後成長 | 出處文件 |")
