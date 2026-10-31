@@ -271,10 +271,28 @@ class TestMethodSingleSource(unittest.TestCase):
             r"(?m)^- \*\*OB-1\*\* 開放標準削弱指令集護城河",
         )
 
-    def test_observation_zone_lists_all_eight_items(self) -> None:
+    def test_observation_zone_lists_all_twelve_items(self) -> None:
         body = section(read(METHOD), "### 6.3 觀察區")
         ids = re.findall(r"(?m)^- \*\*(OB-\d+)\*\*", body)
-        self.assertEqual(ids, [f"OB-{n}" for n in range(1, 9)])
+        # OB-2 已升為 R3.6，編號不重排
+        self.assertEqual(ids, ["OB-1"] + [f"OB-{n}" for n in range(3, 14)])
+
+    def test_fix_round1_rule_amendments_are_in_method(self) -> None:
+        text = read(METHOD)
+        for needle in (
+            "並標明屬循環或結構。時間窗寫出起點、終點與目前狀態；",
+            "未發生的才列為觀察指標。",
+            "時間窗終點與狀態為 MCD、樣本外案例（匿名）",
+            "並列含 SBC 與不含 SBC 兩種口徑。列在營收內的不可重複項目",
+            "營收內不可重複項目與營收減項為 BE、樣本外案例（匿名）",
+            "資料不足時依下表降級，各環節的利潤比較取不到同業基準時一樣走降級",
+            "「比較基準未查」只用於 S／W 判定（R4.4），不取代降級。",
+            "- **R3.6** 單位經濟之外，並列應收與存貨的天數",
+            "（證據：高明鐵、樣本外案例（匿名）；文獻：無）",
+        ):
+            with self.subTest(needle[:24]):
+                self.assertIn(needle, text)
+        self.assertNotIn("**OB-2**", text)
 
     def test_governance_sets_its_own_cadence(self) -> None:
         self.assertIn("每季至多一代", section(read(METHOD), "### 6.5 升版節奏"))
@@ -364,7 +382,7 @@ ARCHETYPES = (
 APPROVED_RULES = dict(zip(STEP_HEADINGS, (
     ("R1.1", "R1.2", "R1.3"),
     ("R2.1", "R2.2", "R2.3", "R2.4", "R2.5"),
-    ("R3.1", "R3.2", "R3.3", "R3.4", "R3.5"),
+    ("R3.1", "R3.2", "R3.3", "R3.4", "R3.5", "R3.6"),
     ("R4.1", "R4.3", "R4.4", "R4.5", "R4.6", "R4.8"),
     ("R5.1", "R5.2", "R5.3", "R5.4", "R5.6", "R5.8"),
     ("R6.1", "R6.2", "R6.3"),
@@ -372,7 +390,7 @@ APPROVED_RULES = dict(zip(STEP_HEADINGS, (
     ("R8.1", "R8.2", "R8.3"),
 ), strict=True))
 #: 判定為觀察區或範圍說明的空號，不得以規則行出現
-RESERVED_GAPS = ("R3.6", "R4.2", "R4.7", "R5.5", "R5.7", "R6.4", "R8.4")
+RESERVED_GAPS = ("R4.2", "R4.7", "R5.5", "R5.7", "R6.4", "R8.4")
 #: 凡以 `- **R<n>.<n>**` 或 `- **RD.<n>**` 開頭的行都是規則行；ID 之後的內容另由 RULE_FORMAT 驗
 RULE_LINE = re.compile(r"^- \*\*((?:R\d|RD)\.\d+)\*\*(.*)$", re.MULTILINE)
 #: ID 之後恰好一個半形空白、非空正文，再以完整的證據欄結尾
@@ -686,8 +704,9 @@ class TestDTemplate(unittest.TestCase):
         text = self.body()
         refs = [ln for ln in text.splitlines() if "參考做法見" in ln]
         self.assertTrue(refs)
-        for n in range(1, 9):
+        for n in (1, 3, 4, 5, 6, 7, 8):  # OB-2 已升為 R3.6（必填）
             self.assertIn(f"方法檔參考做法見 6.3 OB-{n}", text)
+        self.assertNotIn("6.3 OB-2", text)
         for line in refs:
             self.assertIn("方法檔參考做法見 6.3 OB-", line)
             self.assertIn("（選填，", line)
@@ -790,13 +809,15 @@ class TestDTemplateFormatAndSourcing(unittest.TestCase):
         self.assertTrue(self.prev_nonblank(idx).startswith("> **〈表格結論"))
         self.assertIn("無關係人交易", section(self.body(), "## 三、營收來源與商業模式"))
 
-    def test_working_capital_is_an_optional_table_citing_ob2(self):
+    def test_working_capital_is_a_required_table_citing_r36(self):
         idx = self.table_start("| 指標 | 本期（期間） | 基期（期間） | 出處文件 |")
         self.assertTrue(self.prev_nonblank(idx).startswith("> **〈表格結論"))
         lines = self.lines()
         label = next(ln for ln in lines if ln.startswith("**營運資金**"))
-        self.assertIn("選填", label)
-        self.assertIn("6.3 OB-2", label)
+        self.assertIn("必填", label)
+        self.assertNotIn("選填", label)
+        self.assertIn("R3.6", label)
+        self.assertNotIn("OB-2", label)
         rows = "\n".join(lines[idx:idx + 8])
         for metric in ("應收天數", "存貨天數", "營業現金流", "淨利"):
             self.assertIn(metric, rows)
