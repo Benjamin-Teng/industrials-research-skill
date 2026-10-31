@@ -271,21 +271,21 @@ class TestMethodSingleSource(unittest.TestCase):
             r"(?m)^- \*\*OB-1\*\* 開放標準削弱指令集護城河",
         )
 
-    def test_observation_zone_lists_all_thirteen_items(self) -> None:
+    def test_observation_zone_lists_all_nine_items(self) -> None:
         body = section(read(METHOD), "### 6.3 觀察區")
         ids = re.findall(r"(?m)^- \*\*(OB-\d+)\*\*", body)
         # OB-2 已升為 R3.6，編號不重排
-        self.assertEqual(ids, ["OB-1"] + [f"OB-{n}" for n in range(3, 15)])
+        self.assertEqual(ids, ["OB-1"] + [f"OB-{n}" for n in range(3, 11)])
 
     def test_fix_round1_rule_amendments_are_in_method(self) -> None:
         text = read(METHOD)
         for needle in (
             "並標明屬循環或結構。時間窗寫出起點、終點與目前狀態。",
             "未發生的才列為觀察指標。",
-            "- **OB-14** 分階段生效事項的排程",
+            "- **OB-10** 跨章節的期間與口徑一致",
             "時間窗終點與狀態為 MCD、樣本外案例（匿名）",
-            "並列含 SBC 與不含 SBC 兩種口徑。列在營收內的不可重複項目",
-            "營收內不可重複項目與營收減項為 BE、樣本外案例（匿名）",
+            "不可重複的項目不論列在財報哪一行，都從本業與底層成長中分離後，再判斷成長品質。",
+            "不在營業外的不可重複項目為 BE、樣本外案例（匿名）",
             "資料不足時依下表降級，各環節的利潤比較取不到同業基準時一樣走降級",
             "「比較基準未查」只用於 S／W 判定（R4.4），不取代降級。",
             "- **R3.6** 單位經濟之外，並列應收與存貨的天數、收付款條件，以及營業現金流與淨利的對照（證據",
