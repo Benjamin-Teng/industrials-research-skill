@@ -250,3 +250,59 @@ def test_visible_length_strips_markup() -> None:
         )
         == 5
     )
+
+
+# --- Codex 第 2 輪回歸 ----------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "NT$2025 萬 US$1999M 2030 億",
+        "NT$2,025 萬 US$1,999M 2,030 億",
+        "2025％ 1999％ 2030％",
+        "2025% 1999% 2030%",
+        "2025 元 1999 倍 2030x",
+    ],
+)
+def test_year_like_values_with_currency_or_unit_counted(text: str) -> None:
+    assert fa_check.count_numbers(text) == 3
+
+
+def test_standalone_years_still_excluded() -> None:
+    assert fa_check.count_numbers("2025, 2026 與 2030 年") == 0
+    assert fa_check.count_numbers("2025 年營收") == 0
+
+
+def test_mismatched_fences_do_not_close() -> None:
+    text = "```text\n~~~\n```\n\n" + _DENSE + "\n"
+    assert _levels(text) == ["RED"]
+    still_open = "```text\n~~~\n" + _DENSE + "\n"
+    assert _levels(still_open) == []
+
+
+def test_shorter_inner_fence_does_not_close() -> None:
+    text = "````md\n```\n" + _DENSE + "\n```\n````\n\n" + _DENSE + "\n"
+    assert [h.line for h in fa_check.check_text(text)] == [7]
+
+
+def test_cell_leading_decimal_counted() -> None:
+    assert _levels(_HEAD + "| 1 | 結論 | 12.5 13.5 14.5 |\n") == ["CELL"]
+    assert _levels(_HEAD + "| 1 | 結論 | 5.1 12.5 13.5 |\n") == ["CELL"]
+
+
+def test_paragraph_leading_decimals_counted() -> None:
+    assert fa_check.count_numbers("12.5 13.5 14.5") == 3
+
+
+def test_pipeless_table_matches_piped_table() -> None:
+    piped = "| 指標 | 值 |\n|---|---|\n| 成長 | 11% 12% 13% |\n"
+    bare = "指標 | 值\n--- | ---\n成長 | 11% 12% 13%\n"
+    assert _levels(bare) == _levels(piped) == ["CELL"]
+    assert [h.line for h in fa_check.check_text(bare)] == [3]
+    assert _levels("指標 | 值\n:-- | --:\n成長 | 11% 12%\n") == []
+
+
+def test_pipeless_table_header_skipped_and_ends_at_blank() -> None:
+    text = "1Q 11% 12% 13% | b\n--- | ---\nx | y\n\n" + _DENSE + "\n"
+    assert _levels(text) == ["RED"]

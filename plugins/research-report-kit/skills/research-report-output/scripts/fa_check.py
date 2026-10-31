@@ -52,9 +52,14 @@ _EXCLUDE = [
     re.compile(r"(?<![A-Za-z0-9])l[123](?![A-Za-z0-9])"),
     re.compile(r"(?<![A-Za-z0-9])v\d+(?:\.\d+)*"),
     # 單獨的西元年
-    re.compile(r"(?<![\d,.\-/])(?:19|20)\d{2}(?![\d,%]|\.\d|[-/]\d)"),
+    # （前面有幣別符號，或後面接數字、千分位、小數、%、％、金額單位時，是數值不是年份）
+    re.compile(
+        r"(?<![\d,.\-/$])(?<!\d,)(?:19|20)\d{2}"
+        r"(?!\d|,\d|\.\d|[-/]\d|\s?(?:[%％]|萬|億|仟|千|百|元|倍|x\b|[KMB](?![A-Za-z])))"
+    ),
 ]
-_LEADING_SECTION = re.compile(r"^\s*\d+(?:\.\d+)+(?=\s|$)")
+# 段落行首的標題式編號（5.1 營運概況）；後面必須接文字，「12.5 13.5」不算
+_LEADING_SECTION = re.compile(r"^\s*\d+(?:\.\d+)+(?=\s+[^\d\s+\-−])")
 
 _NUM = r"\d+(?:,\d{3})*(?:\.\d+)?"
 _SIGN = r"[+\-−]?"
@@ -64,16 +69,23 @@ _SENTENCE_SPLIT = re.compile(r"[。！？]|[.!?](?=\s|$)")
 _DERIVATION = ("→", "＝", "=")
 
 _LIST_MARK = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+(?:\[[ xX]\]\s+)?")
-_FENCE = re.compile(r"^\s*(```|~~~)")
+_FENCE = re.compile(r"^\s{0,3}(`{3,}|~{3,})")
+_PIPE = re.compile(r"(?<!\\)\|")
 _SEPARATOR_CELL = re.compile(r"^:?-{1,}:?$")
 
 
-def count_numbers(text: str, *, serial_cell: bool = False) -> int:
-    """回傳 text 中計入 F-a 的數字個數。serial_cell=True 時純序號不計。"""
+def count_numbers(
+    text: str, *, serial_cell: bool = False, in_cell: bool = False
+) -> int:
+    """回傳 text 中計入 F-a 的數字個數。
+
+    serial_cell=True 時純序號不計；表格儲存格（in_cell 或 serial_cell）不套用行首章節編號排除。
+    """
     stripped = text.strip()
     if serial_cell and re.fullmatch(r"#?\d{1,3}", stripped):
         return 0
-    text = _LEADING_SECTION.sub(" ", text)
+    if not (in_cell or serial_cell):
+        text = _LEADING_SECTION.sub(" ", text)
     for pattern in _EXCLUDE:
         text = pattern.sub(" ", text)
     return len(_NUMBER.findall(text))
@@ -126,7 +138,9 @@ def _snippet(text: str) -> str:
 
 def _blank_comments(text: str) -> str:
     """把 HTML 註解換成同行數的空行，保留行號。"""
-    return re.sub(r"<!--.*?-->", lambda m: "\n" * m.group().count("\n"), text, flags=re.DOTALL)
+    return re.sub(
+        r"<!--.*?-->", lambda m: "\n" * m.group().count("\n"), text, flags=re.DOTALL
+    )
 
 
 def _split_cells(line: str) -> list[str]:
@@ -138,7 +152,9 @@ def _split_cells(line: str) -> list[str]:
 
 
 def _is_separator(cells: list[str]) -> bool:
-    return bool(cells) and all(_SEPARATOR_CELL.match(c) for c in cells if c) and any(cells)
+    return (
+        bool(cells) and all(_SEPARATOR_CELL.match(c) for c in cells if c) and any(cells)
+    )
 
 
 def check_text(text: str) -> list[Hit]:
@@ -154,7 +170,9 @@ def check_text(text: str) -> list[Hit]:
             joined = " ".join(unit[1])
             level = _classify_paragraph(joined)
             if level != "INFO":
-                hits.append(Hit(unit[0], level, count_numbers(joined), _snippet(joined)))
+                hits.append(
+                    Hit(unit[0], level, count_numbers(joined), _snippet(joined))
+                )
         unit = None
 
     i = 0
@@ -164,41 +182,48 @@ def check_text(text: str) -> list[Hit]:
                 i = j + 1
                 break
 
-    in_fence = False
-    table_rows_seen = 0  # 0 = 不在表格內；1 = 剛過表頭；2 = 已過分隔列
+    fence: tuple[str, int] | None = None  # 開啟中的 fence：(字元, 長度)
+    in_table = False
     while i < len(lines):
         raw = lines[i]
         lineno = i + 1
         i += 1
         stripped = raw.strip()
 
-        if _FENCE.match(raw):
-            flush()
-            in_fence = not in_fence
+        if fence is not None:
+            # 結束行：同字元、長度不短於開啟行、且只有 fence 字元
+            if stripped and set(stripped) == {fence[0]} and len(stripped) >= fence[1]:
+                fence = None
             continue
-        if in_fence:
+        opener = _FENCE.match(raw)
+        if opener:
+            flush()
+            in_table = False
+            fence = (opener.group(1)[0], len(opener.group(1)))
             continue
         if not stripped:
             flush()
-            table_rows_seen = 0
+            in_table = False
             continue
-        if stripped.startswith("|"):
-            flush()
-            cells = _split_cells(stripped)
-            if table_rows_seen == 0:
-                table_rows_seen = 1  # 表頭
+
+        has_pipe = bool(_PIPE.search(stripped))
+        if not in_table and has_pipe and i < len(lines):
+            nxt = lines[i].strip()
+            if _PIPE.search(nxt) and _is_separator(_split_cells(nxt)):
+                flush()
+                in_table = True  # 本行是表頭，下一行是分隔列，兩者都略過
+                i += 1
                 continue
-            if table_rows_seen == 1:
-                table_rows_seen = 2
-                if _is_separator(cells):
-                    continue
-            for col, cell in enumerate(cells):
+        if in_table and not has_pipe:
+            in_table = False
+        if in_table or stripped.startswith("|"):
+            flush()
+            for col, cell in enumerate(_split_cells(stripped)):
                 for part in re.split(r"<br\s*/?>", cell, flags=re.IGNORECASE):
-                    n = count_numbers(part, serial_cell=(col == 0))
+                    n = count_numbers(part, serial_cell=(col == 0), in_cell=True)
                     if n >= 3:
                         hits.append(Hit(lineno, "CELL", n, _snippet(part)))
             continue
-        table_rows_seen = 0
         if re.match(r"^#{1,6}(\s|$)", stripped) or stripped.startswith(">"):
             flush()
             continue
@@ -220,8 +245,9 @@ def check_text(text: str) -> list[Hit]:
 
 
 def main(argv: list[str]) -> int:
-    if isinstance(sys.stdout, io.TextIOWrapper):
-        sys.stdout.reconfigure(encoding="utf-8")
+    for stream in (sys.stdout, sys.stderr):
+        if isinstance(stream, io.TextIOWrapper):
+            stream.reconfigure(encoding="utf-8")
     if len(argv) != 1:
         print("用法: python3 fa_check.py <報告.md>", file=sys.stderr)
         return 2
