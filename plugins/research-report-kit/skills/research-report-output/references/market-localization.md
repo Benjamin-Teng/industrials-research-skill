@@ -23,7 +23,7 @@
 | 幣別與會計口徑 | NT$；IFRS | US$；**GAAP vs non-GAAP（core）須指明引用口徑**；公司自定義 core 營收與 GAAP 方向不一致時，跨季比較須確認同一口徑 |
 | 信用評等 | TCRI／中華信評 | S&P／Moody's／Fitch＋展望（中小型股常無評等，須寫明「未取得評等」） |
 | 監控儀表板資料源 | MOPS、TWSE OpenAPI、行情 API | SEC EDGAR、財報彙整站 API、行情 API、第三方效能／價格量測 API |
-| 短線催化劑主力 | 月營收開獎（每月 10 日） | 財報季＋高頻報價＋原廠 keynote／Investor Day＋**鎖定期解禁日** |
+| 短線催化劑主力 | 月營收公布（每月 10 日） | 財報季＋高頻報價＋原廠 keynote／Investor Day＋**鎖定期解禁日** |
 
 SEC 全文的程式化下載與 User-Agent 設定見 customize-your-framework.md 第六節；指令樣板在 business-industry-analysis 的 SKILL.md。
 
@@ -34,7 +34,7 @@ SEC 全文的程式化下載與 User-Agent 設定見 customize-your-framework.md
 不是換資料源就能解決，須在報告內明示處理方式。
 
 ::: caveat
-**一、分部揭露顆粒度不同 → SOTP 拆解難度不同。** 美股 10-K 的 segment 揭露通常給到分部營收、營業利益與資產；台股 IFRS 8 部門資訊常只有兩、三段且口徑粗。**台股標的做 SOTP 時，若分部獲利需自行推估，必須在 Caveats 明寫推估方法與誤差來源**，並把該分部的倍數往保守端取。
+**一、分部揭露揭露細緻度不同 → SOTP 拆解難度不同。** 美股 10-K 的 segment 揭露通常給到分部營收、營業利益與資產；台股 IFRS 8 部門資訊常只有兩、三段且口徑粗。**台股標的做 SOTP 時，若分部獲利需自行推估，必須在 Caveats 明寫推估方法與誤差來源**，並把該分部的倍數往保守端取。
 
 **美股亦有反例**：宣告 `one reportable segment` 的公司可能仍提供**產品線毛利率**。這**不是**分部獲利揭露——SOTP 需要分部**營業利益**，營業費用未分攤即等同捏造，應判為「單一事業體」。
 

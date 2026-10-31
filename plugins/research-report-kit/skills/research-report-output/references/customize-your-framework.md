@@ -141,4 +141,4 @@ SEC 要求程式化下載時在請求標頭宣告 User-Agent。指令樣板在 `
    - bash：`[ -n "$SEC_USER_AGENT" ] && echo set || echo missing`
 6. **各宿主的設定位置**：
    - Claude Code：寫在使用者層級、不進版控的 settings 檔，路徑是 `~/.claude/settings.json`（Windows 為 `%USERPROFILE%\.claude\settings.json`，依 Claude Code 官方 settings 文件）；不要寫進專案共用的 `.claude/settings.json`。格式：`{"env": {"SEC_USER_AGENT": "<名稱與聯絡信箱>"}}`。
-   - Codex：預設是否把 SEC_USER_AGENT 傳給子程序待查證；shell_environment_policy 的子鍵 inherit、set、ignore_default_excludes 依官方設定參考；其餘子鍵待查證。
+   - Codex：預設是否把 SEC_USER_AGENT 傳給子行程待查證；shell_environment_policy 的子鍵 inherit、set、ignore_default_excludes 依官方設定參考；其餘子鍵待查證。

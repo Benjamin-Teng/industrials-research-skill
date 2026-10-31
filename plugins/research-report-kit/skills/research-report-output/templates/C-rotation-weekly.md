@@ -47,7 +47,7 @@ kpi:
 
 > 欄數上限 7 欄，拆兩張表；兩表以「問題#」對應同一筆記錄。
 
-| 日期 | 問題# | `thesis_id` | 層級 | 來源描述（不記個資） | **推定原始消息源** | 可信度 |
+| 日期 | 問題# | `thesis_id` | 層級 | 來源描述（不記個資） | **推定原始消息來源** | 可信度 |
 |---|---|---|---|---|---|---|
 | | | | L2 | | | B |
 
@@ -56,7 +56,7 @@ kpi:
 | | | | |
 
 ::: note
-**升級規則**：只有 A、B 級可作為行動依據；C 級累積兩個**不同消息源**後升為 B。**獨立性 ＝ 推定原始消息源不同**——兩家媒體引用同一份通路調查只算一源。**B 級不自動升格為財務基準事實**——仍是方向性推論，升重倉仍須依 `equity-valuation-discipline/references/expectations-and-decisions.md` 第11節決策條件另行判定。合規紅線：不索取、不使用未公開重大消息（見 `product-cycle-rotation` 的 channel-check SOP 第 0 節）。
+**升級規則**：只有 A、B 級可作為行動依據；C 級累積兩個**不同消息來源**後升為 B。**獨立性 ＝ 推定原始消息來源不同**——兩家媒體引用同一份通路調查只算一源。**B 級不自動升格為財務基準事實**——仍是方向性推論，升重倉仍須依 `equity-valuation-discipline/references/expectations-and-decisions.md` 第11節決策條件另行判定。合規紅線：不索取、不使用未公開重大消息（見 `product-cycle-rotation` 的 channel-check SOP 第 0 節）。
 :::
 
 ## 四、Product Cycle 時間軸定位
