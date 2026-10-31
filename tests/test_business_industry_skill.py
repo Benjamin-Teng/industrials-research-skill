@@ -271,23 +271,24 @@ class TestMethodSingleSource(unittest.TestCase):
             r"(?m)^- \*\*OB-1\*\* 開放標準削弱指令集護城河",
         )
 
-    def test_observation_zone_lists_all_twelve_items(self) -> None:
+    def test_observation_zone_lists_all_thirteen_items(self) -> None:
         body = section(read(METHOD), "### 6.3 觀察區")
         ids = re.findall(r"(?m)^- \*\*(OB-\d+)\*\*", body)
         # OB-2 已升為 R3.6，編號不重排
-        self.assertEqual(ids, ["OB-1"] + [f"OB-{n}" for n in range(3, 14)])
+        self.assertEqual(ids, ["OB-1"] + [f"OB-{n}" for n in range(3, 15)])
 
     def test_fix_round1_rule_amendments_are_in_method(self) -> None:
         text = read(METHOD)
         for needle in (
-            "並標明屬循環或結構。時間窗寫出起點、終點與目前狀態；",
+            "並標明屬循環或結構。時間窗寫出起點、終點與目前狀態。",
             "未發生的才列為觀察指標。",
+            "- **OB-14** 分階段生效事項的排程",
             "時間窗終點與狀態為 MCD、樣本外案例（匿名）",
             "並列含 SBC 與不含 SBC 兩種口徑。列在營收內的不可重複項目",
             "營收內不可重複項目與營收減項為 BE、樣本外案例（匿名）",
             "資料不足時依下表降級，各環節的利潤比較取不到同業基準時一樣走降級",
             "「比較基準未查」只用於 S／W 判定（R4.4），不取代降級。",
-            "- **R3.6** 單位經濟之外，並列應收與存貨的天數",
+            "- **R3.6** 單位經濟之外，並列應收與存貨的天數、收付款條件，以及營業現金流與淨利的對照（證據",
             "（證據：高明鐵、樣本外案例（匿名）；文獻：無）",
         ):
             with self.subTest(needle[:24]):
@@ -717,7 +718,7 @@ class TestDTemplate(unittest.TestCase):
 
 
 NL = chr(10)
-SWOT_NUMBER_RULE = "一格一個數字；多個數字以 `<br>` 分行，每行附出處"
+SWOT_NUMBER_RULE = "一行一個數字；多個數字以 `<br>` 分行，每行附出處"
 
 
 def swot_number_cell_problems(text: str, expected_tables: int) -> list[str]:
@@ -833,6 +834,7 @@ class TestDTemplateFormatAndSourcing(unittest.TestCase):
         for card in front_matter(D_TEMPLATE)["kpi"]:
             with self.subTest(card["label"]):
                 self.assertIn("出處", str(card["note"]))
+                self.assertIn("期間", str(card["note"]))
 
 
 class TestOutputSkillRouting(unittest.TestCase):
