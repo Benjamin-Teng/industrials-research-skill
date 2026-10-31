@@ -122,7 +122,7 @@ def build_toc(body: str):
 
     def repl(m):
         lvl, attrs, inner = m.group(1), m.group(2), m.group(3)
-        text = re.sub(r"<[^>]+>", "", inner).strip()
+        text = html.unescape(re.sub(r"<[^>]+>", "", inner)).strip()
         idm = re.search(r'id="([^"]+)"', attrs)
         hid = idm.group(1) if idm else slugify(text, used)
         if not idm:
