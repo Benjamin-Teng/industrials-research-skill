@@ -54,7 +54,7 @@ _EXCLUDE = [
     # 單獨的西元年
     # （前面有幣別符號，或後面接數字、千分位、小數、%、％、金額單位時，是數值不是年份）
     re.compile(
-        r"(?<![\d,.\-/$])(?<!\d,)(?:19|20)\d{2}"
+        r"(?<![\d,.\-/$¥€])(?<![$¥€]\s)(?<!\d,)(?:19|20)\d{2}"
         r"(?!\d|,\d|\.\d|[-/]\d|\s?(?:[%％]|萬|億|仟|千|百|元|倍|x\b|[KMB](?![A-Za-z])))"
     ),
 ]
@@ -69,7 +69,8 @@ _SENTENCE_SPLIT = re.compile(r"[。！？]|[.!?](?=\s|$)")
 _DERIVATION = ("→", "＝", "=")
 
 _LIST_MARK = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+(?:\[[ xX]\]\s+)?")
-_FENCE = re.compile(r"^\s{0,3}(`{3,}|~{3,})")
+_FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+_BLOCK_START = re.compile(r"^\s*(?:#{1,6}(?:\s|$)|>|(?:[-*+]|\d+[.)])\s)")
 _PIPE = re.compile(r"(?<!\\)\|")
 _SEPARATOR_CELL = re.compile(r"^:?-{1,}:?$")
 
@@ -192,7 +193,12 @@ def check_text(text: str) -> list[Hit]:
 
         if fence is not None:
             # 結束行：同字元、長度不短於開啟行、且只有 fence 字元
-            if stripped and set(stripped) == {fence[0]} and len(stripped) >= fence[1]:
+            closer = _FENCE.match(raw)
+            if (
+                closer
+                and set(raw.strip()) == {fence[0]}
+                and len(raw.strip()) >= fence[1]
+            ):
                 fence = None
             continue
         opener = _FENCE.match(raw)
@@ -214,7 +220,7 @@ def check_text(text: str) -> list[Hit]:
                 in_table = True  # 本行是表頭，下一行是分隔列，兩者都略過
                 i += 1
                 continue
-        if in_table and not has_pipe:
+        if in_table and not has_pipe and _BLOCK_START.match(raw):
             in_table = False
         if in_table or stripped.startswith("|"):
             flush()

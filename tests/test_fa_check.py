@@ -306,3 +306,42 @@ def test_pipeless_table_matches_piped_table() -> None:
 def test_pipeless_table_header_skipped_and_ends_at_blank() -> None:
     text = "1Q 11% 12% 13% | b\n--- | ---\nx | y\n\n" + _DENSE + "\n"
     assert _levels(text) == ["RED"]
+
+
+# --- Codex 第 3 輪回歸 ----------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["NT$ 2025 US$ 1999 NT$ 2030", "US$ 2,025 ¥ 1999 € 2030", "$ 2025 $ 1999 $ 2030"],
+)
+def test_currency_with_space_counted(text: str) -> None:
+    assert fa_check.count_numbers(text) == 3
+
+
+def test_currency_with_space_in_cell_hits() -> None:
+    assert _levels(_HEAD + "| 1 | 結論 | NT$ 2025 US$ 1999 NT$ 2030 |\n") == ["CELL"]
+
+
+def test_indented_fake_closing_fence_does_not_close() -> None:
+    text = "```\n    ```\n" + _DENSE + "\n```\n\n" + _DENSE + "\n"
+    assert [h.line for h in fa_check.check_text(text)] == [6]
+
+
+def test_fence_indent_up_to_three_closes() -> None:
+    text = "   ```\nx\n   ```\n\n" + _DENSE + "\n"
+    assert [h.line for h in fa_check.check_text(text)] == [5]
+
+
+def test_four_space_indented_fence_is_not_opener() -> None:
+    assert _levels("    ```\n\n" + _DENSE + "\n") == ["RED"]
+
+
+def test_pipeless_short_row_stays_in_table() -> None:
+    hits = fa_check.check_text("a | b\n--- | ---\n11% 12% 13%\n")
+    assert [(h.line, h.level) for h in hits] == [(3, "CELL")]
+
+
+def test_table_ends_at_block_structure() -> None:
+    text = "a | b\n--- | ---\nx | y\n# 標題\n" + _DENSE + "\n"
+    assert _levels(text) == ["RED"]
