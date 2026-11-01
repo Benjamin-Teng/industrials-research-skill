@@ -211,16 +211,24 @@ FOOTER_TPL = """
 </div>"""
 
 
-def render_pdf(html_str: str, out: Path, footer: str | None):
+def render_pdf(html_str: str, out: Path, footer: str | None, base_dir: Path):
+    """把 HTML 渲染成 PDF。
+
+    中間 HTML 寫在 base_dir（報告所在目錄）：瀏覽器以「被載入檔案所在目錄」解析
+    相對路徑，寫到系統暫存目錄的話，報告裡 `![](fig.png)` 這類相對引用會變破圖，
+    而且不丟例外。不用 `<base href>` 是因為它會讓 `#fn1` 等頁內錨點改指向別的文件。
+    """
     from playwright.sync_api import sync_playwright
-    with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, encoding="utf-8") as f:
+    with tempfile.NamedTemporaryFile("w", suffix=".html", prefix=".md2pdf-", dir=base_dir,
+                                     delete=False, encoding="utf-8") as f:
         f.write(html_str)
-        tmp = f.name
+        tmp = Path(f.name)
     try:
         with sync_playwright() as pw:
             browser = pw.chromium.launch()
             page = browser.new_page()
-            page.goto(f"file://{tmp}", wait_until="networkidle")
+            # as_uri() 處理 Windows 磁碟代號與路徑中的空白、中文
+            page.goto(tmp.as_uri(), wait_until="networkidle")
             page.emulate_media(media="print")
             page.pdf(
                 path=str(out), format="A4", print_background=True,
@@ -295,14 +303,14 @@ def main():
     if front_parts:
         f_html = wrap(css, "".join(front_parts))
         f_pdf = tmpdir / "front.pdf"
-        render_pdf(f_html, f_pdf, None)
+        render_pdf(f_html, f_pdf, None, src.parent)
         pdfs.append(f_pdf)
         if a.keep_html:
             (src.parent / (src.stem + ".front.html")).write_text(f_html, encoding="utf-8")
 
     b_html = wrap(css, body)
     b_pdf = tmpdir / "body.pdf"
-    render_pdf(b_html, b_pdf, footer)
+    render_pdf(b_html, b_pdf, footer, src.parent)
     pdfs.append(b_pdf)
     if a.keep_html:
         (src.parent / (src.stem + ".body.html")).write_text(b_html, encoding="utf-8")

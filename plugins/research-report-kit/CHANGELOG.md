@@ -1,5 +1,15 @@
 # Changelog
 
+## 未發布
+
+### 修正
+
+- **`md2pdf.py` 以相對路徑引用的圖片不再變破圖**：中間 HTML 原本寫在系統暫存目錄，瀏覽器以那裡為基準解析
+  `![說明](fig.png)`，PDF 只嵌入破圖圖示且不報錯；`output-spec.md` 4.5 要求的「圖輸出到報告同目錄、
+  用相對路徑引用」因此無法運作。現在中間 HTML 寫在報告同目錄（隱藏檔名，產檔後刪除），並以正確編碼的
+  檔案 URI 載入，報告路徑含空白或中文也能用。`tests/test_md2pdf.py` 新增端到端測試，以 PDF 內嵌圖片的
+  像素尺寸驗證（環境沒有 pandoc 或 playwright 時 skip）。
+
 ## v1.6.0 — 2026-11-01
 
 新增**企業與產業分析（Layer 1）**：第五個 skill `business-industry-analysis`，回答「這家公司靠什麼賺錢、
