@@ -545,3 +545,14 @@ def test_numeric_markdown_links_counted_in_cell() -> None:
 )
 def test_url_and_link_handling(text: str, expected: int) -> None:
     assert fa_check.count_numbers(text) == expected
+
+
+def test_link_text_at_paragraph_start_not_section_number() -> None:
+    text = "[12.5](https://example.com/revenue) billion, 20, 30, 40, 50, 60, 70, 80, 90, 100"
+    assert fa_check.count_numbers(text) == 10
+    assert _levels(text) == ["RED"]
+
+
+def test_genuine_leading_section_number_still_excluded() -> None:
+    assert fa_check.count_numbers("5.1 營收來源") == 0
+    assert fa_check.count_numbers("5.1 營收來源 [12.5](https://a.com/x) 與 13.5") == 2

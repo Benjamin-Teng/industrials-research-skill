@@ -138,10 +138,11 @@ def count_numbers(
     stripped = text.strip()
     if serial_cell and re.fullmatch(r"#?\d{1,3}", stripped):
         return 0
-    # Markdown 連結 [文字](網址) 只留顯示文字：[100](https://…) 的 100 是可見數值
-    text = _MD_LINK.sub(r" \1 ", text)
+    # 段首章節編號在連結解包之前判斷：連結的顯示文字（[12.5](…)）永遠不是章節編號
     if not (in_cell or serial_cell):
         text = _LEADING_SECTION.sub(" ", text)
+    # Markdown 連結 [文字](網址) 只留顯示文字：[100](https://…) 的 100 是可見數值
+    text = _MD_LINK.sub(r" \1 ", text)
     for pattern in _EXCLUDE:
         text = pattern.sub(" ", text)
     return len(_NUMBER.findall(text))
