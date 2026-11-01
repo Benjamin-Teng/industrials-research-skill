@@ -82,8 +82,10 @@ def test_excluded_numbers(text: str) -> None:
     assert fa_check.count_numbers(text) == 0
 
 
-def test_leading_section_number_not_counted() -> None:
-    assert fa_check.count_numbers("5.1 營運概況") == 0
+def test_leading_section_number_counted_by_design() -> None:
+    # 刻意不排除段首章節編號：正文裡的章節編號計 1 個，接受多報
+    assert fa_check.count_numbers("5.1 營運概況") == 1
+    assert _levels("## 5.1 營運概況 11.5% 12.5% 13.5%\n") == []  # 標題整行略過
 
 
 def test_serial_cell_not_counted() -> None:
@@ -553,6 +555,13 @@ def test_link_text_at_paragraph_start_not_section_number() -> None:
     assert _levels(text) == ["RED"]
 
 
-def test_genuine_leading_section_number_still_excluded() -> None:
-    assert fa_check.count_numbers("5.1 營收來源") == 0
-    assert fa_check.count_numbers("5.1 營收來源 [12.5](https://a.com/x) 與 13.5") == 2
+def test_leading_decimal_before_link_counted() -> None:
+    text = "12.5 [13.5](https://example.com/revenue), 20, 30, 40, 50, 60, 70, 80, 90"
+    assert fa_check.count_numbers(text) == 10
+    assert _levels(text) == ["RED"]
+
+
+def test_section_number_in_body_counts_one() -> None:
+    assert fa_check.count_numbers("5.1 營收來源") == 1
+    assert fa_check.count_numbers("5.1 營收來源 [12.5](https://a.com/x) 與 13.5") == 3
+    assert fa_check.count_numbers("第 5.1 節") == 0

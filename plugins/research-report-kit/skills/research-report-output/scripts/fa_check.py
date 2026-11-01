@@ -59,8 +59,9 @@ _EXCLUDE = [
         r"(?!\d|,\d|\.\d|[-/]\d|\s?(?:[%％]|萬|億|仟|千|百|元|倍|x\b|[KMB](?![A-Za-z])))"
     ),
 ]
-# 段落行首的標題式編號（5.1 營運概況）；後面必須接文字，「12.5 13.5」不算
-_LEADING_SECTION = re.compile(r"^\s*\d+(?:\.\d+)+(?=\s+[^\d\s+\-−])")
+# 刻意不排除段首章節編號（5.1 營運概況）：它與段首數值（12.5 營收）無法可靠區分，
+# 排除會誤刪數值。標題整行已略過；正文裡的章節編號計為 1 個數字，接受多報。
+# 只排除「第 N 章／節」與規則代號（見上方 _EXCLUDE）。
 
 _NUM = r"\d+(?:,\d{3})*(?:\.\d+)?"
 _SIGN = r"[+\-−]?"
@@ -128,19 +129,14 @@ def is_block_start(line: str) -> bool:
     return block_kind(line) is not None
 
 
-def count_numbers(
-    text: str, *, serial_cell: bool = False, in_cell: bool = False
-) -> int:
+def count_numbers(text: str, *, serial_cell: bool = False) -> int:
     """回傳 text 中計入 F-a 的數字個數。
 
-    serial_cell=True 時純序號不計；表格儲存格（in_cell 或 serial_cell）不套用行首章節編號排除。
+    serial_cell=True 時純序號（表格第 1 欄的 1–3 位整數）不計。
     """
     stripped = text.strip()
     if serial_cell and re.fullmatch(r"#?\d{1,3}", stripped):
         return 0
-    # 段首章節編號在連結解包之前判斷：連結的顯示文字（[12.5](…)）永遠不是章節編號
-    if not (in_cell or serial_cell):
-        text = _LEADING_SECTION.sub(" ", text)
     # Markdown 連結 [文字](網址) 只留顯示文字：[100](https://…) 的 100 是可見數值
     text = _MD_LINK.sub(r" \1 ", text)
     for pattern in _EXCLUDE:
@@ -249,7 +245,7 @@ def check_text(text: str) -> list[Hit]:
     def check_row(lineno: int, row: str) -> None:
         for col, cell in enumerate(_split_cells(row)):
             for part in re.split(r"<br\s*/?>", cell, flags=re.IGNORECASE):
-                n = count_numbers(part, serial_cell=(col == 0), in_cell=True)
+                n = count_numbers(part, serial_cell=(col == 0))
                 if n >= 3:
                     hits.append(Hit(lineno, "CELL", n, _snippet(part)))
 
