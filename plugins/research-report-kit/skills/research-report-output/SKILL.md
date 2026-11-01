@@ -1,6 +1,6 @@
 ---
 name: research-report-output
-description: "產出投資研究報告時使用（台股、美股共用同一套骨架），統一輸出格式：一律同時交付 .md 與機構風 .pdf。觸發情境包含個股深度研究、產業／供應鏈／技術研究、輪動掃描與 channel check 週報、SOTP／DCF 估值報告、供應鏈上下游分析、產品銷售展望、技術瓶頸分析；也在使用者說「寫一份研究報告」「做個股深度研究」「產業研究報告」「幫我出 PDF 版報告」時使用；使用者要「簡介」「摘要」「briefing」「重點速覽」時走 Briefing 模式。"
+description: "產出投資研究報告時使用（台股、美股共用同一套骨架），統一輸出格式：一律同時交付 .md 與機構風 .pdf。觸發情境包含企業與產業研究（商業模式、營收拆解、SWOT、產業鏈與利潤池）、個股深度研究、產業／供應鏈／技術研究、輪動掃描與 channel check 週報、SOTP／DCF 估值報告、供應鏈上下游分析、產品銷售展望、技術瓶頸分析；也在使用者說「寫一份研究報告」「做個股深度研究」「產業研究報告」「幫我出 PDF 版報告」時使用；使用者要「簡介」「摘要」「briefing」「重點速覽」時走 Briefing 模式。"
 metadata:
   compatibility: 產 PDF 需要 pandoc、playwright(chromium)、pypdf、PyYAML 與 Noto CJK 字型；缺件時的降級路徑見 references/output-spec.md 第六章。無這些依賴的環境（如 ChatGPT 網頁沙箱）只能交付 .md。
 ---
@@ -11,9 +11,9 @@ metadata:
 
 本 skill 管**格式與交付**：長什麼樣、怎麼排版、怎麼產檔、怎麼交。
 
-**內容標準**（估值方法、假設紀律、發布前的內容層檢查）交給 `equity-valuation-discipline`；
+**內容標準**（方法、假設紀律、發布前的內容層檢查）依報告類型交給內容層 skill：A 型交 `equity-valuation-discipline`，D 型交 `business-industry-analysis`；
 **產業掃描與 channel check** 交給 `product-cycle-rotation`；
-**取價**交給 `price-routing`。這三個都是可替換層——使用者若有自己的方法論文件，優先讀他的。
+**取價**交給 `price-routing`。這些都是可替換層——使用者若有自己的方法論文件，優先讀他的。
 
 > **使用者方法論優先**：若使用者的 project／repo 中有自訂的研究框架文件（例如「個股深度研究框架」「投資決策手冊」），**那份文件是 source of truth**，本 plugin 的方法論 skill 退為預設值。設定方式見 `references/customize-your-framework.md`。
 
@@ -22,10 +22,10 @@ metadata:
 1. 一律**同時產出 `.md` 與 `.pdf`**，PDF 由該 md 直接生成，不得手改。
 2. PDF 一律用 `scripts/md2pdf.py` 產生（機構研究報告樣式）。
 3. **兩檔都要交付給使用者**，附一句話結論——不要複述報告內容。（Claude 用 `SendUserFile`；Codex／其他環境把檔案寫進工作目錄並告知路徑。）
-4. md 必須有完整 YAML front matter（見下方樣板與 `references/output-spec.md` 第二章）。
-5. 關鍵數據標**資料層級標籤**（`l1/l2/l3`）與**查價日**；價格書寫格式強制為「**數值＋日期＋盤別**」三件套（例：`US$218.98（2026-08-14 正常盤收盤）`），缺任一件即視為未查證數據。
+4. md 必須有完整 YAML front matter（見下方樣板與 `references/output-spec.md` 第二章）；D 型依 `templates/D-business-industry.md` 的 front matter。
+5. 關鍵數據標**資料層級標籤**（`l1/l2/l3`）與**查價日**；價格書寫格式強制為「**數值＋日期＋盤別**」三件套（例：`US$218.98（2026-08-14 正常盤收盤）`），缺任一件即視為未查證數據。D 型不含價格與市場數據，以完整會計期間取代查價日。
 6. **骨架不因市場而變**：台股、美股共用同一套章節與檢查清單，只換資料源與籌碼欄位（`references/market-localization.md`），依 front matter 的 `market` 取用。
-7. 交付前跑完 `references/output-spec.md` 第八章的**格式層檢查清單**＋下方 **F-rules 六項自查（F-a 至 F-f）**；內容層檢查清單見 `equity-valuation-discipline`。
+7. 交付前跑完 `references/output-spec.md` 第八章的**格式層檢查清單**＋下方 **F-rules 六項自查（F-a 至 F-f）**；內容層檢查清單依報告類型區分：A 型見 `equity-valuation-discipline`；D 型見 `business-industry-analysis` 的「交付前內容層檢查」。
 8. **排版即內容**：任何需要讀第二次才能拆解的排版，等於沒寫。
 
 ---
@@ -48,7 +48,7 @@ metadata:
 
 | # | 檢查項 | 判定細則 |
 |---|---|---|
-| F-a | 段落或**表格儲存格**含 ≥3 個數字？ | 依嚴重度分級處理；表格格內多值 → 拆出數據明細欄 |
+| F-a | 段落或**表格儲存格**含 ≥3 個數字？ | 先跑 `scripts/fa_check.py`；依嚴重度分級處理；表格格內多值 → 拆出數據明細欄 |
 | F-b | 段落含 ≥2 粗體小標？ | 遮蓋測試：遮掉一個 bold，剩餘仍是完整論點 → 須拆 |
 | F-c | 有傳遞鏈／影響路徑描述？ | 套 F3 畫樹狀圖 |
 | F-d | 所有 >3 行表格前有 blockquote？ | **含連續表的第 2、3 張；含 F3 圖後摘要表** |
@@ -62,10 +62,20 @@ metadata:
 ## 工作流程
 
 1. **先研究、後排版**：把資料查完、數字算完（估值模型以程式重算），再開始寫檔。研究階段不要碰產檔器。
-2. **選骨架**：`templates/A-single-stock.md`（個股深度）／`B-industry-supplychain.md`（產業供應鏈）／`C-rotation-weekly.md`（輪動掃描週報）。
+2. **選骨架**：依請求意圖選，不依字面上的報告類型名稱。
+   - 單一個股的研究請求，沒有明確要求估值、目標價、報酬風險比或買賣判斷 → `templates/D-business-industry.md`（企業與產業研究），內容層用 business-industry-analysis。例：「幫我研究 BE」「做 BE 的個股深度研究」「BE 的供應鏈上下游分析」「BE 前景如何」。
+     - 單一個股請求即使用到「供應鏈上下游分析」「技術瓶頸分析」等字眼，也走 D 型；以產業或技術主題為主體才走 B 型。
+   - 明確要求估值、目標價、報酬風險比，或買進、賣出、加減碼、持有的判斷 → `templates/A-single-stock.md`（個股深度研究），內容層用 equity-valuation-discipline。例：「BE 值不值得買」「BE 要不要賣」「算 BE 的目標價」。同一標的已有 D 型報告時，A 型第四章直接引用它。
+   - 以產業或供應鏈主題為主體 → `templates/B-industry-supplychain.md`（產業供應鏈研究）。
+   - 輪動掃描與 channel check 週報 → `templates/C-rotation-weekly.md`（輪動掃描週報）。
 3. **命名**：`{主體}_{報告類型}_{版本}_{YYYYMMDD}.md`。版本語意：`v1.1` 補資料／**`v2.0` 結論改變**。同標的新版不覆蓋舊版。
 4. **寫內容**：模板中標 `【TW】`／`【US】` 的欄位只留對應市場那一組。**寫完每一節立即檢查 F1–F5 觸發條件**，不要留到最後。
-5. **產 PDF**：
+5. **中文用語校對（選用）**：PDF 由定稿的 md 生成，所以排在產 PDF 之前。環境裡有 `speak-human-tw` skill 時，F-rules 自查通過後，用它檢查報告**正文段落**的台灣用語與標點；沒有安裝就略過這一步，不影響交付。
+   - 範圍只限正文句子。表格、數字、`l1`／`l2`／`l3` 標籤、出處、front matter、程式碼、規則編號、引號內原文維持原樣。
+   - 版面以 F-rules 為準：speak-human-tw 的「降格式」步驟（把表格、粗體、列表降回散文）不套用。
+   - 報告由非互動流程產生時（例如 `claude -p`），採用它的「跳過確認、事後摘要」模式，摘要附在交付訊息裡。
+   - 校對後的 md 若有改動，重跑一次 F-rules 自查再往下。
+6. **產 PDF**：先跑 `python3 "$SKILL_DIR/scripts/fa_check.py" 報告.md`，命中逐一依 F1 拆表或用 `<br>` 分行，直到 `0 hit(s)` 才產 PDF；環境沒有 Python 時改為逐段人工檢查。
 
    ```bash
    # $SKILL_DIR = 本 SKILL.md 所在的資料夾
@@ -75,15 +85,15 @@ metadata:
    ```
 
    環境缺套件時：`pip install pypdf pyyaml --break-system-packages`（另需 `pandoc` 與 `playwright install chromium`）。依賴不全時的降級路徑見 `references/output-spec.md` 第六章。
-6. **目視驗收**：
+7. **目視驗收**：
 
    ```bash
    pdftoppm -png -r 80 你的報告.pdf pg && ls pg*
    ```
 
    用 Read 看封面與最寬那張表所在頁，確認未溢出、頁碼正常。
-7. **交付**：把 `.md` 與 `.pdf` 兩個檔都交給使用者（各平台的交付方式見鐵則 3）。
-8. **歸檔**：報告本體不寫進知識庫（避免被單一標的長文灌爆）；只有方法論更新、可複用的產業地圖／觀察名單、覆盤結論才寫回。
+8. **交付**：把 `.md` 與 `.pdf` 兩個檔都交給使用者（各平台的交付方式見鐵則 3）。
+9. **歸檔**：報告本體不寫進知識庫（避免被單一標的長文灌爆）；只有方法論更新、可複用的產業地圖／觀察名單、覆盤結論才寫回。
 
 ### 取價
 
@@ -103,9 +113,10 @@ metadata:
 
 **刪除所有「內部模型」敘述，保留全部數據與結論。** 觸發：使用者說「給別人」「傳播」「第三方」「外部版」「external」。命名加 `_ext` 後綴。
 
-須逐條掃描刪除：①框架標籤（`★A1`–`★A7`、`◇B1`–`◇B4` 及章節標題中的括號標註）；②框架引用句（「依框架 2.X」「規範第 N 章」「框架 vX.Y」）；③方法論補充段（改為直述結論）；④框架降級說明（改為直述理由）；⑤規範版本聲明；⑥自查清單引用；⑦強制處置的框架出處（保留處置本身）；⑧Caveats 中的方法論路徑描述（保留資料缺口本身）。
+須逐條掃描刪除：①框架標籤（`★A1`–`★A7`、`◇B1`–`◇B4` 及章節標題中的括號標註）；②框架引用句（「依框架 2.X」「規範第 N 章」「框架 vX.Y」；D 型另含「方法檔 x.y」與規則編號 `R1.1`／`RD.1`／`OB-1` 這類標註）；③方法論補充段（改為直述結論）；④框架降級說明（改為直述理由）；⑤規範版本聲明；⑥自查清單引用；⑦強制處置的框架出處（保留處置本身）；⑧Caveats 中的方法論路徑描述（保留資料缺口本身）。
 
 **保留**：所有數字、表格、結論、資料層級標籤、來源清單、KPI 卡、bull/bear/caveat 區塊內容本身。A 型（`methodology_version: expectations-v1`）另須保留：模型依賴（走哪條估值路徑）、機率主觀性（示範機率的 `illustrative`／`subjective_evidence_based`／`empirically_calibrated` 標記）、資料缺口、時間假設（`holding_horizon_months`／`forecast_horizon_years`／價格反映收斂係數）、R/R 與示範機率表的示範標籤、價格假設（進場基準、日期、盤別）、機率來源與計算限制——刪內部方法論編號不等於可以移除這些揭露。
+**D 型保留**（`methodology_version: business-industry-v1`）：資料標示（推論、未揭露、未查到、未核對、口述、第三方逐字稿、屬技術報告範圍、管理層預測、第三方預測、未扣資本成本）、會計期間、比較基準未查的標記、交接清單的資料缺口。
 
 ### Briefing（摘要，≤3 頁）
 
@@ -113,6 +124,8 @@ metadata:
 
 **保留**：TL;DR（含 KPI 卡，刪推導表）、Key Findings（數據明細欄只留 1–2 項）、個人判斷與市場定價落差（核心命題一列）、估值結論（只留情境表 ＋ Reverse DCF 一行）、**R/R（至少牛／熊與基準／熊兩種）＋ 示範機率表（至少三組）＋ 每組一句解讀**（A 型不得刪，見 `expectations-and-decisions.md` 第 7、8 節）、Recommendations（`decision_status`／`rating` ＋ 加減碼訊號各前 2 項）、核心風險三點各一行。新建倉或加碼的 Briefing 另須保留 `valuation-paths.md` 5.2 建倉前最低檢查的五項判定（含未查項目），以及決策段對警示的逐項回應與對未查項目的處置。
 **刪去**：市場共識基線拆解細節（留分歧一句）、事業結構全文、供應鏈全文（留一行定位句）、交叉驗證細節、敏感度矩陣（留排序第一名一句）、催化劑表（留下一個關鍵觀察時點一行）、命題監控儀表板、Caveats 全文、來源清單。⛔ 篇幅不足時優先縮減背景敘述，**不得刪除機率性質標記、成本／股利缺口揭露或建倉前最低檢查**。
+**D 型保留**（D 型以這兩行取代上方兩行）：營收來源排序、各來源 SWOT 的第一項、利潤分布結論、交接變數，以及這些內容的資料標示與會計期間。
+**D 型刪去**：各來源 SWOT 第一項以外的項目、同業比較表的明細列（保留結論）、資料時點疊加表的明細（保留體制轉換旗標）。
 
 ### ⚠️ 刪節後處理（External 與 Briefing 共用）
 
@@ -124,13 +137,13 @@ metadata:
 
 ---
 
-## Front matter 最小樣板
+## Front matter 最小樣板（A 型）
 
 ```yaml
 ---
 title: 〈公司名〉〈代號〉個股深度研究報告
 subtitle: 一句話講清楚論點與方法
-type: 個股深度研究          # 個股深度研究 / 產業供應鏈研究 / 輪動掃描週報
+type: 個股深度研究          # 個股深度研究 / 產業供應鏈研究 / 輪動掃描週報 / 企業與產業研究
 market: TW                 # TW / US / TW+US
 ticker: TWSE:0000          # 美股寫 NYSE:XXX、NASDAQ:XXXX
 version: v1.0
@@ -162,7 +175,7 @@ kpi:
 ---
 ```
 
-`tone` 可填 `bull`／`bear`／留空（中性）。KPI 卡 3–5 張，且數字須與內文一致；**未知項不填零**，缺值行為見 `references/output-spec.md` 二；⛔ **不得把熊情境持有期損失標為最大可能損失**。`rating` 必須與 `decision_status` 一致（對照表見 `references/output-spec.md` 2.2）。
+`tone` 可填 `bull`／`bear`／留空（中性）。KPI 卡 3–5 張，且數字須與內文一致；**未知項不填零**，缺值行為見 `references/output-spec.md` 二；⛔ **不得把熊情境持有期損失標為最大可能損失**。`rating` 必須與 `decision_status` 一致（對照表見 `references/output-spec.md` 2.2）。D 型的 front matter 以 `templates/D-business-industry.md` 為準，欄位規則見 references/output-spec.md 第二章。
 
 ## 專用語法速查
 
@@ -193,10 +206,11 @@ kpi:
 
 | 檔案 | 用途 |
 |---|---|
-| `references/output-spec.md` | 完整輸出規範：檔名規則、front matter schema、三型骨架、標註規範、產檔流程、格式層檢查清單 |
+| `references/output-spec.md` | 完整輸出規範：檔名規則、front matter schema、四型骨架、標註規範、產檔流程、格式層檢查清單 |
 | `references/formatting-rules.md` | F1–F5 完整版：正反例、嚴重度分級、常見漏網區域 |
 | `references/market-localization.md` | 台股／美股資料源與籌碼欄位對照，以及三個真正的方法論差異 |
 | `references/customize-your-framework.md` | 如何接上你自己的方法論、改樣式、換免責標語 |
-| `templates/` | 三型報告骨架模板 |
+| `templates/` | A／B／C／D 四型報告骨架模板 |
 | `scripts/md2pdf.py` | md → PDF 產檔器（md → pandoc → HTML → Playwright/Chromium → PDF） |
+| `scripts/fa_check.py` | F-a 數字密集檢查（段落與表格儲存格；產 PDF 前必跑） |
 | `assets/report.css` | PDF 版面樣式（A4、邊界 16mm、內文 10pt、表格 8.6pt、深藍 `#16324f` 主色） |

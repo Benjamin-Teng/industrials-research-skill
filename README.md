@@ -24,13 +24,14 @@
 
 #### VS Code／Codex IDE（推薦）
 
-Codex IDE extension 目前不支援完整 plugin，但支援獨立 skill。本 plugin 沒有 MCP、connector 或 hook，所以用這條路可取得目前全部功能。四個 skill 各自獨立，要哪個裝哪個；在 Codex 對話框貼上：
+Codex IDE extension 目前不支援完整 plugin，但支援獨立 skill。本 plugin 沒有 MCP、connector 或 hook，所以用這條路可取得目前全部功能。五個 skill 各自獨立，要哪個裝哪個；在 Codex 對話框貼上：
 
 ```text
 $skill-installer 請從 https://github.com/Benjamin-Teng/industrials-research-skill/tree/main/plugins/research-report-kit/skills/research-report-output 安裝 research-report-output skill
 $skill-installer 請從 https://github.com/Benjamin-Teng/industrials-research-skill/tree/main/plugins/research-report-kit/skills/equity-valuation-discipline 安裝 equity-valuation-discipline skill
 $skill-installer 請從 https://github.com/Benjamin-Teng/industrials-research-skill/tree/main/plugins/research-report-kit/skills/product-cycle-rotation 安裝 product-cycle-rotation skill
 $skill-installer 請從 https://github.com/Benjamin-Teng/industrials-research-skill/tree/main/plugins/research-report-kit/skills/price-routing 安裝 price-routing skill
+$skill-installer 請從 https://github.com/Benjamin-Teng/industrials-research-skill/tree/main/plugins/research-report-kit/skills/business-industry-analysis 安裝 business-industry-analysis skill
 ```
 
 同意下載後開啟新對話，輸入 `/skills` 應該看到剛裝的 skill；若沒出現，重新載入 VS Code。
@@ -65,9 +66,9 @@ codex plugin add research-report-kit@research-tools
 
 ### 使用方式
 
-- **自動觸發（主要）**：不必打任何指令——只要對話講到研究報告、估值、產業輪動、查股價，Claude Code 或 Codex 會依 skill 的 `description` 自動載入。
+- **自動觸發（主要）**：不必打任何指令——只要對話講到研究報告、商業模式、產業結構、估值、產業輪動、查股價，Claude Code 或 Codex 會依 skill 的 `description` 自動載入。
 - **Claude Code 手動觸發**：`/research-report-output`（依環境亦可能顯示為 `/research-report-kit:research-report-output`）。
-- **Codex 手動觸發**：`$research-report-output`。其餘三個 skill 同理。
+- **Codex 手動觸發**：`$research-report-output`。其餘四個 skill 同理。
 
 ### ChatGPT 網頁版
 
@@ -83,11 +84,12 @@ codex plugin add research-report-kit@research-tools
 
 把投資研究的**輸出格式**與**內容紀律**變成可重複的流程。裝上之後，Claude 產出的研究報告會有一致的章節骨架、可讀的排版、機構風格的 PDF，以及一份跑得完的發布前檢查清單。
 
-四個可分開使用的 skill：
+五個可分開使用的 skill：
 
 | Skill | 管什麼 |
 |---|---|
 | `research-report-output` | 格式與交付：檔名、front matter、章節骨架、F1–F5 排版鐵則、PDF 產檔、三種輸出模式 |
+| `business-industry-analysis` | 企業與產業分析：營收來源與單位經濟、逐營收來源 SWOT、產業鏈與利潤池、同業替代與護城河；不評價股價 |
 | `equity-valuation-discipline` | 內容紀律：價格隱含預期與預期差、模型路由、內在價值／期末價格／持有期報酬分離、R/R 與示範機率、決策門檻、發布前檢查 |
 | `product-cycle-rotation` | 產業掃描：product cycle 五問、T-18～T+6 時間軸、channel check SOP |
 | `price-routing` | 取價路由：偵測可用行情工具 → 依市場選路 → 無 MCP 時退回 yfinance |

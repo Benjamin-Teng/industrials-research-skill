@@ -15,6 +15,7 @@ SKILL_NAMES = (
     "equity-valuation-discipline",
     "product-cycle-rotation",
     "price-routing",
+    "business-industry-analysis",
 )
 GITHUB = "https://github.com/Benjamin-Teng/industrials-research-skill"
 

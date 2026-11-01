@@ -5,7 +5,7 @@
 | 層 | 內容 | 該不該改 |
 |---|---|---|
 | **格式層**（`research-report-output`） | 檔名、front matter、章節骨架、F1–F5 排版鐵則、PDF 樣式、交付流程 | 多數人直接用；只需改署名與免責標語 |
-| **內容層**（`equity-valuation-discipline`、`product-cycle-rotation`） | 估值路徑、參數紀律、情境機率、channel check SOP、發布前內容檢查 | **這是預設值，不是教條**——有自己方法論的人應該覆蓋掉 |
+| **內容層**（`equity-valuation-discipline`、`business-industry-analysis`、`product-cycle-rotation`） | 估值路徑、參數紀律、情境機率、商業模式與產業結構分析、channel check SOP、發布前內容檢查 | **這是預設值，不是教條**——有自己方法論的人應該覆蓋掉 |
 
 分層的理由：排版與交付規則跨方法論通用（不管你用 DCF 還是 EV/EBITDA，數據密集段落都該拆表）；但估值方法論高度個人化，硬套別人的框架預設值只會產生假精確。
 
@@ -33,7 +33,7 @@ disclaimer: 本報告由〈機構〉編製，僅供內部參考，不構成投�
 
 ### 2. 建立自己的 front matter 預設
 
-把常填欄位寫進一個 `my-defaults.yaml` 放在工作目錄，每次從模板複製後覆蓋。或直接改 `templates/` 下的三份模板——它們就是你的預設值。
+把常填欄位寫進一個 `my-defaults.yaml` 放在工作目錄，每次從模板複製後覆蓋。或直接改 `templates/` 下的四份模板——它們就是你的預設值。
 
 ---
 
@@ -41,7 +41,7 @@ disclaimer: 本報告由〈機構〉編製，僅供內部參考，不構成投�
 
 自 `expectations-v1` 起，A 型報告的 front matter 多了一組 FR-01 契約欄位（`research_question`／`strategy_type`／`as_of`／`holding_horizon_months`／`forecast_horizon_years`／`decision_policy_source` 等，完整定義見 `references/output-spec.md` 二）。這些欄位是**每份報告自己的研究契約與政策紀錄**，不是方法論本身。
 
-- **`methodology_version`**：標的是這份報告套用的**方法論主版本**（例如 `expectations-v1`），對應 `equity-valuation-discipline/references/expectations-and-decisions.md` 定義的那一代公式、口徑與決策門檻。它**不等於**報告自己的 `version`（結論改版），也**不等於** plugin 的 semver（套件發布版本）；三者分開的完整說明見 `references/output-spec.md` 二之 2.1。方法論本身改版（例如未來出現 `expectations-v2`）時才需要改這個欄位；補資料或結論變動改的是 `version`。
+- **`methodology_version`**：標的是這份報告套用的**方法論主版本**，對應所屬方法論的代際：A 型是 `expectations-v1`，單一來源檔為 `equity-valuation-discipline/references/expectations-and-decisions.md`（那一代的公式、口徑與決策門檻）；D 型是 `business-industry-v1`，單一來源檔為 `business-industry-analysis/references/business-industry-method.md`。它**不等於**報告自己的 `version`（結論改版），也**不等於** plugin 的 semver（套件發布版本）；三者分開的完整說明見 `references/output-spec.md` 二之 2.1。方法論本身改版（例如未來出現 `expectations-v2`）時才需要改這個欄位；補資料或結論變動改的是 `version`。
 - **使用者政策覆寫寫在哪**：`decision_policy_source`（報酬要求與風險政策的來源）、`holding_horizon_months`（持有期政策）與 `edge_status` 的證據門檻，都是**逐份報告在 front matter 填寫**，不是改 skill 檔案。你要覆寫的是「這次研究要用什麼政策」，不是「方法論公式本身」——公式與口徑一律留在 `expectations-and-decisions.md`，不要在報告或你自己的框架文件裡另抄一份變體，否則兩處對不上時無法判斷哪個才是準的。
 - 若你有自己一套決策政策（例如固定的風險預算、Kelly 上限、停損政策），寫成一份文件放進專案知識庫，在 `decision_policy_source` 填該文件名稱與版本；**不要**把政策數字直接寫死進 skill 的模板或 SKILL.md，那樣每份報告都要手動同步。
 
@@ -73,7 +73,7 @@ disclaimer: 本報告由〈機構〉編製，僅供內部參考，不構成投�
 
 ### 做法 C：整個停用內容層
 
-只留 `research-report-output` 與 `price-routing`，把另外兩個 skill 目錄刪掉。SKILL.md 中對它們的引用會自然降級為「照使用者的方法論做」。
+只留 `research-report-output` 與 `price-routing`，把另外三個 skill 目錄刪掉。SKILL.md 中對它們的引用會自然降級為「照使用者的方法論做」。刪掉 business-industry-analysis 後，D 骨架仍可當格式用，但沒有內容層規則。
 
 適合：你有完整的既有流程，只想要排版與產檔這一段。
 
@@ -121,6 +121,24 @@ zip -r ~/research-report-kit.plugin . -x "*.DS_Store" -x "__pycache__/*"
 | 台股股價、月營收、三大法人、融資融券 | FinMind MCP |
 | 美股即時報價、歷史價、選擇權 | 券商 MCP（如 Interactive Brokers） |
 | 財報原文（10-K／10-Q／MOPS） | 對應市場的文件庫，或直接用網頁抓取 |
+| SEC 全文下載（10-K／20-F 等） | 不需要 MCP；需要環境變數 `SEC_USER_AGENT` |
 | 產業報價與供應鏈情報 | 產業研究機構訂閱（付費，見 `product-cycle-rotation` 的工具箱） |
 
-連上之後不需要改任何設定——`price-routing` 是在執行時偵測工具是否存在，不是讀設定檔。
+MCP 連上之後不需要改任何設定；SEC 全文下載另需設定環境變數 `SEC_USER_AGENT`。`price-routing` 是在執行時偵測工具是否存在，不是讀設定檔。
+
+### 設定 `SEC_USER_AGENT`
+
+SEC 要求程式化下載時在請求標頭宣告 User-Agent。指令樣板在 `business-industry-analysis` 的 SKILL.md，樣板只讀這個環境變數，值不寫進任何檔案。
+
+這個值由使用者自己在終端機或設定檔中輸入。AI 代理檢查到 missing 時，走 business-industry-analysis 的退路並回報，不代為設定、也不使用對話中出現的任何 email 或姓名。
+
+1. **格式範例**：照 SEC〈Accessing EDGAR Data〉頁面原文：`Sample Company Name AdminContact@<sample company domain>.com`，換成你自己的名稱與聯絡信箱。
+2. **Windows**：在 PowerShell 執行 `[Environment]::SetEnvironmentVariable("SEC_USER_AGENT", "<名稱與聯絡信箱>", "User")`，或在 cmd 執行 `setx SEC_USER_AGENT "<名稱與聯絡信箱>"`。`setx` 的官方說明是只對之後新開的命令視窗生效；`SetEnvironmentVariable` 的生效時機屬推論，視同相同。設完要重開 Claude Code、Codex 與 VS Code（屬推論，官方文件未針對這幾個程式另述）。
+3. **WSL**：把 `export SEC_USER_AGENT="<名稱與聯絡信箱>"` 寫進 `~/.bashrc`（bash 官方說明：互動式非登入 shell 讀 `~/.bashrc`；登入 shell 讀 `~/.bash_profile`、`~/.bash_login`、`~/.profile` 中第一個存在者）。`export` 的語法與行為、Windows 與 WSL 之間是否經 `WSLENV` 傳遞，都待查證。
+4. **PowerShell 版本**：樣板裡的 `Invoke-WebRequest` 需要 PowerShell 7 的 `-SkipHeaderValidation`；Windows PowerShell 5.1 沒有這個參數，改用 SKILL.md 的 bash 樣板（Git Bash 或 WSL）。
+5. **確認方式**：只檢查有沒有設定，不印出值。要在新開的視窗確認；在設定時的同一個視窗確認會顯示 missing。
+   - PowerShell：`if ($env:SEC_USER_AGENT) {'set'} else {'missing'}`
+   - bash：`[ -n "$SEC_USER_AGENT" ] && echo set || echo missing`
+6. **各宿主的設定位置**：
+   - Claude Code：寫在使用者層級、不進版控的 settings 檔，路徑是 `~/.claude/settings.json`（Windows 為 `%USERPROFILE%\.claude\settings.json`，依 Claude Code 官方 settings 文件）；不要寫進專案共用的 `.claude/settings.json`。格式：`{"env": {"SEC_USER_AGENT": "<名稱與聯絡信箱>"}}`。
+   - Codex：預設是否把 SEC_USER_AGENT 傳給子行程待查證；shell_environment_policy 的子鍵 inherit、set、ignore_default_excludes 依官方設定參考；其餘子鍵待查證。

@@ -4,9 +4,8 @@ spec v1.3.0 第 9.2 節要求：新增檢查「不得只比對關鍵字，須涵
 schema 時點與實際報告輸出的行為」。數值與反解狀態由 ``test_valuation_math.py`` 守護；
 本檔負責另外兩類：
 
-* **schema 時點**——三份模板與範例的 front matter 必須帶齊 expectations-v1 欄位，
-  且持有期（``holding_horizon_months``）與預測期（``forecast_horizon_years``）是兩個
-  獨立欄位，不得只有其一。
+* **schema 時點**——四份模板與範例的 front matter 依 ``methodology_version`` 分流：
+  估值方法論帶齊 expectations-v1 欄位，Layer 1 帶齊自己的欄位，且不帶估值欄位。
 * **實際報告輸出的行為**——範例報告引用的數字，必須與 ``valuation_math`` 由同一組
   輸入實際算出來的值一致；模板不得殘留已退役的指令；表格不得超過七欄。
 """
@@ -55,6 +54,26 @@ REQUIRED_FIELDS = (
     "decision_status",
     "decision_policy_source",
 )
+
+LAYER1_METHODOLOGY = "business-industry-v1"
+
+#: Layer 1（企業與產業研究）報告的 front matter 必填欄位。
+LAYER1_REQUIRED_FIELDS = (
+    "title", "subtitle", "type", "market", "ticker", "version", "date", "author",
+    "framework", "methodology_version", "research_question", "as_of", "disclaimer", "kpi",
+)
+
+#: Layer 1 報告不得出現的估值欄位。
+LAYER1_FORBIDDEN_FIELDS = (
+    "strategy_type", "holding_horizon_months", "forecast_horizon_years", "valuation_methods",
+    "expectations_status", "decision_status", "decision_policy_source", "edge_status",
+    "rating", "price_asof",
+)
+
+
+def is_layer1(meta: dict) -> bool:
+    return meta.get("methodology_version") == LAYER1_METHODOLOGY
+
 
 ENUMS = {
     "strategy_type": {"fundamental", "catalyst", "monitoring", "unknown"},
@@ -132,25 +151,51 @@ class TestFrontMatterSchema(unittest.TestCase):
         for path in report_files():
             with self.subTest(path.name):
                 meta = front_matter(path)
-                missing = [f for f in REQUIRED_FIELDS if f not in meta]
+                required = LAYER1_REQUIRED_FIELDS if is_layer1(meta) else REQUIRED_FIELDS
+                missing = [f for f in required if f not in meta]
                 self.assertEqual(missing, [], f"{path.name} 缺欄位：{missing}")
 
     def test_methodology_version_is_pinned_and_separate_from_report_version(self) -> None:
         for path in report_files():
             with self.subTest(path.name):
                 meta = front_matter(path)
-                self.assertEqual(meta["methodology_version"], METHODOLOGY_VERSION)
+                self.assertIn(meta["methodology_version"], (METHODOLOGY_VERSION, LAYER1_METHODOLOGY))
                 # 報告版本與方法論版本是兩個欄位，不得互相取代
                 self.assertIn("version", meta)
                 self.assertNotEqual(meta["version"], meta["methodology_version"])
 
     def test_horizon_fields_are_two_independent_fields(self) -> None:
-        """持有期 ≠ 預測期：兩者必須各自存在，缺一即違反 FR-01。"""
+        """持有期 ≠ 預測期：兩者必須各自存在，缺一即違反 FR-01。Layer 1 不帶這兩欄。"""
         for path in report_files():
             with self.subTest(path.name):
                 meta = front_matter(path)
+                if is_layer1(meta):
+                    continue
                 self.assertIn("holding_horizon_months", meta)
                 self.assertIn("forecast_horizon_years", meta)
+
+    def test_layer1_template_is_layer1(self) -> None:
+        meta = front_matter(TEMPLATES / "D-business-industry.md")
+        self.assertEqual(meta["methodology_version"], LAYER1_METHODOLOGY)
+        self.assertEqual(meta["type"], "企業與產業研究")
+
+    def test_valuation_reports_stay_on_valuation_methodology(self) -> None:
+        names = ("A-single-stock.md", "B-industry-supplychain.md", "C-rotation-weekly.md")
+        for path in [*(TEMPLATES / n for n in names), SAMPLE]:
+            with self.subTest(path.name):
+                self.assertEqual(front_matter(path)["methodology_version"], METHODOLOGY_VERSION)
+
+    def test_layer1_reports_carry_no_valuation_fields(self) -> None:
+        for path in report_files():
+            with self.subTest(path.name):
+                meta = front_matter(path)
+                if is_layer1(meta):
+                    self.assertEqual([f for f in LAYER1_FORBIDDEN_FIELDS if f in meta], [])
+
+    def test_layer1_disclaimer_omits_valuation_and_market_data(self) -> None:
+        text = front_matter(TEMPLATES / "D-business-industry.md")["disclaimer"]
+        for word in ("估值", "市場數據", "基準日"):
+            self.assertNotIn(word, text)
 
     def test_enum_fields_use_declared_values(self) -> None:
         for path in report_files():
