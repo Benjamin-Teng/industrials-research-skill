@@ -191,8 +191,9 @@ def test_html_comment_skipped() -> None:
     assert _levels(f"<!-- {_DENSE}\n{_DENSE} -->\n") == []
 
 
-def test_heading_and_blockquote_skipped() -> None:
-    assert _levels(f"# {_DENSE}\n\n> {_DENSE}\n") == []
+def test_heading_skipped_blockquote_counted() -> None:
+    assert _levels(f"# {_DENSE}\n") == []
+    assert _levels(f"# {_DENSE}\n\n> {_DENSE}\n") == ["RED"]
 
 
 def test_dense_paragraph_outside_skipped_regions_hits() -> None:
@@ -479,3 +480,68 @@ def test_unprefixed_line_after_quoted_paragraph_counted() -> None:
 def test_block_kind(line: str, kind: str | None) -> None:
     assert fa_check.block_kind(line) == kind
     assert fa_check.is_block_start(line) is (kind is not None)
+
+
+# --- 引述區塊內文與連結顯示文字 -------------------------------------------------
+
+_F1_COUNTEREXAMPLE = (
+    "2026Q2 合併營收 39.5 億元（YoY +28.3%、QoQ +5.1%），營業利益率 13.8%"
+    "（較 Q1 的 12.5% 回升 1.3ppts），EPS NT$3.82，累計 H1 EPS NT$7.49，"
+    "年化後隱含 2026E EPS NT$14.98，以現價 NT$262 計對應 17.5x 本益比。"
+)
+
+
+def test_f1_counterexample_in_blockquote_red() -> None:
+    assert fa_check.count_numbers(_F1_COUNTEREXAMPLE) == 11
+    hits = fa_check.check_text("> " + _F1_COUNTEREXAMPLE + "\n")
+    assert [(h.line, h.level, h.numbers) for h in hits] == [(1, "RED", 11)]
+
+
+def test_nested_blockquote_prefix_stripped() -> None:
+    assert _levels(">> " + _DENSE + "\n") == ["RED"]
+    assert _levels("   > > " + _DENSE + "\n") == ["RED"]
+
+
+def test_multiline_blockquote_is_one_unit() -> None:
+    text = "> " + _HALF + "> " + _HALF
+    assert [(h.line, h.level, h.numbers) for h in fa_check.check_text(text)] == [
+        (1, "RED", 10)
+    ]
+
+
+@pytest.mark.parametrize("sep", [">", "> ", "> ---", "> ## 小標", ""])
+def test_blockquote_unit_ends_at_quote_boundary(sep: str) -> None:
+    assert _levels("> " + _HALF + sep + "\n> " + _HALF) == []
+
+
+def test_blockquote_list_items_are_separate_units() -> None:
+    assert _levels("> - " + _HALF + "> - " + _HALF) == []
+    assert _levels("> - " + _HALF + "> " + _HALF) == ["RED"]  # 續行併入同一項
+
+
+def test_numeric_markdown_links_counted_in_cell() -> None:
+    plain = _HEAD + "| 1 | 結論 | 100、20、10 |\n"
+    linked = (
+        _HEAD
+        + "| 1 | 結論 | [100](https://a.com/x)、[20](https://a.com/y)、"
+        + "[10](https://a.com/z) |\n"
+    )
+    assert _levels(plain) == _levels(linked) == ["CELL"]
+    assert fa_check.check_text(linked)[0].numbers == 3
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("[100](https://a.com/x) [20](https://a.com/y)", 2),
+        ("來源（https://a.com/x）營收 39.5 億", 1),
+        ("見 https://a.com/2024/1，營收 39.5 億、毛利率 12.5%", 2),
+        ("(https://a.com/x)營收 39.5 億", 1),
+        ("https://a.com/x。毛利率 12.5%", 1),
+        ("（https://a.com/x）營收39.5億、毛利率12.5%", 2),
+        ("來源 https://a.com/x，營收39.5億、毛利率12.5%、EPS 3.8", 3),
+        ("腳註[^1] 與 [12]", 0),
+    ],
+)
+def test_url_and_link_handling(text: str, expected: int) -> None:
+    assert fa_check.count_numbers(text) == expected

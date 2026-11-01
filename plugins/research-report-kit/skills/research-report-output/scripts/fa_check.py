@@ -26,9 +26,10 @@ from pathlib import Path
 # --- 不計入的內容：先整段換成空白，再數剩下的數字 ----------------------------
 
 _EXCLUDE = [
-    re.compile(r"https?://\S+"),
+    # 裸網址：在空白、右括號或中文全形標點處結束，之後的可見文字照計
+    re.compile(r"https?://[^\s)\]>（）「」『』，。、；：！？]+"),
     re.compile(r"<[^>]+>"),  # <span …> 等 HTML 標籤
-    re.compile(r"\[\d+\]"),  # 腳註編號
+    re.compile(r"\[\^?\d+\]"),  # 腳註編號 [12]、[^1]（數字連結已先轉成顯示文字）
     # 日期
     re.compile(r"\d{4}\s?[-/]\s?\d{1,2}\s?[-/]\s?\d{1,2}"),
     re.compile(r"(?<![\d,.])\d{4}-(?:0[1-9]|1[0-2])(?![\d-])"),  # 年月
@@ -81,6 +82,7 @@ _THEMATIC_BREAK = re.compile(
 _SETEXT_UNDERLINE = re.compile(r"^ {0,3}(?:=+|-+)[ \t]*$")
 _ATX_HEADING = re.compile(r"^ {0,3}#{1,6}(?:[ \t]|$)")
 _BLOCKQUOTE = re.compile(r"^ {0,3}>")
+_QUOTE_PREFIX = re.compile(r"^ {0,3}> ?")
 _HTML_BLOCK_TAGS = (
     "address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup"
     "|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame"
@@ -136,6 +138,8 @@ def count_numbers(
     stripped = text.strip()
     if serial_cell and re.fullmatch(r"#?\d{1,3}", stripped):
         return 0
+    # Markdown 連結 [文字](網址) 只留顯示文字：[100](https://…) 的 100 是可見數值
+    text = _MD_LINK.sub(r" \1 ", text)
     if not (in_cell or serial_cell):
         text = _LEADING_SECTION.sub(" ", text)
     for pattern in _EXCLUDE:
@@ -280,6 +284,33 @@ def check_text(text: str) -> list[Hit]:
             continue
 
         kind = block_kind(raw)
+        if kind == "quote":
+            # 引述內文照計：去掉 > 前綴，連續引述行合成一個單位，同段落規則分級。
+            # 引述內的空行（單獨的 >）、標題、分隔線、fence 結束單位且本行不計；
+            # 引述內的清單項各自成單位。
+            in_table = False
+            inner = raw
+            while (m := _QUOTE_PREFIX.match(inner)) is not None:
+                inner = inner[m.end() :]
+            inner_kind = block_kind(inner)
+            if unit is None or unit[2] not in ("quote", "quote-list"):
+                flush()
+            if inner_kind in ("blank", "thematic", "heading", "fence"):
+                flush()
+            elif inner_kind == "list":
+                flush()
+                marker = _LIST_MARK.match(inner)
+                assert marker is not None
+                unit = (lineno, [inner[marker.end() :]], "quote-list")
+            elif unit is not None:
+                unit[1].append(inner.strip())
+            else:
+                unit = (lineno, [inner.strip()], "quote")
+            continue
+        if unit is not None and unit[2] in ("quote", "quote-list"):
+            # 刻意偏離 CommonMark：不做 blockquote 惰性續行，`>` 行之後沒有 `>` 的行
+            # 一律另起段落計數——檢查器寧可多報，也不要吞掉引述後的正文。
+            flush()
         if kind is not None:
             # 任何區塊開頭都結束進行中的表格與段落
             flush()
@@ -294,9 +325,7 @@ def check_text(text: str) -> list[Hit]:
                 unit = (lineno, [raw[marker.end() :]], "list")
             elif kind == "html":
                 unit = (lineno, [stripped], "para")  # 標籤由 _EXCLUDE 去除，文字照計
-            # blank、thematic、heading、quote：只當邊界，本行不計。
-            # 刻意偏離 CommonMark：不做 blockquote 惰性續行，`>` 行之後沒有 `>` 的行
-            # 一律另起段落計數——檢查器寧可多報，也不要吞掉引述後的正文。
+            # blank、thematic、heading：只當邊界，本行不計
             continue
 
         if in_table:
