@@ -208,6 +208,8 @@
 - 亞利桑那：「around 30% of our 2-nanometer and more advanced capacity will be located in Arizona」｜S31（2025-04-17；公司事後補了「and more advanced」）。
 - 台中：「actively commencing the construction of its 1.4-nanometer fab in Taichung」｜S14（現行頁）。
 
+- 產能與製程範圍【已發生】（2026-11-07 補，供序幕卡片）：「As of 2025, the combined capacity has exceeded 13 million 12-inch equivalent wafers, offering process technologies covering the full generation and half-generation designs from 0.13 micrometers to 2 nanometers.」｜S14（https://www.tsmc.com/english/dedicatedFoundry/manufacturing/gigafab，現行頁，查證日 2026-11-07）；方法檔 3.1 第 1 級。
+
 ## 8. 競爭對手路線
 
 ### 8.1 Samsung Foundry（2nm GAA）
@@ -325,3 +327,12 @@ B = `https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/`
 | N2 IEDM 2024 論文等學術一手數據（SRAM 密度等） | 未納入（本次僅見媒體轉述，未取得論文全文） | IEDM TSMC N2 |
 
 其他限制：Intel 10-Q 提交日取自 SEC 索引頁；Samsung 簡報發布日以 PDF 建立日推算（建立日加一日為法說日，屬推算）；tsmc.com 現行頁面皆無發布日，已標「現行頁」並以存檔頁補足歷史時點。
+
+## 12. 序幕用的證據（2026-11-07 補）
+
+原本只記在審查紀錄 `review-pe-r1.md`，補進證據檔。查證日 2026-11-07，以頁面原始碼逐字比對。
+
+| 論斷 | 逐字引文 | 來源 URL | 類型 |
+|---|---|---|---|
+| 節點名稱不對應任何特定尺寸 | "Nowadays, a particular node name does not reflect the size of any particular chip feature, as it once did." | https://spectrum.ieee.org/the-status-of-moores-law-its-complicated（Rachel Courtland，2013-10-28） | 媒體；方法檔 3.1 第 5 級 |
+| Intel 的 Mark Bohr：指不出哪個尺寸剛好是節點名稱 | "But I’m the first to admit that I can’t point to the one dimension that’s 32 nm or 22 nm or 14 nm. Some dimensions are smaller than the stated node name, and others are larger." | 同上 | 媒體；第 5 級 |

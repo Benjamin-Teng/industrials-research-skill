@@ -77,7 +77,7 @@
 | N2 流程認證與 tape-out（Synopsys，2023-09-25） | "Synopsys, Inc. (Nasdaq: SNPS) today announced that its digital and custom/analog design flows are certified for TSMC's N2 process technology, enabling faster delivery of advanced-node SoCs with higher quality. Both flows are seeing strong momentum, with the digital design flow achieving multiple tape-outs and the analog design flow adopted for several design starts." | https://us.design-reuse.com/news/54884/synopsys-tsmc-2nm-certified-digital-and-analog-design-flows.html | EDA 廠（轉載） |
 | N2 全晶片 sign-off 工具（同上） | "As part of the certified EDA flows, Synopsys provides interoperable process design kits (iPDKs) and Synopsys IC Validator™ physical verification for full-chip physical signoff." | 同上 | EDA 廠 |
 | N2P 的 pin access 與 DRC／LVS／ESD（Synopsys，2025-04-23） | "Pattern-based pin access methodology has been enhanced for TSMC N2P and A16™ nodes to deliver competitive area results." ／ "Synopsys IC Validator™ signoff physical verification solution, including Design Rule Checks (DRC) and Layout Versus Schematic (LVS) checking, is certified for A16™ and N2P processes." | https://news.synopsys.com/2025-04-23-Synopsys-and-TSMC-Usher-In-Angstrom-Scale-Designs-with-Certified-EDA-Flows-on-Advanced-TSMC-A16-and-N2P-Processes | EDA 廠 |
-| sign-off 通用定義 | "signoff (also written as sign-off) checks is the collective name given to a series of verification steps that the design must pass before it can be taped out." | https://en.wikipedia.org/wiki/Signoff_(electronic_design_automation) | 第三方（百科） |
+| sign-off 通用定義 | "signoff (also written as sign-off) checks is the collective name given to a series of verification steps that the design must pass before it can be taped out." | https://en.wikipedia.org/wiki/Signoff_(electronic_design_automation) | 百科；方法檔 3.3：只當線索，不作來源（替代來源見第 9 節） |
 | 經紀商清單：DRC 清零、waiver 要核准（非 N2 專屬、非 TSMC 官方，可靠度低） | "Run the TSMC-specified DRC deck in full batch mode. Zero DRC violations is required. Waived violations must be documented with foundry-approved waiver forms." | https://www.vlsishuttle.com/en/mpw/tsmc-mpw-schedule-2026 | 第三方（MPW 經紀商） |
 
 **查無**：N2 專屬的 DRC 規則條數、N2 DRM 公開內容（需 NDA）；TSMC 官方的 tape-out 前置 checklist。已搜關鍵字：TSMC tape-out review checklist、TSMC DRM N2 design rules、TSMC tape-out submission TSMC-Online。
@@ -94,8 +94,8 @@
 
 | 論斷 | 逐字引文 | 來源 URL | 類型 |
 |---|---|---|---|
-| tape-out 的定義（含 mask 資料傳送） | "The tapeout is specifically the point at which the graphic for the photomask of the circuit is sent to the fabrication facility." | https://en.wikipedia.org/wiki/Tape-out | 第三方（百科） |
-| foundry 在 tape-out 後還會修改光罩資料 | "in current practice, the foundry will perform checks and make modifications to the mask design specific to the manufacturing process before actual tapeout." | 同上 | 第三方（百科） |
+| tape-out 的定義（含 mask 資料傳送） | "The tapeout is specifically the point at which the graphic for the photomask of the circuit is sent to the fabrication facility." | https://en.wikipedia.org/wiki/Tape-out | 百科；方法檔 3.3：只當線索，不作來源（替代來源見第 9 節） |
+| foundry 在 tape-out 後還會修改光罩資料 | "in current practice, the foundry will perform checks and make modifications to the mask design specific to the manufacturing process before actual tapeout." | 同上 | 百科；方法檔 3.3：只當線索，不作來源（替代來源見第 9 節） |
 | TSMC 光罩服務是「設計者與 fab 的介面」 | "As the world's largest mask making operation, TSMC's mask service is the interface between designers and our world class fabs." | https://www.tsmc.com/english/dedicatedFoundry/services/mask_services | 官方 |
 | CyberShuttle（多專案共用光罩） | "CyberShuttle® services overcome this barrier by enabling multiple designs to share tooling costs through a multi-project mask set. This significantly reduces mask NRE costs for product prototyping and circuit characterization." | https://www.tsmc.com/english/dedicatedFoundry/services/cybershuttle | 官方 |
 | CyberShuttle 涵蓋範圍與時程取得 | "the broadest technology range (from 0.5μm to A14), with the most frequent launch schedule (up to 10 shuttles per month)" ／ "login to TSMC-Online or contact your local TSMC representative for the latest CyberShuttle® schedule." | 同上 | 官方 |
@@ -144,11 +144,12 @@
 
 | 論斷 | 逐字引文 | 來源 URL | 類型 |
 |---|---|---|---|
-| 電子束在光阻上畫圖形、顯影、再以蝕刻轉到底下材料（一般做法，非 TSMC 專屬） | "Electron-beam lithography (often abbreviated as e-beam lithography or EBL) is the practice of scanning a focused beam of electrons to draw custom shapes on a surface covered with an electron-sensitive film called a resist (exposing). The electron beam changes the solubility of the resist, enabling selective removal of either the exposed or non-exposed regions of the resist by immersing it in a solvent (developing). The purpose, as with photolithography, is to create very small structures in the resist that can subsequently be transferred to the substrate material, often by etching." | https://en.wikipedia.org/wiki/Electron-beam_lithography | 【第三方】百科；方法檔 3.1 第 4 級（間接來源） |
-| 電子束微影用在光罩製作（一般做法） | "This form of maskless lithography has high resolution but low throughput, limiting its usage to photomask fabrication, low-volume production of semiconductor devices, and research and development." | 同上 | 【第三方】百科；第 4 級 |
+| 電子束在光阻上畫圖形、顯影、再以蝕刻轉到底下材料（一般做法，非 TSMC 專屬） | "Electron-beam lithography (often abbreviated as e-beam lithography or EBL) is the practice of scanning a focused beam of electrons to draw custom shapes on a surface covered with an electron-sensitive film called a resist (exposing). The electron beam changes the solubility of the resist, enabling selective removal of either the exposed or non-exposed regions of the resist by immersing it in a solvent (developing). The purpose, as with photolithography, is to create very small structures in the resist that can subsequently be transferred to the substrate material, often by etching." | https://en.wikipedia.org/wiki/Electron-beam_lithography | 百科；方法檔 3.3：只當線索，不作來源（替代來源見第 9 節） |
+| 電子束微影用在光罩製作（一般做法） | "This form of maskless lithography has high resolution but low throughput, limiting its usage to photomask fabrication, low-volume production of semiconductor devices, and research and development." | 同上 | 百科；方法檔 3.3：只當線索，不作來源（替代來源見第 9 節） |
 
 - 查證日：2026-11-07（以頁面原始碼逐字比對）。
 - 範圍：只說明一般做法，沒有講 TSMC 或 EUV 光罩用哪一種光阻、正型或負型。
+- 2026-11-07 起：維基百科依方法檔 3.3 只當線索，上面兩筆改由第 9 節的 Synopsys 術語頁取代。
 
 ---
 
@@ -185,6 +186,51 @@
 
 ---
 
+## 9. 替代維基百科的來源（2026-11-07 補）
+
+依方法檔 3.3，維基百科只當線索，引用時改引原始文件或其他第 1～4 級來源。下列來源都是非 TSMC 的一般做法說明，分級為 3.1 第 4 級（間接來源）。
+查證日一律 2026-11-07；引文以下載的頁面原始碼逐字比對（Google Patents 只比對說明書本文）。
+
+### 9.1 設計驗證與 tape-out（互動頁步驟 2、3）
+
+| 論斷 | 逐字引文 | 來源 URL | 類型 |
+|---|---|---|---|
+| DRC 的定義 | "Design Rule Checking (DRC) verifies as to whether a specific design meets the constraints imposed by the process technology to be used for its manufacturing." | https://www.synopsys.com/glossary/what-is-design-rule-checking.html（Synopsys Editorial Staff，2021-01-04） | 第 4 級（EDA 廠術語頁） |
+| DRC 規則舉例：最小間距 | "Minimum Spacing Minimum distance between two wires or features."（表格列） | 同上 | 第 4 級 |
+| LVS 的定義 | "Layout Versus Schematic (LVS) checking compares the extracted netlist from the layout to the original schematic netlist to determine if they match." | https://www.synopsys.com/glossary/what-is-layout-versus-schematic-checking.html（Manoz Palaparthi，2020-03-17） | 第 4 級 |
+| sign-off 的內容 | "Here, all of the critical parameters that will impact the performance or manufacturability of the chip are verified against the results of “golden signoff” quality tools." | https://www.synopsys.com/glossary/what-is-ic-design.html（Synopsys Editorial Staff，2021-01-04） | 第 4 級 |
+| 驗證之後才 tape-out，tape-out 是定稿並交給晶圓廠 | "Analysis and verification of the design: analyze the power, performance, power , and verify the design correctness" ／ "Tape out and fabricate the silicon chip: finalize the silicon chip design and send to foundry for manufacture"（流程清單的兩項，原文照錄） | https://www.synopsys.com/glossary/what-is-physical-design.html（Frank Malloy，2025-10-16） | 第 4 級 |
+
+### 9.2 微影、光阻與 OPC（互動頁步驟 3、4、5）
+
+| 論斷 | 逐字引文 | 來源 URL | 類型 |
+|---|---|---|---|
+| 光阻與正型、負型 | "Depending on whether a positive or negative photoresist is used, the exposed regions either harden or become soluble, allowing selective removal in later manufacturing steps." | https://www.synopsys.com/glossary/what-is-lithography.html（Claris Leung，2025-10-24） | 第 4 級（EDA 廠術語頁） |
+| 一層一層用光罩做出圖形 | "By repeating this process layer by layer, manufacturers can build the complex structures that form modern integrated circuits (ICs) ." | 同上 | 第 4 級 |
+| 電子束寫入用在光罩製作 | "Electron-beam (e-beam) lithography, by contrast, is primarily used for direct writing, especially in photomask creation." | 同上 | 第 4 級 |
+| OPC 的定義 | "Optical Proximity Correction (OPC) involves modifying mask layouts to compensate for distortions caused by the optical system, ensuring that the printed features closely match the intended design." | 同上 | 第 4 級 |
+| 輔助圖形（SRAF）不會被印出來 | "Sub-Resolution Assist Features (SRAF) are small, non-printing elements added to masks to improve image fidelity and process windows by influencing diffraction patterns." | 同上 | 第 4 級 |
+| 線端加寬與轉角小方塊 | "In general, optical proximity correction includes the addition of serifs to the corners or hammerheads to end edges of the original pattern to prevent the rounding of right-angled corners and the pulling up of line-ends." | https://patents.google.com/patent/US6598218B2/en（UMC 專利，2003-07-22 核准；先前技術段） | 第 4 級（非 TSMC 專利，當一般做法） |
+| 轉角變圓、線端縮短、疏密造成的線寬偏差 | "As feature sizes on a circuit become smaller and smaller, the circuit shape on the wafer differs from the original mask pattern more and more. In particular, optical proximity effect phenomena such as corner rounding, line end foreshortening, iso-dense print bias, etc., are typically observed." | https://patents.google.com/patent/US6127071A/en（IBM 專利，2000-10-03 核准；先前技術段） | 第 4 級 |
+
+### 9.3 EUV 光罩結構與保護膜（互動頁步驟 5）
+
+| 論斷 | 逐字引文 | 來源 URL | 類型 |
+|---|---|---|---|
+| EUV 靠反射，不靠穿透 | "However, extreme ultraviolet light, which is generally in the 5 to 100 nanometer wavelength range, is strongly absorbed in virtually all materials. For that reason, extreme ultraviolet systems work by reflection rather than by transmission of light." | https://patents.google.com/patent/US11630385B2/en（Applied Materials 專利，2023-04-18 核准；先前技術段） | 第 4 級（設備商專利，當一般做法） |
+| 鉬／矽多層膜 | "The lens elements and mask blanks of extreme ultraviolet lithography systems are coated with reflective multilayer coatings of materials such as molybdenum and silicon." | 同上 | 第 4 級 |
+| 多層膜的對數（實施例） | "In a non-limiting embodiment, the multilayer stack 306 includes a range of 20-60 of the reflective pairs 316 for a total of up to 120 reflective layers." | 同上 | 第 4 級（實施例，不是一般規格） |
+| 沒有吸收層的地方反射 | "FIG. 1 shows a conventional EUV reflective mask 10 , which is formed from an EUV mask blank, which includes a reflective multilayer stack 12 on a substrate 14 , which reflects EUV radiation at unmasked portions by Bragg interference." | https://patents.google.com/patent/US11366379B2/en（Applied Materials 專利，2022-06-21 核准；先前技術段） | 第 4 級 |
+| 覆蓋層在蝕刻時保護多層膜 | "A capping layer 22 is formed over the reflective multilayer stack 12 and protects the reflective multilayer stack 12 during the etching process." | 同上 | 第 4 級 |
+| 吸收層：以 TaN 為主的材料是一例 | "For example, TaN-based or other absorber layers on top of the multilayer stack 12 require a thickness of at least 40 nm, typically in a range of from 51 nm to 77 nm, which is very thick." | 同上 | 第 4 級 |
+| 保護膜的用途 | "A pellicle may be provided to protect the patterning device from airborne particles and other forms of contamination. Contamination on the surface of the patterning device can cause manufacturing defects on the substrate." | https://patents.google.com/patent/US11977326B2/en（ASML 專利，2024-05-07 核准；先前技術段） | 第 4 級（設備商專利，當一般做法） |
+| 保護膜裝在框架上 | "The pellicle may be supported by a pellicle frame, forming a pellicle assembly." | 同上 | 第 4 級 |
+
+- 範圍：以上都在講一般做法，沒有一筆講 TSMC 或 N2。
+- 找不到第 1～4 級來源而從頁面刪掉的說法：「晶圓廠在 tape-out 前會檢查並修改光罩資料」「轉角圓化很難完全補償」「保護膜讓灰塵落在離圖形夠遠的地方、不會被印出來」「光罩寫入機也可用雷射」「多層膜 40 到 50 層」。
+
+---
+
 ## 官方示意圖候選清單
 
 | # | 檔名（已下載） | 圖直接 URL | 所在頁面 URL | 頁碼／位置 | 圖說 | 授權／版權標示 |
@@ -202,7 +248,7 @@
 
 - **N2 EDA 認證時程**：EDA 廠（Synopsys 2023-09-25、Siemens 2023-09-27、Cadence 2023-04／2024-04）宣稱 N2 認證完成；TSMC 官網 EDA 認證頁（as of 10/01/2026）已不再單列 N2，僅列 N2P 等。兩者不矛盾（不同時點），但官方頁面無法直接佐證 N2 的逐格狀態。
 - **N2P 量產時間**：Tom's Hardware（2024-11-22）寫 "mass production using this fabrication process is slated for the second half of 2026"；TSMC 官網 2026 版 N2 頁只說 N2 本體已於 4Q25 量產，N2P 量產時間於本次取得的 TSMC 頁面中未見——**待查證**。
-- **tape-out 定義**：第三方（百科）與 TSMC 官方頁面用語不同；TSMC 頁面用「interface between designers and our world class fabs」，未使用 "tape-out" 一詞。
+- **tape-out 定義**：第三方（百科，2026-11-07 起只當線索；替代來源見 9.1）與 TSMC 官方頁面用語不同；TSMC 頁面用「interface between designers and our world class fabs」，未使用 "tape-out" 一詞。
 
 ## 搜尋紀錄（供驗收「查無」項目）
 

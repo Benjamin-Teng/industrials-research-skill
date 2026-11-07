@@ -88,7 +88,9 @@ def test_banned_source_list_defined_only_in_method():
         if "不能當來源" in p.read_text(encoding="utf-8") and p.name != "CHANGELOG.md"
     ]
     assert hits == [METHOD]
-    assert "社群貼文" in section(METHOD.read_text(encoding="utf-8"), "### 3.3 不能當來源的清單")
+    banned = section(METHOD.read_text(encoding="utf-8"), "### 3.3 不能當來源的清單")
+    assert "社群貼文" in banned
+    assert "維基百科" in banned
 
 
 REVIEW_KEYWORDS = [
