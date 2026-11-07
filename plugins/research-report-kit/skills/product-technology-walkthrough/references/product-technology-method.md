@@ -214,7 +214,23 @@ DOM id 沿用 N2，產生衍生成品的腳本依這些 id 擷取文字。`<scri
 - md 與 PDF 由互動頁逐拍截圖產生，符合 `research-report-output` 的「md 與 PDF 一律交付」。
 - 改內容一律先改互動頁，再重產衍生成品。
 
-產生衍生成品的工具用法：待後續補上。
+重產流程是三步，在互動頁所在的環境裡跑（`<skill>` 指本 skill 的目錄，`<report-output>` 指
+`research-report-output` 的 `scripts/`）：
+
+```bash
+# 1. 互動頁 → md ＋ 逐拍截圖（pdf-img/sNN-B.png）
+python <skill>/scripts/build_walkthrough_md.py <互動頁.html> <成品資料夾> <md 檔名>
+# 2. 數字密度檢查，要 0 命中
+python <report-output>/fa_check.py <成品資料夾>/<md 檔名>
+# 3. md → PDF
+python <report-output>/md2pdf.py <成品資料夾>/<md 檔名>
+```
+
+- 第 1 步只讀互動頁上實際顯示的文字：front matter、閱讀說明、KPI、幕導語取自 `META`（見 5.1），
+  廠商與來源徽章取自 `STEPS`、`SUP`、`SRC`、`TAG`。必填欄位或 `META` 欄位缺值時腳本直接停止，不產出 md。
+- 截圖檔名的 `NN` 是兩位數步號，`B` 從 1 起算的拍號，與 md 的圖片連結一致。
+- 第 2 步有命中時，回頭改互動頁的文字（把段落拆短），不改 md；改完從第 1 步重跑。
+- 腳本依賴 Playwright（chromium）與同一個 plugin 內的 `research-report-output`；`md2pdf.py` 另需 pandoc。
 
 ### 5.3 成品資料夾與發布
 

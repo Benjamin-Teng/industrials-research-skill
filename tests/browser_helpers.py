@@ -9,26 +9,35 @@
 from __future__ import annotations
 
 import atexit
+import importlib.util
 import os
 import shutil
+import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from types import ModuleType
 from typing import Any, NoReturn
 
 import pytest
 
-# Task 3 完成前的暫用外殼，內容與 N2 的 build_pdf_md.py 相同；之後改為匯入 wrap_fragment()。
-SHELL_HEAD = (
-    '<!doctype html><html><head><meta charset="utf-8">'
-    '<meta name="viewport" content="width=device-width,initial-scale=1">'
-    "<style>body{margin:0}[hidden]{display:none!important}</style></head><body>"
-)
-SHELL_TAIL = "</body></html>"
+ROOT = Path(__file__).resolve().parents[1]
+PTW = ROOT / "plugins" / "research-report-kit" / "skills" / "product-technology-walkthrough"
+SKELETON = PTW / "assets" / "walkthrough-skeleton.html"
+SCRIPT = PTW / "scripts" / "build_walkthrough_md.py"
 
-
-def wrap_fragment(html: str) -> str:
-    return SHELL_HEAD + html + SHELL_TAIL
+# 外殼只在腳本裡寫一份：以檔案路徑載入（目錄名含連字號，無法用一般 import），測試共用同一個模組物件。
+_spec = importlib.util.spec_from_file_location("build_walkthrough_md", SCRIPT)
+assert _spec is not None and _spec.loader is not None
+build_walkthrough_md: ModuleType = importlib.util.module_from_spec(_spec)
+sys.modules["build_walkthrough_md"] = build_walkthrough_md
+_old_dont_write = sys.dont_write_bytecode
+sys.dont_write_bytecode = True  # 載入腳本（含它載入的 fa_check）時不在 plugin 目錄寫 __pycache__
+try:
+    _spec.loader.exec_module(build_walkthrough_md)
+finally:
+    sys.dont_write_bytecode = _old_dont_write
+wrap_fragment = build_walkthrough_md.wrap_fragment
 
 
 def _unavailable(reason: str) -> NoReturn:
