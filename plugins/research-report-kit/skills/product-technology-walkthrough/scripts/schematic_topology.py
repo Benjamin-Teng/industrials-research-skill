@@ -135,7 +135,9 @@ def _load_wrap_fragment() -> Any:
 
 
 def _scenes(page: Path, step: int | None, beat: int) -> list[tuple[int, int, list[Box]]]:
-    """逐拍傾印。回傳 [(步號, 拍索引, boxes)]；頁面錯誤或步驟不存在時 raise RuntimeError。"""
+    """逐拍傾印。回傳 [(步號, 拍索引, boxes)]；頁面錯誤、步驟不存在或 Playwright 失敗時 raise RuntimeError。"""
+    from playwright.sync_api import Error as PlaywrightError
+    from playwright.sync_api import TimeoutError as PlaywrightTimeout
     from playwright.sync_api import sync_playwright
 
     wrap_fragment = _load_wrap_fragment()
@@ -176,6 +178,8 @@ def _scenes(page: Path, step: int | None, beat: int) -> list[tuple[int, int, lis
                 return result
             finally:
                 browser.close()
+    except (PlaywrightError, PlaywrightTimeout) as exc:  # 啟動失敗、等待逾時、頁面 JS 例外
+        raise RuntimeError(f"Playwright 失敗：{exc}") from exc
     finally:
         work.unlink(missing_ok=True)
 

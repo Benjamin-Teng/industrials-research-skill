@@ -10,9 +10,10 @@ import importlib.util
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
-from browser_helpers import PTW, SKELETON, launch
+import pytest
+from browser_helpers import PTW, SKELETON, _unavailable, launch
 
 TOPOLOGY = PTW / "scripts" / "schematic_topology.py"
 DEMO_PLAIN_STEP = 1  # 與 test_walkthrough_skeleton.py 相同：沒有 data-net 元件
@@ -196,3 +197,87 @@ def test_cli_reports_problem_with_exit_1(tmp_path):
     r = run_cli(page, "--step", DEMO_NET_STEP, "--beat", 0)
     assert r.returncode == 1, r.stdout + r.stderr
     assert "懸空端點" in r.stdout and "孤立通孔" in r.stdout
+
+
+# ---- Playwright 例外一律轉成 exit 3（不開真的瀏覽器，用假的 sync_playwright 注入）
+
+
+class _FakePage:
+    def __init__(self, fail: str | None) -> None:
+        self.fail = fail
+
+    def on(self, *_: object) -> None:
+        pass
+
+    def goto(self, *_: object) -> None:
+        pass
+
+    def wait_for_function(self, *_: object) -> None:
+        if self.fail == "timeout":
+            from playwright.sync_api import TimeoutError as PlaywrightTimeout
+
+            raise PlaywrightTimeout("Timeout 30000ms exceeded.")
+
+    def evaluate(self, *_: object) -> list[Any]:
+        if self.fail == "evaluate":
+            from playwright.sync_api import Error as PlaywrightError
+
+            raise PlaywrightError("Page.evaluate: ReferenceError: walkthrough is not defined")
+        return [[1, 0]]
+
+
+class _FakeBrowser:
+    def __init__(self, fail: str | None) -> None:
+        self.fail = fail
+        self.closed = False
+
+    def new_context(self, **_: object) -> Any:
+        fail = self.fail
+
+        class _Ctx:
+            def new_page(self) -> _FakePage:
+                return _FakePage(fail)
+
+        return _Ctx()
+
+    def close(self) -> None:
+        self.closed = True
+
+
+def _fake_sync_playwright(fail: str | None, browsers: list[_FakeBrowser]) -> Any:
+    class _Chromium:
+        def launch(self, **_: object) -> _FakeBrowser:
+            if fail == "launch":
+                from playwright.sync_api import Error as PlaywrightError
+
+                raise PlaywrightError("BrowserType.launch: Executable doesn't exist")
+            browser = _FakeBrowser(fail)
+            browsers.append(browser)
+            return browser
+
+    class _Pw:
+        chromium = _Chromium()
+
+        def __enter__(self) -> Self:
+            return self
+
+        def __exit__(self, *_: object) -> None:
+            pass
+
+    return lambda: _Pw()
+
+
+@pytest.mark.parametrize("fail", ["evaluate", "timeout", "launch"])
+def test_playwright_errors_exit_3(fail, tmp_path, monkeypatch, capsys):
+    try:
+        from playwright import sync_api
+    except ImportError:
+        _unavailable("沒有安裝 playwright")
+    browsers: list[_FakeBrowser] = []
+    monkeypatch.setattr(sync_api, "sync_playwright", _fake_sync_playwright(fail, browsers))
+    page = skeleton_copy(tmp_path)
+    code = topology.main(["schematic_topology.py", str(page), "--step", str(DEMO_NET_STEP)])
+    assert code == 3
+    assert "停止檢查" in capsys.readouterr().err
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["page.html"]  # 中間檔已刪
+    assert all(b.closed for b in browsers)  # 瀏覽器有關
