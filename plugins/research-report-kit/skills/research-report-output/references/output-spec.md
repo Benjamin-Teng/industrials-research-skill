@@ -1,7 +1,7 @@
 # 研究報告輸出規範（格式與交付標準）
 
 > **版本**：v2.0（發布版）　|　**適用**：企業與產業研究、個股深度研究、產業／供應鏈研究、輪動掃描週報，**台股與美股共用同一套骨架**
-> **本文件管的是「格式與交付」，不是「研究內容」**：內容對錯看方法論文件（A 型看 `equity-valuation-discipline`，D 型看 `business-industry-analysis`，或你自己的框架），長什麼樣、怎麼交、怎麼歸檔看本文件。
+> **本文件管的是「格式與交付」，不是「研究內容」**：內容對錯看方法論文件（A 型看 `equity-valuation-discipline`，D 型看 `business-industry-analysis`，E 型看 `product-technology-walkthrough`，或你自己的框架），長什麼樣、怎麼交、怎麼歸檔看本文件。
 > **回報語言**：繁體中文（專有名詞、財務科目、公司代號保留原文）。
 
 ---
@@ -12,7 +12,7 @@
 2. **PDF 由 `md2pdf.py` 產生**，套用機構研究報告樣式；不得用未套樣式的裸轉檔交付。
 3. **兩個檔都必須交付給使用者**，並在同一則訊息內附一句話結論。Claude 用 `SendUserFile`；Codex／其他環境把檔案寫進工作目錄並告知路徑。
 4. **md 檔必須含 YAML front matter**（第二章），缺必填欄位即不得交付。
-5. **所有關鍵數據標註資料層級標籤與查價日**（第四章），未標註者視為未完成。D 型以會計期間取代查價日。
+5. **所有關鍵數據標註資料層級標籤與查價日**（第四章），未標註者視為未完成。D 型以會計期間取代查價日；E 型沒有價格與市場數據，以 front matter 的 `date`（查證日）取代，並標來源分級（方法檔 3.1）。
 6. **骨架不因市場而變**：台股、美股共用同一套章節與檢查清單，**只換資料源、籌碼欄位與幣別口徑**（`market-localization.md`）。
 7. **發布前跑完第八章格式層檢查清單＋F-rules 自查**（`formatting-rules.md`）；內容層檢查清單另見方法論文件。
 
@@ -30,6 +30,7 @@
 | B 產業供應鏈研究 | 產業／技術主題 | `AI伺服器液冷_產業供應鏈研究_v1.0_20260806.pdf` |
 | C 輪動掃描週報 | 期間 | `2026W32_輪動掃描週報_v1.0_20260806.pdf` |
 | D 企業與產業研究 | 公司名＋代號 | `富喬1815_企業與產業研究_v1.0_20261024.pdf`／`Bloom_BE_企業與產業研究_v1.0_20261024.pdf` |
+| E 產品技術研究 | 公司名＋代號 | `台積電2330_產品技術研究_v1.0_20261107.pdf`／`Bloom_BE_產品技術研究_v1.0_20261107.pdf` |
 
 - 版本語意：`v1.0` 首發；`v1.1` 小幅更新或補資料；**`v2.0` 結論改變**。結論改變一律進位主版號，並在文件開頭「版本紀錄」寫明改了什麼、為什麼改。
 - 同一標的的新版**不覆蓋舊版**，兩版並存以利覆盤。
@@ -45,15 +46,15 @@
 ---
 title: 〈公司名〉〈代號〉個股深度研究報告   # ★
 subtitle: 一句話講清楚論點與方法            # ★
-type: 個股深度研究                         # ★ 個股深度研究 / 產業供應鏈研究 / 輪動掃描週報 / 企業與產業研究
+type: 個股深度研究                         # ★ 個股深度研究 / 產業供應鏈研究 / 輪動掃描週報 / 企業與產業研究 / 產品技術研究
 market: TW                                 # ★ TW / US / TW+US → 決定套哪一組在地化欄位
 ticker: TWSE:0000                          # ★ 台股 TWSE:xxxx／TPEx:xxxx；美股 NYSE:XXX／NASDAQ:XXXX
 version: v1.0                              # ★ 報告版本（見下方三者分開說明）
 date: 2026-08-06                           # ★ 發布日
-price_asof: 2026-08-05 正常盤收盤           # ★ A／B／C 型使用；D 型不使用。市場數據基準日與口徑（三件套）
+price_asof: 2026-08-05 正常盤收盤           # ★ A／B／C 型使用；D、E 型不使用。市場數據基準日與口徑（三件套）
 author: 〈你的名字或機構〉                   # ★
 framework: 〈方法論文件名 vX.Y〉             # ★ 本報告套用的上位框架與版本
-methodology_version: expectations-v1       # ★ A 型與 D 型必填；A 型 `expectations-v1`、D 型 `business-industry-v1`（見下方三者分開說明）
+methodology_version: expectations-v1       # ★ A、D、E 型必填；A 型 `expectations-v1`、D 型 `business-industry-v1`、E 型 `product-technology-v1`（見下方三者分開說明）
 research_question: 〈本次要驗證的投資命題〉  # ★ 一句話、可證偽（FR-01）
 as_of: 2026-08-05 18:00                    # ★ 本次可用資訊截止日期與時間（FR-01）
 strategy_type: fundamental                 # fundamental / catalyst / monitoring；未定填 unknown 並說明影響
@@ -64,7 +65,7 @@ expectations_status: insufficient          # supported / insufficient / no_mater
 decision_status: watch                     # actionable_candidate / watch / avoid；預設 watch；須與 rating 一致
 decision_policy_source: unspecified        # 使用者報酬要求與風險政策來源；預設 unspecified
 edge_status:                               # hypothesis_only / evidence_supported / validated_with_limits；提出 edge 結論時必填，預設不得高於 hypothesis_only
-rating: 〈分批布局／觀察／回避〉              # A 型必填；B/C 型填產業評等或結論標籤；D 型不使用
+rating: 〈分批布局／觀察／回避〉              # A 型必填；B/C 型填產業評等或結論標籤；D、E 型不使用
 footer_right: 個人研究筆記 · 非投資建議      # 選填；頁尾右欄標語
 disclaimer: 〈封面免責條款全文〉            # 選填；不填則用產檔器預設值
 baseline_of: 2026-08-13 Investor Day       # 選填；未來 30 天內有已排定事件、或事件已發生但結果未取得時必填
@@ -83,11 +84,15 @@ D 型的 KPI 卡只放業務指標（營收來源數與最大來源的利潤占�
 
 **D 型 front matter**：只使用 `templates/D-business-industry.md` 列出的欄位；`disclaimer` 必須用 D 骨架的版本。
 
+E 型的 KPI 卡由互動頁的 `META.kpi` 提供，3–5 張。
+
+**E 型 front matter**：由 `build_walkthrough_md.py` 依互動頁的 `META` 產生，欄位見 `product-technology-walkthrough` 的 `references/product-technology-method.md` 5.1 的 `META` 欄位表；必填欄位缺值時腳本停止，不產出 md。
+
 ### 2.1 `methodology_version`／`version`／plugin semver 三者分開
 
 | 欄位 | 管的是什麼 | 誰改它 |
 |---|---|---|
-| `methodology_version` | 本報告套用的**方法論主版本**（如 `expectations-v1`），對應所屬方法論的代際：A 型為 equity-valuation-discipline 的 `expectations-v1`，D 型為 business-industry-analysis 的 `business-industry-v1` | 方法論改版時才變 |
+| `methodology_version` | 本報告套用的**方法論主版本**（如 `expectations-v1`），對應所屬方法論的代際：A 型為 equity-valuation-discipline 的 `expectations-v1`，D 型為 business-industry-analysis 的 `business-industry-v1`，E 型為 product-technology-walkthrough 的 `product-technology-v1` | 方法論改版時才變 |
 | `version`（front matter 既有欄位） | **這份報告**本身的版本（`v1.0`／`v1.1`／`v2.0`），見第一章版本語意 | 每次補資料或結論改變時變 |
 | plugin manifest 的 semver | **這個 plugin 套件**的版本（`plugin.json`） | plugin 發布新版時變 |
 
@@ -192,6 +197,16 @@ D 型的 KPI 卡只放業務指標（營收來源數與最大來源的利潤占�
 
 內容規則（各章寫什麼、怎麼判定）見 business-industry-analysis 的 `references/business-industry-method.md`，本檔不另抄。`disclaimer` 用 D 骨架的版本。
 
+### E 型｜產品技術研究（methodology_version: product-technology-v1）
+
+主要成品是互動頁，沒有手寫的骨架模板：md 由 `product-technology-walkthrough` 的 `scripts/build_walkthrough_md.py` 依互動頁逐拍產生，PDF 再由該 md 產生。
+
+- **章節結構**：閱讀說明，其後每一幕（`##`）含若干步驟（`###`），步驟內為白話說明、逐拍截圖與圖說、細節、相關廠商、資料來源。章節由互動頁的 `ACTS` 與 `STEPS` 決定，本檔不另列章次。
+- **沒有價格與市場數據**：不使用 `price_asof`、`rating` 與估值欄位，不標查價日。
+- **改內容的順序**：先改互動頁，再重跑腳本產 md 與 PDF；不手改 md。重產流程見方法檔 5.2。
+- **與 B 型的分界**：以單一公司主力產品「怎麼做出來、怎麼運作」為主體走 E 型；以產業或技術主題為主體走 B 型。
+- 內容規則（來源分級、示意圖審查、限制）見 product-technology-walkthrough 的 `references/product-technology-method.md`，本檔不另抄。
+
 ---
 
 ## 四、內容標註規範（各型報告共用）
@@ -210,11 +225,11 @@ D 型的 KPI 卡只放業務指標（營收來源數與最大來源的利潤占�
 - `l2` 分析師／媒體估算（黃）— 情境參考
 - `l3` 未具名／第二手轉述（紅）— **不得納入基準假設**，僅可記錄
 
-D 型另有 Layer 1 專用標示，定義見 business-industry-analysis 的 `references/business-industry-method.md` 5.1。
+D 型另有 Layer 1 專用標示，定義見 business-industry-analysis 的 `references/business-industry-method.md` 5.1。E 型的來源分級見 product-technology-walkthrough 的方法檔 3.1。
 
 ### 4.2 查價日
 
-所有市場數據（股價、市值、倍數、共識、同業 P/E、報價、short interest）**逐處標註查詢日與口徑**；同業倍數比較表**每列**標查價日。front matter 的 `price_asof` 是全報告的預設基準日，個別數據不同日者須另標。格式一律「數值＋日期＋盤別」三件套。D 型不含市場數據，以會計期間標示取代。
+所有市場數據（股價、市值、倍數、共識、同業 P/E、報價、short interest）**逐處標註查詢日與口徑**；同業倍數比較表**每列**標查價日。front matter 的 `price_asof` 是全報告的預設基準日，個別數據不同日者須另標。格式一律「數值＋日期＋盤別」三件套。D 型不含市場數據，以會計期間標示取代；E 型同樣不含市場數據，以查證日與來源分級取代。
 
 ### 4.3 來源引用
 
@@ -297,16 +312,16 @@ playwright install chromium
 
 ## 八、發布前檢查清單（格式層）
 
-每份報告必跑。內容層檢查清單依類型區分：A 型見 `equity-valuation-discipline` 的 `references/prepublish-checklist.md`；D 型見 `business-industry-analysis` 的「交付前內容層檢查」。
+每份報告必跑。內容層檢查清單依類型區分：A 型見 `equity-valuation-discipline` 的 `references/prepublish-checklist.md`；D 型見 `business-industry-analysis` 的「交付前內容層檢查」；E 型見 `product-technology-walkthrough` 的方法檔第八章「治理」與第六章「示意圖審查」。
 
 1. `.md` 與 `.pdf` 皆已產出，PDF 由該 md 直接生成，未手改。
-2. A／B／C 型：front matter 必填欄位齊全（含 `market`、`framework` 版本、`methodology_version`、`research_question`、`as_of`）；KPI 卡 3–5 張且與內文數字一致、未知項未填零；價格均有幣別前綴與「數值＋日期＋盤別」三件套。D 型：front matter 依 D 骨架、只用 D 骨架欄位；KPI 卡 3–5 張、只放業務指標、與內文數字一致、未知項未填零；`disclaimer` 用 D 骨架版本。
-2.1 D 型不適用。`rating` 與 `decision_status` 一致（見第二章 2.2）；提出 edge 結論者 `edge_status` 已填且不高於 `hypothesis_only`，除非補齊對應證據。
+2. A／B／C 型：front matter 必填欄位齊全（含 `market`、`framework` 版本、`methodology_version`、`research_question`、`as_of`）；KPI 卡 3–5 張且與內文數字一致、未知項未填零；價格均有幣別前綴與「數值＋日期＋盤別」三件套。D 型：front matter 依 D 骨架、只用 D 骨架欄位；KPI 卡 3–5 張、只放業務指標、與內文數字一致、未知項未填零；`disclaimer` 用 D 骨架版本。E 型：front matter 由 `build_walkthrough_md.py` 依互動頁 `META` 產生（缺值時腳本已停止）；KPI 卡 3–5 張、與內文數字一致、未知項未填零；`type` 為「產品技術研究」、`methodology_version` 為 `product-technology-v1`。
+2.1 D、E 型不適用。`rating` 與 `decision_status` 一致（見第二章 2.2）；提出 edge 結論者 `edge_status` 已填且不高於 `hypothesis_only`，除非補齊對應證據。
 3. 檔名符合第一章規則；版本語意正確（結論改變＝主版號進位）；輸出模式後綴正確。
 4. 抽查 PDF：封面資訊正確、目錄無斷字、寬表未溢出版面（**欄數 >7 已拆表**）、頁碼正常、提示框顏色語意正確。
-5. 資料層級標籤已標；A／B／C 型：查價日已標；D 型：會計期間已標；`l3` 資訊未被用作基準假設；一手取證失敗處已依 4.3 明寫。
+5. 資料層級標籤已標；A／B／C 型：查價日已標；D 型：會計期間已標；E 型：查證日與來源分級已標；`l3` 資訊未被用作基準假設；一手取證失敗處已依 4.3 明寫。
 6. **F-rules 六項自查（F-a 至 F-f）已逐條通過**（`formatting-rules.md`）。
-7. 資料源、籌碼欄位（D 型不適用）、信用評等欄位已依 `market` 換成對應版本，無台美混用。
+7. 資料源、籌碼欄位（D、E 型不適用）、信用評等欄位已依 `market` 換成對應版本，無台美混用。
 8. **刪節後處理**（External／Briefing）：章次已重編、子節已重編、交叉引用已同步。
 9. （選用）已用 speak-human-tw 校對正文用語；版面仍以 F-rules 為準。
 

@@ -128,7 +128,7 @@ research-report-kit/
     │   │   ├── formatting-rules.md        # F1–F5 完整版（正反例）
     │   │   ├── market-localization.md     # 台股／美股對照 ＋ 三個真差異
     │   │   └── customize-your-framework.md # 怎麼換成你自己的方法論
-    │   ├── templates/{A,B,C,D}-*.md       # 個股／產業／週報／企業與產業四型骨架
+    │   ├── templates/{A,B,C,D}-*.md       # 個股／產業／週報／企業與產業骨架（E 型產品技術研究由互動頁產 md，沒有模板）
     │   ├── scripts/md2pdf.py
     │   └── assets/report.css
     ├── business-industry-analysis/

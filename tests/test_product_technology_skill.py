@@ -138,3 +138,54 @@ def test_openai_yaml_states_collect_and_integrate():
     y = (PTW / "agents" / "openai.yaml").read_text(encoding="utf-8")
     assert "collect" in y
     assert "integrate" in y
+
+
+OUTPUT_DIR = PLUGIN / "skills" / "research-report-output"
+OUTPUT_SPEC = OUTPUT_DIR / "references" / "output-spec.md"
+OUTPUT_SKILL = OUTPUT_DIR / "SKILL.md"
+LAYER1_METHOD = PLUGIN / "skills" / "business-industry-analysis" / "references" / "business-industry-method.md"
+
+
+def test_output_spec_defines_type_e_after_d():
+    spec = OUTPUT_SPEC.read_text(encoding="utf-8")
+    d, e = spec.index("### D 型｜"), spec.index("### E 型｜產品技術研究")
+    assert d < e and "product-technology-v1" in spec
+
+
+def test_routing_mentions_type_e():
+    assert "E 型" in section(OUTPUT_SKILL.read_text(encoding="utf-8"), "## 工作流程")
+
+
+def test_no_four_type_wording_left():
+    for p in (OUTPUT_SKILL, OUTPUT_SPEC, ROOT / "README.md"):
+        t = p.read_text(encoding="utf-8")
+        assert "四型" not in t and "{A,B,C,D}" not in t, p
+
+
+def test_layer1_points_to_new_skill():
+    m = LAYER1_METHOD.read_text(encoding="utf-8")
+    assert "技術報告（另案）" not in m and "product-technology-walkthrough" in m
+
+
+def test_output_spec_type_e_has_no_market_data_fields():
+    body = section(OUTPUT_SPEC.read_text(encoding="utf-8"), "### E 型｜產品技術研究（methodology_version: product-technology-v1）")
+    for word in ("build_walkthrough_md.py", "沒有價格與市場數據", "product-technology-method.md"):
+        assert word in body, word
+
+
+def test_output_spec_filename_and_checklist_cover_type_e():
+    spec = OUTPUT_SPEC.read_text(encoding="utf-8")
+    assert "_產品技術研究_v1.0_" in spec
+    checklist = section(spec, "## 八、發布前檢查清單（格式層）")
+    assert "E 型" in checklist and "product-technology-walkthrough" in checklist
+
+
+def test_output_skill_description_and_modes_cover_type_e():
+    text = OUTPUT_SKILL.read_text(encoding="utf-8")
+    assert "產品技術" in frontmatter(OUTPUT_DIR / "SKILL.md")["description"]
+    assert "**E 型保留**" in section(text, "### External（傳播）")
+    assert "**E 型保留**" in section(text, "### Briefing（摘要，≤3 頁）")
+
+
+def test_plugin_readme_no_four_type_wording():
+    assert "四型" not in (PLUGIN / "README.md").read_text(encoding="utf-8")
