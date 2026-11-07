@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -189,3 +190,36 @@ def test_output_skill_description_and_modes_cover_type_e():
 
 def test_plugin_readme_no_four_type_wording():
     assert "四型" not in (PLUGIN / "README.md").read_text(encoding="utf-8")
+
+
+EX = ROOT / "examples" / "tsmc-n2-walkthrough"
+LOCAL = re.compile(r"C:\\Users|AppData|G:\\|D:[/\\]projects|[\w.+-]+@[\w-]+\.[\w.]+")
+
+
+def test_example_has_expected_files():  # 先確認首例存在，下面幾條才不會在空目錄上空轉通過
+    names = {p.relative_to(EX).as_posix() for p in EX.rglob("*") if p.is_file()}
+    assert {"README.md", "CONFORMANCE.md"} <= names
+    assert len(list(EX.glob("*.html"))) == 1
+    assert len([p for p in EX.glob("*.md") if p.name not in ("README.md", "CONFORMANCE.md")]) == 1
+    assert list((EX / "research").glob("*.md"))
+
+
+def test_example_page_not_gitignored():
+    page = next(EX.glob("*.html"))
+    assert subprocess.run(["git", "check-ignore", "--no-index", "-q", str(page)], cwd=ROOT, check=False).returncode == 1
+
+
+def test_example_has_only_text_files():
+    allowed = {".html", ".md"}
+    assert [p for p in EX.rglob("*") if p.is_file() and p.suffix.lower() not in allowed] == []
+
+
+def test_example_has_no_local_paths_or_email():
+    for p in EX.rglob("*"):
+        if p.is_file():
+            assert not LOCAL.search(p.read_text(encoding="utf-8")), p
+
+
+def test_example_md_has_no_dangling_image_links():
+    for p in EX.rglob("*.md"):
+        assert "pdf-img/" not in p.read_text(encoding="utf-8"), p

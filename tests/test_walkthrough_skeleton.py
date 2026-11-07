@@ -173,3 +173,21 @@ def test_step_total_counts_only_unlabelled_steps(tmp_path):
         assert pg.text_content("#eyebrow").endswith("步驟 2／2")
         pg.evaluate("walkthrough.go(1, 0)")
         assert pg.text_content("#eyebrow").endswith("序幕")
+
+
+SUP_NOTE = "#suppliers > p.muted"
+
+
+@demo_only
+def test_supplier_note_without_caveat(page):
+    page.evaluate("walkthrough.go(3, 0)")
+    assert page.text_content(SUP_NOTE).endswith("名單依類別列出，沒有逐家證明用在這一步。")
+
+
+@demo_only
+def test_supplier_note_appends_caveat(tmp_path):  # META.supCaveat：研究對象專屬的但書，接在說明句後面
+    variant = _variant(tmp_path, [("    subject: '示範公司',\n", "    subject: '示範公司',\n    supCaveat: '也沒有任何一家明確指出供應示範產品',\n")])
+    with launch("chromium") as browser:
+        pg = open_page(browser, variant, tmp_path / "out")
+        pg.evaluate("walkthrough.go(3, 0)")
+        assert pg.text_content(SUP_NOTE).endswith("沒有逐家證明用在這一步，也沒有任何一家明確指出供應示範產品。")

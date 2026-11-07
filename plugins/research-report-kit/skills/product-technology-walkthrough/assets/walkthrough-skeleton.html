@@ -309,6 +309,7 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
     title: '示範產品：從材料到出貨',
     subtitle: '骨架示範：兩幕三步，展示每一種欄位與互動',
     subject: '示範公司',
+    // supCaveat：選填，研究對象專屬的廠商但書，接在每一步廠商說明句的後面
     market: 'TW',
     ticker: 'TWSE:0000',
     type: '產品技術研究',
@@ -661,7 +662,7 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
     $('suppliers').innerHTML = s.sup
       ? s.sup.map(g => `<div class="supg"><b>${SUP[g].name}</b><span>${SUP[g].list.map(([nm, lv]) =>
           `<span class="sup ${lv}">${lv === 'S' ? '●' : '○'} ${nm}</span>`).join('')}</span></div>`).join('')
-        + `<p class="muted">● 有公開資料顯示供貨給${META.subject}或與${META.subject}合作（供應商獎、官方名單、雙方新聞稿或媒體報導）　○ 該類主要廠商。名單依類別列出，沒有逐家證明用在這一步。</p>`
+        + `<p class="muted">● 有公開資料顯示供貨給${META.subject}或與${META.subject}合作（供應商獎、官方名單、雙方新聞稿或媒體報導）　○ 該類主要廠商。名單依類別列出，沒有逐家證明用在這一步${META.supCaveat ? '，' + META.supCaveat : ''}。</p>`
       : need(s.supNote, `步驟 ${s.n} 的 sup 或 supNote`);
 
     document.querySelectorAll('.dot').forEach(d => {

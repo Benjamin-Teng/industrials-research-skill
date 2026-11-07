@@ -1,0 +1,1412 @@
+<title>台積電 N2 晶圓之旅</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+/* 版面：上方幕次軌道 → 雙剖面舞台 → 操作列 → 左文右圖例的說明區。材料色是內容，UI 色退在後面。 */
+:root {
+  --bg: #eef2f1; --panel: #ffffff; --fg: #13201c; --muted: #56665f; --line: #d3dcd8;
+  --accent: #b4430f; --accent-soft: #f7e3d8; --stage: #f8faf9;
+  --m-si: #8fb0d3; --m-sige: #e2ae45; --m-sub: #6f8fb3; --m-ox: #bfe2e9; --m-nit: #b6d3a8;
+  --m-poly: #b46a5c; --m-sd: #3f9a85; --m-highk: #8455c4; --m-metal: #56606e; --m-mask: #3d4650; --m-sti: #9fb5b9;
+  --tag-official: #0f6b55; --tag-paper: #3c5ba8; --tag-media: #8a5a12; --tag-generic: #6a6f75; --tag-vendor: #7a4fa0;
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0d1315; --panel: #141c1f; --fg: #e4ebe8; --muted: #93a39d; --line: #26343a;
+  --accent: #f08a4b; --accent-soft: #3a2418; --stage: #10181b;
+  --m-si: #7fa6cf; --m-sige: #d9a33a; --m-sub: #4f6f93; --m-ox: #5f8f99; --m-nit: #7fa271;
+  --m-poly: #b0685a; --m-sd: #3fae94; --m-highk: #a57ae6; --m-metal: #a9b3bf; --m-mask: #8b96a3; --m-sti: #8d9ea0;
+  --tag-official: #4fc9a6; --tag-paper: #8aa6f0; --tag-media: #e2b05a; --tag-generic: #a3a9af; --tag-vendor: #c9a2f0;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0d1315; --panel: #141c1f; --fg: #e4ebe8; --muted: #93a39d; --line: #26343a;
+  --accent: #f08a4b; --accent-soft: #3a2418; --stage: #10181b;
+  --m-si: #7fa6cf; --m-sige: #d9a33a; --m-sub: #4f6f93; --m-ox: #5f8f99; --m-nit: #7fa271;
+  --m-poly: #b0685a; --m-sd: #3fae94; --m-highk: #a57ae6; --m-metal: #a9b3bf; --m-mask: #8b96a3; --m-sti: #8d9ea0;
+  --tag-official: #4fc9a6; --tag-paper: #8aa6f0; --tag-media: #e2b05a; --tag-generic: #a3a9af; --tag-vendor: #c9a2f0;
+  color-scheme: dark; }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.7;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1160px; margin: 0 auto; padding-block: 28px 56px; display: grid; gap: 20px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+header.top { display: grid; gap: 6px; }
+.kicker { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: clamp(26px, 4.2vw, 40px); font-weight: 900; line-height: 1.2; letter-spacing: .01em; }
+h1 .node { font-family: var(--font-mono); font-weight: 500; color: var(--accent); }
+.lede { color: var(--muted); max-width: 62ch; margin: 0; }
+.notice { font-size: 13px; color: var(--muted); border-left: 3px solid var(--m-sige); padding: 4px 0 4px 10px; max-width: 80ch; margin: 0; }
+
+/* 幕次軌道 */
+nav.rail { overflow-x: auto; padding-bottom: 4px; }
+/* 欄寬依各幕步數由程式設定（每欄至少放得下幕名）；比畫面寬時在 nav 內橫向捲動 */
+.acts { display: grid; gap: 10px; }
+.act { display: grid; gap: 6px; }
+.act-name { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.act-name b { color: var(--fg); font-weight: 700; margin-right: 4px; }
+.act.cur .act-name b { color: var(--accent); }
+.dots { display: flex; gap: 4px; }
+.dot { flex: 1; min-width: 22px; height: 30px; border: 1px solid var(--line); background: var(--panel); border-radius: 4px;
+  font: 500 11px var(--font-mono); color: var(--muted); cursor: pointer; padding: 0;
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease; }
+.dot.done { background: var(--accent-soft); color: var(--fg); }
+.dot.cur { background: var(--accent); border-color: var(--accent); color: #fff; }
+.dot:focus-visible, button:focus-visible, summary:focus-visible, .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* 舞台 */
+.stage { background: var(--stage); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 10px; position: relative; }
+.stage-head { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; justify-content: space-between; }
+.stage-head .where { font-size: 13px; color: var(--muted); }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.badge { font-size: 12px; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.badge.generic { color: var(--tag-generic); } .badge.official { color: var(--tag-official); } .badge.media { color: var(--tag-media); } .badge.paper { color: var(--tag-paper); } .badge.vendor { color: var(--tag-vendor); }
+.head-r { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
+.panels { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; position: relative; }
+.panel { display: grid; gap: 4px; min-width: 0; }
+.panel-title { display: flex; gap: 8px; align-items: baseline; font-size: 13px; }
+.panel-title .cut { font-family: var(--font-mono); font-weight: 500; color: var(--accent); }
+/* SVG 放在固定比例的框裡、以絕對定位填滿：不依賴百分比高度，iOS Safari 才不會算錯尺寸 */
+.svgbox { position: relative; aspect-ratio: 4 / 3; min-height: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.svgbox svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.panel-cap { font-size: 13px; color: var(--muted); min-height: 2.6em; margin: 0; }
+
+/* 操作列：三欄固定，按鈕位置不受拍數指示影響 */
+.controls { display: grid; grid-template-columns: minmax(0, 1fr) 112px minmax(0, 1fr); align-items: center; gap: 12px; }
+.nav { width: min(100%, 200px); }
+#prev { justify-self: start; } #next { justify-self: end; }
+.btn.ghost { font-size: 13px; padding: 6px 12px; }
+.btn { font: 700 15px var(--font-body); padding: 10px 18px; border-radius: 8px; cursor: pointer; border: 1px solid var(--line); background: var(--panel); color: var(--fg);
+  transition: transform 120ms var(--ease-out), background-color 160ms ease; }
+.btn:active { transform: scale(0.97); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn:disabled { opacity: .4; cursor: default; }
+.btn:disabled:active { transform: none; }
+.beatinfo { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+.pips { display: flex; gap: 5px; justify-content: center; }
+.pip { width: 18px; height: 6px; border-radius: 3px; background: var(--line); transition: background-color 200ms ease; }
+.pip.on { background: var(--accent); }
+.hint { font-size: 12px; color: var(--muted); margin: 0; text-align: center; }
+
+/* 沉浸模式：舞台蓋滿整個畫面，操作列固定在底部 */
+.imm-now { display: none; }
+html.imm-lock, html.imm-lock body { overflow: hidden; }
+.stage.immersive { position: fixed; inset: 0; z-index: 100; border: 0; border-radius: 0;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 10px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 8px; overscroll-behavior: contain; }
+.stage.immersive .badges, .stage.immersive .hint { display: none; }
+.stage.immersive .imm-now { display: block; margin: 0; font-weight: 500; line-height: 1.5; min-height: 3em; }
+.stage.immersive .panels { flex: 1; min-height: 0; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; touch-action: pan-y; }
+.stage.immersive .panel { grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; }
+.stage.immersive .svgbox { aspect-ratio: auto; }
+.stage.immersive .panel-cap { min-height: 0; font-size: 12px; line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.stage.immersive .nav { width: 100%; padding-block: 14px; }
+@media (orientation: landscape) { .stage.immersive .panels { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); } }
+/* 手機橫拿：高度很少，把文字壓到最精簡，材料卡改為浮在圖上 */
+@media (orientation: landscape) and (max-height: 520px) {
+  .stage.immersive { gap: 4px; padding-top: calc(env(safe-area-inset-top, 0px) + 6px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px); }
+  .stage.immersive .panel-cap { display: none; }
+  .stage.immersive .imm-now { min-height: 0; font-size: 14px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .stage.immersive .nav { padding-block: 8px; }
+  .stage.immersive .imm-part { position: absolute; z-index: 2; left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px));
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 58px); box-shadow: 0 6px 24px rgb(0 0 0 / .25); }
+}
+.imm-part { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 4px; font-size: 13px; }
+.imm-part .row { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 15px; }
+.imm-part .sw { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.imm-part .x { margin-left: auto; font: 500 13px var(--font-body); background: none; border: 0; color: var(--muted); cursor: pointer; padding: 4px 6px; }
+.imm-part p { margin: 0; }
+
+/* 說明區 */
+.info { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; display: grid; gap: 12px; min-width: 0; }
+.eyebrow { font-size: 12px; letter-spacing: .06em; color: var(--muted); }
+h2 { font-size: 24px; font-weight: 900; line-height: 1.3; }
+.now { margin: 0; padding: 10px 12px; background: var(--accent-soft); border-radius: 6px; }
+.now .lab { font-size: 12px; color: var(--accent); font-weight: 700; display: block; }
+.plain { margin: 0; max-width: 65ch; }
+details { border-top: 1px solid var(--line); padding-top: 10px; }
+summary { cursor: pointer; font-weight: 700; }
+details p { margin: 8px 0 0; max-width: 65ch; }
+h3 { font-size: 14px; font-weight: 700; color: var(--muted); letter-spacing: .04em; }
+ol.src { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 13px; }
+ol.src a { color: var(--fg); text-decoration-color: var(--line); text-underline-offset: 3px; word-break: break-word; }
+ol.src .t { font-size: 11px; padding: 0 6px; border-radius: 4px; border: 1px solid currentColor; margin-right: 6px; white-space: nowrap; }
+.part-name { font-size: 18px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+.part-name .sw { width: 14px; height: 14px; border-radius: 3px; flex: none; }
+.part-en { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.part-text { margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font: 500 13px var(--font-body); padding: 4px 10px 4px 6px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--fg); cursor: pointer; }
+.chip .sw { width: 12px; height: 12px; border-radius: 3px; }
+.chip[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.muted { color: var(--muted); font-size: 13px; margin: 0; }
+#suppliers { display: grid; gap: 8px; font-size: 13px; }
+.supg { display: grid; gap: 2px; }
+.supg b { font-weight: 700; }
+.supg > span { display: flex; flex-wrap: wrap; gap: 2px 12px; }
+.sup.M { color: var(--muted); }
+footer { font-size: 12px; color: var(--muted); }
+
+/* SVG 材料與動畫 */
+svg .el { opacity: 0; pointer-events: none; cursor: pointer;
+  transition: opacity 420ms var(--ease-out), transform 640ms var(--ease-out); transition-delay: 0ms; }
+svg .el[data-fx="grow"] { transform-box: fill-box; transform-origin: 50% 100%; transform: scaleY(0.04); }
+svg .el[data-fx="drop"] { transform: translateY(-18px); }
+svg .el[data-fx="rise"] { transform: translateY(14px); }
+svg .el[data-fx="growx"] { transform-box: fill-box; transform-origin: 0 50%; transform: scaleX(0.04); }
+svg .el.on { opacity: 1; transform: none; pointer-events: auto; transition-delay: var(--d, 0ms); }
+svg .el.sel:not([data-part="printed"]):not([data-part="drc"]) { stroke: var(--accent); stroke-width: 2.5px; vector-effect: non-scaling-stroke; }
+[data-part="si-sub"] { fill: var(--m-sub); } [data-part="si-sheet"] { fill: var(--m-si); } [data-part="sige"] { fill: var(--m-sige); }
+[data-part="hardmask"] { fill: var(--m-mask); } [data-part="dummy"] { fill: var(--m-poly); } [data-part="gspacer"], [data-part="inner"] { fill: var(--m-nit); }
+[data-part="sti"] { fill: var(--m-sti); }
+svg rect { shape-rendering: crispEdges; }
+[data-part="sd"] { fill: var(--m-sd); } [data-part="ild"] { fill: var(--m-ox); } [data-part="highk"] { fill: var(--m-highk); } [data-part="metal"] { fill: var(--m-metal); }
+svg .arrow { fill: var(--accent); }
+svg .axis { font: 500 14px var(--font-body); fill: var(--muted); }
+/* 第一幕：示意圖用的框、文字與線 */
+svg .nbox { fill: var(--panel); stroke: var(--line); stroke-width: 1.5px; }
+svg .lbl { font: 500 14px var(--font-body); fill: var(--fg); }
+svg .lbl-s { font: 400 12px var(--font-body); fill: var(--muted); }
+svg .mono-t { font: 500 16px var(--font-mono); fill: var(--fg); }
+svg .ln { fill: none; stroke: var(--muted); stroke-width: 1.5px; }
+svg .arrow-m { fill: var(--muted); }
+svg .hl, svg .ring { fill: none; stroke: var(--accent); stroke-width: 2.5px; }
+svg .crit { fill: none; stroke: var(--accent); stroke-width: 4px; stroke-linejoin: round; }
+svg .beam { stroke: var(--accent); stroke-width: 3px; stroke-dasharray: 4 4; }
+svg .ghost { fill: none; stroke: var(--muted); stroke-width: 1.5px; stroke-dasharray: 5 4; }
+svg .band { fill: var(--accent); fill-opacity: .18; }
+[data-part="kit"], [data-part="masksvc"] { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5px; }
+[data-part="eda"] { fill: var(--panel); stroke: var(--m-sd); stroke-width: 2px; }
+[data-part="cell-short"], [data-part="stdcell"], [data-part="design"] { fill: var(--m-si); stroke: var(--panel); }
+[data-part="cell-tall"] { fill: var(--m-sige); stroke: var(--panel); }
+[data-part="wire"] { fill: var(--m-metal); }
+[data-part="drc"] { fill: none; stroke: var(--accent); stroke-width: 2.5px; }
+[data-part="shuttle"] { stroke: var(--panel); stroke-width: 2px; }
+[data-part="target"], [data-part="opc"], [data-part="curvy"], [data-part="absorber"] { fill: var(--m-mask); }
+[data-part="sraf"] { fill: var(--m-mask); fill-opacity: .55; }
+[data-part="printed"] { fill: none; stroke: var(--m-sd); }
+[data-part="mask-sub"] { fill: var(--m-sti); }
+[data-part="cap"] { fill: var(--m-sd); }
+[data-part="defect"] { fill: var(--accent); }
+[data-part="pellicle"] { fill: var(--m-ox); }
+[data-part="ild2"] { fill: var(--m-ox); }
+[data-part="contact"] { fill: var(--m-mask); }
+[data-part="beol"] { fill: var(--m-metal); }
+[data-part="mim"] { fill: var(--m-highk); }
+[data-part="rdl"] { fill: var(--m-poly); }
+[data-part="passiv"] { fill: var(--m-nit); }
+[data-part="wafer"] { fill: var(--m-si); }
+[data-part="die"] { fill: var(--m-sub); }
+[data-part="wat"], [data-part="fail"] { fill: var(--accent); }
+[data-part="pad"], [data-part="die2"] { fill: var(--m-sige); }
+[data-part="interposer"] { fill: var(--m-sti); }
+[data-part="hbm"] { fill: var(--m-si); }
+[data-part="pkgsub"] { fill: var(--m-sd); }
+[data-part="pkg"] { fill: var(--m-metal); }
+[data-part="node"] { fill: var(--m-sd); }
+[data-part="nodef"] { fill: var(--panel); stroke: var(--m-sd); stroke-width: 2.5px; stroke-dasharray: 3 3; }
+svg .bar { fill: var(--m-mask); } svg .bar.hi { fill: var(--accent); }
+svg .el.sel[data-part="printed"] { stroke: var(--accent); }
+@media (hover: hover) and (pointer: fine) { svg .el.on:hover { filter: brightness(1.12); } .dot:hover { border-color: var(--accent); } }
+@media (prefers-reduced-motion: reduce) {
+  svg .el, svg .el[data-fx] { transform: none; transition: opacity 200ms ease; }
+  svg .el.on { transition-delay: 0ms; }
+  .btn:active { transform: none; }
+}
+@media (max-width: 760px) {
+  .panels, .info { grid-template-columns: 1fr; }
+  .controls { grid-template-columns: minmax(0, 1fr) 88px minmax(0, 1fr); gap: 8px; }
+  .nav { width: 100%; }
+}
+/* 幕次軌道上的主線標記、說明區的「交會」標籤、圖片載入失敗時的來源連結 */
+.act-line { margin-left: 6px; padding: 0 5px; border: 1px solid var(--line); border-radius: 4px; font-size: 11px; }
+.cross { display: flex; flex-wrap: wrap; gap: 6px; }
+.cross[hidden] { display: none; }
+.cross .chip { padding: 4px 10px; }
+svg .lnk { fill: var(--accent); text-decoration: underline; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="kicker" id="kicker"></div>
+    <h1 id="headline"></h1>
+    <p class="lede" id="lede"></p>
+    <p class="notice" id="notice"></p>
+  </header>
+
+  <nav class="rail" aria-label="製程步驟">
+    <div class="acts" id="acts"></div>
+  </nav>
+
+  <section class="stage" id="stage" aria-label="製程動畫">
+    <div class="stage-head">
+      <div class="where" id="where"></div>
+      <div class="head-r">
+        <div class="badges" id="badges"></div>
+        <button class="btn ghost" id="immBtn" type="button" aria-pressed="false">全螢幕觀看</button>
+      </div>
+    </div>
+    <p class="imm-now" id="immNow" aria-live="polite"></p>
+    <div class="panels" id="panels">
+      <figure class="panel" style="margin:0">
+        <figcaption class="panel-title"><span class="cut" id="paCut"></span><span id="paText"></span></figcaption>
+        <div class="svgbox"><svg id="svgA" viewBox="0 0 400 300" role="img" aria-label="左圖"></svg></div>
+        <p class="panel-cap" id="capA"></p>
+      </figure>
+      <figure class="panel" style="margin:0">
+        <figcaption class="panel-title"><span class="cut" id="pbCut"></span><span id="pbText"></span></figcaption>
+        <div class="svgbox"><svg id="svgB" viewBox="0 0 400 300" role="img" aria-label="右圖"></svg></div>
+        <p class="panel-cap" id="capB"></p>
+      </figure>
+    </div>
+    <div class="imm-part" id="immPart" hidden></div>
+    <div class="controls">
+      <button class="btn nav" id="prev" type="button">上一步</button>
+      <div class="beatinfo"><span id="beatlabel" class="mono"></span><div class="pips" id="pips"></div></div>
+      <button class="btn primary nav" id="next" type="button">下一步</button>
+    </div>
+    <p class="hint">鍵盤 ← → 切換，Esc 離開全螢幕；手機全螢幕時可左右滑動。</p>
+  </section>
+
+  <section class="info">
+    <article class="card" aria-live="polite">
+      <div class="eyebrow" id="eyebrow"></div>
+      <h2 id="title"></h2>
+      <div class="cross" id="cross" hidden></div>
+      <p class="now" id="nowWrap"><span class="lab">現在發生什麼</span><span id="now"></span></p>
+      <p class="plain" id="plain"></p>
+      <details id="detailWrap"><summary>展開看細節</summary><div id="detail"></div></details>
+      <div><h3>資料來源</h3><ol class="src" id="sources"></ol></div>
+    </article>
+    <aside class="card">
+      <div id="part"></div>
+      <div><h3>圖中的材料</h3><div class="chips" id="legend"></div></div>
+      <div><h3>這一步相關的設備與材料廠商</h3><div id="suppliers"></div></div>
+    </aside>
+  </section>
+
+  <footer id="footer"></footer>
+</div>
+
+<script>
+(() => {
+  // ==================== 資料：換成自己的內容（欄位定義見方法檔 5.1） ====================
+  const META = {
+    title: '台積電 N2 製程：從晶圓到出貨',
+    subtitle: '跟著一片晶圓，一步步看 2 奈米奈米片電晶體怎麼做出來、怎麼變成可出貨的晶片',
+    subject: '台積電',
+    supCaveat: '也沒有任何一家的資料明確指出供應 N2',
+    market: 'TW',
+    ticker: 'TWSE:2330',
+    type: '產品技術研究',
+    methodology_version: 'product-technology-v1',
+    framework: '個人研究筆記（互動頁靜態版）',
+    date: '2026-11-01',
+    version: 'v1.0',
+    footer_right: '個人研究筆記 · 非投資建議',
+    disclaimer: '本報告為個人研究筆記，非投資建議。製程示意圖非依比例繪製；台積電沒有公開 N2 的逐步製程，圖中依學術論文與公開資料中的業界通用做法繪製，台積電已公開的部分另外標示。資料查證日 2026-11-01。',
+    readingGuide: [
+      '本報告是互動頁的靜態版，內容與互動頁相同；每一步的每一拍各附一張剖面圖。',
+      '**互動版** — 逐拍動畫、可點選材料看說明，網址見 README（私人頁面）。',
+      '**左圖與右圖** — 每拍兩張圖並排；圖說寫在圖下方。',
+      '**來源標示** — 綠色徽章為台積電官方或論文，黃色為廠商聲明或業界通用，紅色為媒體轉述。',
+      '**相關廠商** — 依製程類別列出，● 表示有公開資料顯示供貨給台積電或與台積電合作，○ 表示該類主要廠商；沒有任何一家的資料明確指出供應 N2。',
+    ],
+    kpi: [
+      { label: 'N2 量產', value: '2025 Q4', note: '新竹、高雄（法說會）' },
+      { label: 'N2 占晶圓營收', value: '8%', note: '2026 年第 3 季（法說會）' },
+      { label: 'N2 vs N3E 速度', value: '+10–15%', note: '同功耗（法說會口徑）' },
+      { label: 'N2 vs N3E 功耗', value: '−25–30%', note: '同速度（法說會口徑）' },
+    ],
+    actLead: {
+      0: '先建立尺度感：晶圓、晶片、電晶體由遠到近，以及「2nm」只是世代名稱。',
+      1: '晶片進晶圓廠之前，要先完成設計、驗證、tape-out，並把版圖做成光罩。',
+      2: 'N2 的核心：用矽與矽鍺疊層做出奈米片，再讓金屬閘極從四面包住通道。',
+      3: '電晶體做好之後，用中段接點與一層層金屬導線把它們連成電路。',
+      4: '晶圓做完要經過測試、良率學習、切割封裝與最終測試，才能出貨。',
+      5: '從 N7 到 A12 的節點演變、背面供電的路線，以及對手的進度。',
+    },
+    kicker: 'TSMC · N2 · Nanosheet GAA',
+    lede: '跟著台積電 N2 製程，一步一步看一顆奈米片電晶體怎麼做出來。按「下一步」播放每個環節，點圖中任何一塊材料看它的用途。',
+    notice: '圖為示意，非依比例繪製。台積電沒有公開 N2 的逐步製程，圖中依學術論文與公開資料中的業界通用做法繪製；台積電已公開的部分會另外標示。',
+    footer: '個人研究筆記，非投資建議。資料查證日 2026-11-01。',
+  };
+
+  // 來源：t 為 TAG 的 key
+  const SRC = {
+    pmc9920338: { t: 'generic', label: '學術論文：堆疊矽奈米片的通道釋放與應力（PMC9920338）', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC9920338/' },
+    pmc11173960: { t: 'generic', label: '學術論文：GAA 奈米片的關鍵模組與 inner spacer（PMC11173960）', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC11173960/' },
+    pmc12844779: { t: 'generic', label: '學術論文：GAA 奈米片電晶體的 inner spacer 與有效閘極長度（PMC12844779）', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC12844779/' },
+    pmc7221596: { t: 'generic', label: '學術論文：GAA 奈米線元件的製程流程圖（PMC7221596，Figure 1）', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC7221596/' },
+    amatsti: { t: 'generic', label: 'Applied Materials 專利 US9460920B1：Horizontal gate all around device isolation（2016-10-04）', url: 'https://patents.google.com/patent/US9460920B1/en' },
+    spectrum: { t: 'media', label: 'IEEE Spectrum：台積電 IEDM 2024 N2 報導（2024-12-12）', url: 'https://spectrum.ieee.org/tsmc-n2' },
+    pr3136: { t: 'official', label: '台積電新聞稿：2024 北美技術論壇，A16、N2 與 NanoFlex（2024-04-24）', url: 'https://pr.tsmc.com/english/news/3136' },
+    toms: { t: 'media', label: "Tom's Hardware：台積電在 IEDM 2024 揭露 N2 細節", url: 'https://www.tomshardware.com/tech-industry/tsmc-shares-deep-dive-details-about-its-cutting-edge-2nm-process-node-at-iedm-2024-35-percent-less-power-or-15-percent-more-performance' },
+    semiwiki: { t: 'media', label: 'SemiWiki：TSMC Unveils the World’s Most Advanced Logic Technology at IEDM', url: 'https://semiwiki.com/events/351309-tsmc-unveils-the-worlds-most-advanced-logic-technology-at-iedm/' },
+    l2nm: { t: 'official', label: '台積電官網：2nm 技術頁', url: 'https://www.tsmc.com/english/dedicatedFoundry/technology/logic/l_2nm' },
+    tsmc_oip: { t: 'official', label: '台積電官網：開放創新平台（OIP）', url: 'https://www.tsmc.com/english/dedicatedFoundry/oip' },
+    tsmc_eda: { t: 'official', label: '台積電官網：EDA 聯盟與認證項目', url: 'https://www.tsmc.com/english/dedicatedFoundry/oip/eda_alliance' },
+    pr3228: { t: 'official', label: '台積電新聞稿：NanoFlex Pro（2025-04-23）', url: 'https://pr.tsmc.com/english/news/3228' },
+    cadence2023: { t: 'vendor', label: 'Cadence：設計流程通過台積電 N3E／N2 設計規則認證並交付 PDK（2023-04，CIMdata 轉載）', url: 'https://www.cimdata.com/en/industry-summary-articles/item/21465-cadence-digital-and-custom-analog-design-flows-certified-for-tsmc-s-latest-n3e-and-n2-process-technologies' },
+    siemens2023: { t: 'vendor', label: 'Siemens：Calibre 實體驗證取得台積電 N2 認證（2023-09-27）', url: 'https://news.siemens.com/en-us/tsmc-oip-2023/' },
+    synopsys2023: { t: 'vendor', label: 'Synopsys：設計流程取得台積電 N2 認證（2023-09-25，轉載）', url: 'https://us.design-reuse.com/news/54884/synopsys-tsmc-2nm-certified-digital-and-analog-design-flows.html' },
+    wiki_signoff: { t: 'generic', label: '維基百科：Signoff (electronic design automation)', url: 'https://en.wikipedia.org/wiki/Signoff_(electronic_design_automation)' },
+    wiki_tapeout: { t: 'generic', label: '維基百科：Tape-out', url: 'https://en.wikipedia.org/wiki/Tape-out' },
+    tsmc_mask: { t: 'official', label: '台積電官網：光罩服務', url: 'https://www.tsmc.com/english/dedicatedFoundry/services/mask_services' },
+    tsmc_shuttle: { t: 'official', label: '台積電官網：CyberShuttle', url: 'https://www.tsmc.com/english/dedicatedFoundry/services/cybershuttle' },
+    wiki_opc: { t: 'generic', label: '維基百科：Optical proximity correction', url: 'https://en.wikipedia.org/wiki/Optical_proximity_correction' },
+    nvidia_culitho: { t: 'vendor', label: 'NVIDIA：台積電與 Synopsys 將 cuLitho 導入生產（2024-03-18）', url: 'https://nvidianews.nvidia.com/news/tsmc-synopsys-nvidia-culitho' },
+    spie2024: { t: 'paper', label: 'SPIE Photomask Japan 2024（台積電作者）：光罩檢測與 AI 缺陷分類', url: 'https://doi.org/10.1117/12.3032058' },
+    spie_amrs: { t: 'paper', label: 'SPIE Photomask Technology 2023（台積電作者）：EUV 光罩 actinic 審查系統', url: 'https://doi.org/10.1117/12.2688176' },
+    wiki_euv: { t: 'generic', label: '維基百科：Extreme ultraviolet lithography', url: 'https://en.wikipedia.org/wiki/Extreme_ultraviolet_lithography' },
+    wiki_photomask: { t: 'generic', label: '維基百科：Photomask', url: 'https://en.wikipedia.org/wiki/Photomask' },
+    toms_pellicle: { t: 'media', label: "Tom's Hardware：台積電如何提升 EUV 設備效率（2025-09-17）", url: 'https://www.tomshardware.com/tech-industry/semiconductors/how-tsmc-managed-to-increase-efficiency-of-asmls-euv-tools-system-level-optimizations-and-in-house-pellicles-chipmaker-boosted-euv-driven-wafer-production-by-30x-over-six-years-while-reducing-power-consumption-by-24-percent' },
+    pr3338: { t: 'official', label: '台積電與 ASML 聯合新聞稿：12 吋 EUV 光罩計畫', url: 'https://pr.tsmc.com/english/news/3338' },
+    iedm_fig11: { t: 'paper', label: "台積電 IEDM 2024 論文 Fig.11（經 Tom's Hardware 轉載）", url: 'https://www.tomshardware.com/tech-industry/tsmc-shares-deep-dive-details-about-its-cutting-edge-2nm-process-node-at-iedm-2024-35-percent-less-power-or-15-percent-more-performance' },
+    ar2025: { t: 'official', label: '台積電 2025 年報第 5 章', url: 'https://investor.tsmc.com/static/annualReports/2025/english/pdf/2025_tsmc_ar_e_ch5.pdf' },
+    research97: { t: 'paper', label: '台積電研究網頁：IEDM 2024 N2 論文摘要', url: 'https://research.tsmc.com/page/logic/97.html' },
+    semi_wat: { t: 'generic', label: "Semiconductor Engineering：What's WAT（yieldHUB，2020-03-10）", url: 'https://semiengineering.com/whats-wat-testing-at-the-end-of-manufacturing' },
+    anysilicon: { t: 'generic', label: 'AnySilicon：The Ultimate Guide to Wafer Sort', url: 'https://anysilicon.com/?p=4593' },
+    semi_ns: { t: 'media', label: 'Semiconductor Engineering：奈米片帶來的檢測與量測挑戰（2022-08-09）', url: 'https://semiengineering.com/nanosheet-fets-drive-changes-in-metrology-and-inspection' },
+    tsmc_ap: { t: 'official', label: '台積電官網：先進封裝服務', url: 'https://www.tsmc.com/english/dedicatedFoundry/services/advanced-packaging' },
+    tsmc_ipf: { t: 'official', label: '台積電官網：智慧封裝廠', url: 'https://www.tsmc.com/english/dedicatedFoundry/services/apm_intelligent_packaging_fab' },
+    q4_25: { t: 'official', label: '台積電 4Q25 法說會逐字稿（2026-01-15）', url: 'https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-01/51d09df96cd89ac19d65af39032b038dc2896a24/TSMC%204Q25%20Transcript.pdf' },
+    q1_26: { t: 'official', label: '台積電 1Q26 法說會逐字稿（2026-04-16）', url: 'https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-04/3cef85204275f94fd111485cfdf4adb3c0263c45/TSMC%201Q26%20Transcript.pdf' },
+    q2_26: { t: 'official', label: '台積電 2Q26 法說會逐字稿（2026-07-16）', url: 'https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-08/3e494f0c14dd0890f897aa044415e21d93486cc4/TSMC%202Q26%20Transcript.pdf' },
+    q3_26: { t: 'official', label: '台積電 3Q26 法說會逐字稿（2026-10-15）', url: 'https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-10/eba4fac72873bf546b669bd2b5d973df5c93215d/TSMC%203Q26%20Transcript.pdf' },
+    toms_d0: { t: 'media', label: "Tom's Hardware：台積電揭露 N2 缺陷密度（2025-04-25）", url: 'https://www.tomshardware.com/tech-industry/tsmc-discloses-n2-defect-density-lower-than-n3-at-the-same-stage-of-development' },
+    tpu_d0: { t: 'media', label: 'TechPowerUp：轉引工商時報（2025-05-07）', url: 'https://www.techpowerup.com/336439/tsmc-leadership-speaks-of-unprecedented-demand-for-2-nm-greater-than-previous-gen-nodes' },
+    semiwiki_sram: { t: 'media', label: 'SemiWiki：台積電 IEDM 2nm 揭露分析（2025-02-10）', url: 'https://semiwiki.com/semiconductor-services/techinsights/352972-iedm-2025-tsmc-2nm-process-disclosure-how-does-it-measure-up/' },
+    semi2026: { t: 'media', label: 'Semiconductor Engineering：2026 技術論壇數字整理（2026-04-27）', url: 'https://semiengineering.com/tsmc-tech-symposium-2026-by-the-numbers/' },
+    sec20f: { t: 'official', label: '台積電 2025 年度 20-F（SEC）', url: 'https://www.sec.gov/Archives/edgar/data/1046179/000162828026025362/tsm-20251231.htm' },
+    tsmc_3dfabric: { t: 'official', label: '台積電 3DFabric 總覽', url: 'https://3dfabric.tsmc.com/english/dedicatedFoundry/technology/3DFabric.htm' },
+    tsmc_soic: { t: 'official', label: '台積電 3DFabric：SoIC', url: 'https://3dfabric.tsmc.com/english/dedicatedFoundry/technology/SoIC.htm' },
+    tsmc_cowos: { t: 'official', label: '台積電 3DFabric：CoWoS', url: 'https://3dfabric.tsmc.com/english/dedicatedFoundry/technology/cowos.htm' },
+    amkor_bump: { t: 'generic', label: 'Amkor：Wafer Bumping', url: 'https://amkor.com/services/wafer-bumping/' },
+    amkor_test: { t: 'generic', label: 'Amkor：Test Services', url: 'https://amkor.com/test-services/' },
+    pr3033: { t: 'official', label: '台積電新聞稿：先進封測六廠啟用（2023-06-08）', url: 'https://pr.tsmc.com/english/news/3033' },
+    tsmc_gigafab: { t: 'official', label: '台積電官網：GIGAFAB 超大晶圓廠', url: 'https://www.tsmc.com/english/dedicatedFoundry/manufacturing/gigafab' },
+    spectrum2013: { t: 'media', label: "IEEE Spectrum：The Status of Moore's Law: It's Complicated（2013-10-28）", url: 'https://spectrum.ieee.org/the-status-of-moores-law-its-complicated' },
+    pr3302: { t: 'official', label: '台積電新聞稿：2026 北美技術論壇，A13、A12、N2U（2026-04-22）', url: 'https://pr.tsmc.com/english/news/3302' },
+    tsmc_hpc: { t: 'official', label: '台積電官網：HPC 平台技術頁', url: 'https://www.tsmc.com/english/dedicatedFoundry/technology/platform_hpc_tech_advancedTech' },
+    tsmc_logic: { t: 'official', label: '台積電官網：邏輯製程技術頁', url: 'https://www.tsmc.com/english/dedicatedFoundry/technology/logic/l_3nm' },
+    q2_22: { t: 'official', label: '台積電 2Q22 法說會逐字稿（2022-07-14）', url: 'https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2022-07/185efaefea866a5e944499cda9eeecc65315449c/TSMC%202Q22%20Transcript.pdf' },
+    q4_23: { t: 'official', label: '台積電 4Q23 法說會逐字稿（2024-01-18）', url: 'https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2024-03/1979f7d585d258f1026b753e4b8a98a046bc81d3/TSMC%204Q23%20Transcript.pdf' },
+    q2_24: { t: 'official', label: '台積電 2Q24 法說會逐字稿（2024-07-18）', url: 'https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2024-08/5122725a56670882d777a8e8bfe0ed247cc55330/TSMC%202Q24%20Transcript.pdf' },
+    q2_25: { t: 'official', label: '台積電 2Q25 法說會逐字稿（2025-07-17）', url: 'https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2025-07/1f4f86c935f1de837672a6973154e64b26bdae57/TSMC%202Q25%20Transcript.pdf' },
+    toms_roadmap: { t: 'media', label: "Tom's Hardware：台積電公布到 2029 年的製程路線圖（2026-04-22）", url: 'https://www.tomshardware.com/tech-industry/semiconductors/tsmc-unveils-process-technology-roadmap-through-2029-a12-a13-n2u-announced-a16-slips-to-2027' },
+    samsung2024: { t: 'vendor', label: 'Samsung：SFF 2024 新聞稿，重申 1.4 奈米 2027 年量產（2024-06-13）', url: 'https://news.samsung.com/global/samsung-showcases-ai-era-vision-and-latest-foundry-technologies-at-sff-2024' },
+    intel10q: { t: 'vendor', label: 'Intel 10-Q（2026-10-30 提交）', url: 'https://www.sec.gov/Archives/edgar/data/0000050863/000005086326000191/intc-20260926.htm' },
+    intel10k: { t: 'vendor', label: 'Intel 2025 年度 10-K（SEC）', url: 'https://www.sec.gov/Archives/edgar/data/50863/000005086326000011/intc-20251227.htm' },
+    intel_q4_25: { t: 'vendor', label: 'Intel：2025 年第 4 季暨全年業績新聞稿（2026-01-22）', url: 'https://www.intc.com/news-events/press-releases/detail/1759/intel-reports-fourth-quarter-and-full-year-2025-financial-results' },
+    toms_intel: { t: 'media', label: "Tom's Hardware：Intel 承諾 2028 年 14A 量產（2026-07-24）", url: 'https://www.tomshardware.com/pc-components/cpus/intel-commits-to-14a-mass-production-in-2028-as-its-sales-rise-25-percent-year-over-year' },
+    samsung_q4: { t: 'vendor', label: 'Samsung：2025 年第 4 季業績新聞稿（2026-01-29）', url: 'https://news.samsung.com/global/samsung-electronics-announces-fourth-quarter-and-fy-2025-results' },
+    trendforce_sf14: { t: 'media', label: 'TrendForce：Samsung SF1.4 傳延至 2029 年量產（2026-07-02）', url: 'https://www.trendforce.com/news/2026/07/02/news-samsung-reportedly-expands-2nm-portfolio-ahead-of-2029-sf1-4-mass-production-sf2p-targets-2027-28/' },
+  };
+  // 來源類型；level 為方法檔 3.1 的分級，1 最高。name 沿用 N2 首例的頁面字樣
+  const TAG = {
+    official: { name: '台積電官方', level: 1 },
+    paper: { name: '論文', level: 2 },
+    vendor: { name: '廠商聲明', level: 3 },
+    generic: { name: '業界通用', level: 4 },
+    media: { name: '媒體轉述', level: 5 },
+  };
+
+  // 供應商：S＝有公開資料顯示供貨給台積電；M＝該類主要廠商。名單見 research/05-suppliers.md
+  const SUP = {
+    wafer: { name: '矽晶圓', list: [['SUMCO', 'S'], ['Shin-Etsu Handotai', 'S'], ['環球晶 6488', 'S'], ['台勝科 3532', 'S'], ['合晶 6182', 'S']] },
+    epi: { name: '磊晶設備', list: [['ASM International', 'S'], ['Applied Materials', 'S']] },
+    depo: { name: '薄膜沉積設備與前驅物', list: [['ASM International', 'S'], ['Applied Materials', 'S'], ['KOKUSAI ELECTRIC', 'S'], ['Lam Research', 'S'], ['Tokyo Electron', 'S'], ['Merck', 'S']] },
+    litho: { name: '微影設備與材料', list: [['ASML', 'S'], ['Canon', 'S'], ['Tokyo Electron', 'S'], ['JSR', 'S'], ['東京應化 TOK', 'S'], ['新應材 4749', 'S']] },
+    etch: { name: '蝕刻設備', list: [['Lam Research', 'S'], ['Tokyo Electron', 'S'], ['Applied Materials', 'S']] },
+    cmp: { name: '研磨（CMP）設備與耗材', list: [['Applied Materials', 'S'], ['EBARA', 'S'], ['DuPont', 'S'], ['中砂 1560', 'S']] },
+    metal: { name: '金屬沉積設備', list: [['Applied Materials', 'S']] },
+    wet: { name: '清洗設備與化學品', list: [['SCREEN', 'S'], ['勝一 1773', 'S'], ['長春石化', 'S']] },
+    eda: { name: '設計軟體（EDA）與矽智財', list: [['Synopsys', 'M'], ['Cadence', 'M'], ['Siemens EDA', 'M'], ['Arm', 'M'], ['創意 3443', 'M'], ['力旺 3529', 'M']] },
+    opcsw: { name: '運算微影與 OPC', list: [['Synopsys', 'S'], ['NVIDIA', 'S'], ['ASML', 'M']] },
+    mask: { name: '光罩材料、寫入與檢測', list: [['NuFlare', 'S'], ['IMS Nanofabrication', 'S'], ['Lasertec', 'S'], ['HOYA', 'M'], ['三井化學', 'M'], ['家登 3680', 'M']] },
+    beol: { name: '金屬沉積與研磨（CMP）', list: [['Applied Materials', 'S'], ['Lam Research', 'S'], ['EBARA', 'S'], ['DuPont', 'S'], ['中砂 1560', 'S'], ['光洋科 1785', 'S']] },
+    wtest: { name: '晶圓測試設備與代工', list: [['Advantest', 'S'], ['Technoprobe', 'S'], ['京元電子 2449', 'S'], ['日月光投控 3711', 'S'], ['精測 6510', 'M'], ['旺矽 6223', 'M']] },
+    pkg: { name: '先進封裝代工、設備與材料', list: [['日月光投控 3711', 'S'], ['Amkor', 'S'], ['欣興 3037', 'S'], ['DISCO', 'S'], ['辛耘 3583', 'S'], ['Ajinomoto', 'M']] },
+    ftest: { name: '最終測試設備與代工', list: [['Advantest', 'S'], ['Teradyne', 'M'], ['京元電子 2449', 'M'], ['日月光投控 3711', 'M'], ['矽格 6257', 'M'], ['欣銓 3264', 'M']] },
+    inspect: { name: '線上檢測與量測（每一步之間）', list: [['KLA', 'S'], ['Onto Innovation', 'S'], ['Nova', 'S']] },
+  };
+
+  const PARTS = {
+    'si-sub': { name: '矽基板', en: 'Silicon substrate', text: '單晶矽晶圓的本體。所有電晶體都建在它的表面上。' },
+    'sige': { name: '矽鍺犧牲層', en: 'SiGe sacrificial layer', text: '暫時墊在矽片之間的材料，它的任務就是之後被挖掉。挖空以後，閘極才能伸進矽片之間，從四面包住每一片。' },
+    'si-sheet': { name: '矽奈米片', en: 'Si nanosheet', text: '電流真正流過的通道。N2 把通道從一片直立的「鰭」改成幾片橫躺疊起來的薄片。台積電沒有公開片數與厚度，圖中畫 3 片。' },
+    'hardmask': { name: '硬遮罩', en: 'Hard mask', text: '蝕刻時蓋在要保留區域上的保護層，蝕刻完就移除。' },
+    'dummy': { name: '假閘極', en: 'Dummy gate', text: '先佔住閘極位置的犧牲結構。等源汲極這些高溫步驟結束後拔掉，換成真正的金屬閘極。' },
+    'sti': { name: '淺溝槽隔離', en: 'Shallow trench isolation (STI)', text: '填在鰭與鰭之間溝槽底部的絕緣氧化層，把相鄰的元件隔開。之後的閘極會坐在它上面，不會直接碰到矽基板。' },
+    'gspacer': { name: '閘極側壁', en: 'Gate spacer', text: '貼在閘極兩側的絕緣層，把閘極和源汲極隔開。' },
+    'inner': { name: '內側間隔層', en: 'Inner spacer', text: '奈米片電晶體特有的結構：夾在矽片之間、介於閘極和源汲極中間的小塊絕緣體。它能降低閘極與源汲極之間的寄生電容，也在挖除矽鍺時保護源汲極。' },
+    'sd': { name: '源極／汲極', en: 'Source / Drain', text: '載子（電子或電洞）的出發點與終點，緊貼著每一片矽的兩端。矽鍺被挖空後，懸空的奈米片也是靠兩端的源汲極撐住。' },
+    'ild': { name: '層間介電質', en: 'Interlayer dielectric', text: '把源汲極蓋住的絕緣材料。磨平之後只露出假閘極頂部，讓接下來的步驟只對閘極位置動手。' },
+    'highk': { name: '高介電常數層與功函數金屬', en: 'High-k & work-function metal', text: '包在每片矽外面的多層極薄薄膜，圖中合併畫成一層。高介電常數材料讓閘極隔著絕緣層也能有效控制通道；功函數金屬的厚度與材料會影響臨界電壓（電晶體開始導通的電壓）。台積電 N2 另外用偶極（dipole）技術調出 6 種臨界電壓（媒體轉述）。' },
+    'metal': { name: '金屬閘極', en: 'Metal gate', text: '真正的閘極，加上電壓就能開關通道裡的電流。在 N2 裡它填滿矽片之間的空隙，從四面包住每一片。' },
+    'kit': { name: '設計規則手冊與 PDK', en: 'DRM & PDK', text: '台積電交給設計端的兩份核心資料：設計規則手冊（DRM）規定版圖可以怎麼畫，製程設計套件（PDK）是給設計軟體用的製程資料。Cadence 在 2023 年 4 月宣布設計流程通過 N2 設計規則手冊認證，並與台積電交付 N2 的 PDK（廠商聲明）。' },
+    'eda': { name: 'EDA 設計軟體', en: 'Electronic design automation', text: '晶片設計用的軟體。台積電會針對每個新製程逐項認證，項目包括佈局佈線、時序與功耗、電遷移與壓降、實體驗證等。' },
+    'cell-short': { name: '矮單元', en: 'Short cell', text: '高度較矮的標準單元，強調小面積與省電（台積電官方說法）。' },
+    'cell-tall': { name: '高單元', en: 'Tall cell', text: '高度較高的標準單元，強調效能（台積電官方說法）。' },
+    'stdcell': { name: '標準單元', en: 'Standard cell', text: '晶片設計的基本積木。佈局佈線時，軟體把標準單元排成一列列，再用金屬線連起來。' },
+    'wire': { name: '金屬繞線', en: 'Routing', text: '把標準單元彼此連起來的金屬導線。實際上分佈在好幾層金屬裡，圖中簡化成一層來畫。' },
+    'drc': { name: '設計規則違規', en: 'DRC violation', text: '版圖違反設計規則的地方，例如兩條線靠得太近。實體驗證會逐一抓出來，修改後重跑，直到通過。' },
+    'gds': { name: '版圖資料', en: 'Layout data (GDS)', text: '晶片每一層的幾何圖形。台積電公開頁面稱為 GDS 資料，是光罩製作的起點。' },
+    'masksvc': { name: '台積電光罩服務', en: 'TSMC mask services', text: '台積電官網形容它是「設計者與晶圓廠之間的介面」，並稱擁有全球最大的光罩製造能力。' },
+    'design': { name: '單一設計', en: 'Single design', text: '一套光罩只放一個晶片設計。一套光罩有很多片，圖中只畫一片。' },
+    'shuttle': { name: '多專案光罩', en: 'CyberShuttle', text: '多個設計共用一套光罩、分攤光罩費用，適合原型與電路特性驗證。台積電稱涵蓋 0.5 微米到 A14。' },
+    'target': { name: '設計圖形', en: 'Design target', text: '設計者想要的圖形，也是印出來應該達到的樣子。' },
+    'opc': { name: 'OPC 修正圖形', en: 'OPC features', text: '為了抵銷光學效應而故意加上的形狀：線端加寬（hammerhead）、轉角補小方塊（serif）。' },
+    'sraf': { name: '輔助圖形', en: 'Sub-resolution assist feature', text: '放在孤立線條旁邊的細線，幫助主圖形印得更好，本身小到不會被印出來。' },
+    'printed': { name: '晶圓上的圖形', en: 'Printed pattern', text: '光罩圖形經過曝光後，實際印在晶圓上的形狀。' },
+    'curvy': { name: '曲線光罩圖形', en: 'Curvilinear mask', text: '修正形狀不再侷限於直角的光罩。台積電作者的論文提到曲線 OPC 設計的光罩檢測，但台積電沒有公開 N2 是否採用。' },
+    'mask-sub': { name: '光罩基板', en: 'Mask substrate', text: '光罩的底材。目前 EUV 光罩是 6 吋；台積電與 ASML 的目標是 2031 年前建立 12 吋光罩試產線。' },
+    'ml': { name: '鉬／矽多層膜', en: 'Mo/Si multilayer', text: '40 到 50 層交替的矽與鉬，像一面鏡子把 EUV 光反射出去。圖中只畫 10 層。' },
+    'cap': { name: '覆蓋層', en: 'Capping layer', text: '蓋在多層膜上的薄膜，吸收層就做在它上面。' },
+    'absorber': { name: '吸收層', en: 'Absorber', text: '鉭系材料，會吸收 EUV 光。有吸收層的地方不反射，沒有的地方反射，圖形就這樣定義出來。' },
+    'defect': { name: '光罩缺陷', en: 'Mask defect', text: '光罩上的缺陷可能跟著圖形一起印到晶圓上，所以要檢測、修補，再確認能不能印出來。' },
+    'pellicle': { name: '保護膜', en: 'Pellicle', text: '撐在框架上的透明薄膜，讓灰塵落在離圖形夠遠的地方，不會被印出來。' },
+    'ild2': { name: '層間絕緣層', en: 'Dielectric layer', text: '把接點、金屬導線一層層隔開的絕緣材料，導線就埋在裡面。' },
+    'node': { name: '已量產的節點', en: 'Process node (in production)', text: '已經量產的製程世代，位置是量產年份（約略）。' },
+    'nodef': { name: '預告的節點', en: 'Process node (announced)', text: '公司預告的製程世代與時程，可能修改。' },
+    'contact': { name: '中段接點', en: 'MoL contact', text: '把電晶體的源極、汲極與閘極接到上方金屬導線的細小金屬柱。N2 的中段改用免阻障層的鎢（媒體轉述 IEDM 2024 論文）。' },
+    'beol': { name: '後段金屬導線', en: 'BEOL interconnect', text: '一層層的金屬導線與層間通孔，把電晶體連成電路，越下層越細越密。金屬層數與間距台積電沒有公開。' },
+    'mim': { name: 'MiM 電容', en: 'SHP-MiM capacitor', text: '金屬－絕緣體－金屬構成的電容，用來穩定供電。N2 的超高效能 MiM 約 200 fF/mm²（論文 Fig.11 圖內文字）。' },
+    'rdl': { name: '銅重布線層', en: 'Cu RDL', text: '晶片上方的低電阻銅導線，負責銜接先進封裝（台積電官網與論文 Fig.11）。' },
+    'passiv': { name: '鈍化保護層', en: 'Passivation', text: '晶片最上方的保護層。論文摘要提到 N2 採用平坦的保護層（flat passivation）。' },
+    'wafer': { name: '晶圓', en: 'Wafer', text: '做完所有製程的晶圓，上面排滿一顆顆晶片。' },
+    'die': { name: '晶片', en: 'Die', text: '晶圓上的一顆顆晶片，之後會被切開、封裝。' },
+    'wat': { name: 'WAT 測試結構', en: 'Test structure', text: '晶圓上專門用來量測製程參數的測試結構，不是客戶的電路（業界通用）。圖中畫在晶片之間，位置為示意。' },
+    'fail': { name: '未通過的晶片', en: 'Failed die', text: '針測沒通過的晶片會被標記，不送去封裝（業界通用）。圖中的數量是示意，不是實際良率。' },
+    'pad': { name: '測試接點', en: 'Probe pad', text: '探針接觸的金屬接點。' },
+    'die2': { name: '堆疊在上方的晶片', en: 'Stacked die', text: 'SoIC 把晶片堆疊在另一顆晶片上。台積電官網說 SoIC Gen-2 能與 N2 以後的先進 SoC 相容。' },
+    'interposer': { name: '中介層', en: 'Interposer', text: 'CoWoS 裡承載運算晶片與記憶體的那一層，官方結構圖可以看到裡面的連線。' },
+    'hbm': { name: '高頻寬記憶體', en: 'HBM', text: '堆疊式記憶體，和運算晶片一起整合在 CoWoS 裡，提供大量記憶體頻寬（台積電官網）。' },
+    'pkgsub': { name: '封裝基板', en: 'Package substrate', text: '封裝最下方的基板，再接到電路板上。' },
+    'pkg': { name: '封裝好的晶片', en: 'Packaged chip', text: '完成封裝、等待最終測試的晶片。' },
+  };
+  const PART_ORDER = ['si-sub', 'sige', 'si-sheet', 'hardmask', 'sti', 'dummy', 'gspacer', 'inner', 'sd', 'ild', 'highk', 'metal', 'kit', 'eda', 'cell-short', 'cell-tall', 'stdcell', 'wire', 'drc', 'gds', 'masksvc', 'design', 'shuttle', 'target', 'opc', 'sraf', 'printed', 'curvy', 'mask-sub', 'ml', 'cap', 'absorber', 'defect', 'pellicle', 'ild2', 'contact', 'beol', 'mim', 'rdl', 'passiv', 'wafer', 'die', 'wat', 'fail', 'pad', 'die2', 'interposer', 'hbm', 'pkgsub', 'pkg', 'node', 'nodef'];
+  // 材料的色票：CSS 變數名（不含 --），用在圖例與材料說明的色塊
+  const SWATCH = { 'si-sub': 'm-sub', 'si-sheet': 'm-si', 'sige': 'm-sige', 'hardmask': 'm-mask', 'dummy': 'm-poly', 'gspacer': 'm-nit', 'inner': 'm-nit', 'sd': 'm-sd', 'ild': 'm-ox', 'sti': 'm-sti', 'highk': 'm-highk', 'metal': 'm-metal', 'kit': 'accent-soft', 'eda': 'm-sd', 'cell-short': 'm-si', 'cell-tall': 'm-sige', 'stdcell': 'm-si', 'wire': 'm-metal', 'drc': 'accent', 'gds': 'm-highk', 'masksvc': 'accent-soft', 'design': 'm-si', 'shuttle': 'm-sige', 'target': 'm-mask', 'opc': 'm-mask', 'sraf': 'm-mask', 'printed': 'm-sd', 'curvy': 'm-mask', 'mask-sub': 'm-sub', 'ml': 'm-highk', 'cap': 'm-sd', 'absorber': 'm-mask', 'defect': 'accent', 'pellicle': 'm-poly', 'ild2': 'm-ox', 'contact': 'm-mask', 'beol': 'm-metal', 'mim': 'm-highk', 'rdl': 'm-poly', 'passiv': 'm-nit', 'wafer': 'm-si', 'die': 'm-sub', 'wat': 'accent', 'fail': 'accent', 'pad': 'm-sige', 'die2': 'm-sige', 'interposer': 'm-sti', 'hbm': 'm-si', 'pkgsub': 'm-sd', 'pkg': 'm-metal', 'node': 'm-sd', 'nodef': 'm-sd' };
+
+  // line：這一幕走哪條線（product 產品線／supply 供應鏈／both 兩條線）；N2 的製程步驟本身就是供應鏈，兩條線重合
+  const ACTS = [
+    { n: 0, name: '序幕', title: '尺度', line: 'both' },
+    { n: 1, name: '第一幕', title: '設計到光罩', line: 'both' },
+    { n: 2, name: '第二幕', title: '做出電晶體', line: 'both' },
+    { n: 3, name: '第三幕', title: '接上導線', line: 'both' },
+    { n: 4, name: '第四幕', title: '測試與封裝', line: 'both' },
+    { n: 5, name: '終章', title: '藍圖', line: 'both' },
+  ];
+
+  const STEPS = [
+    { n: 0, act: 0, short: '序', label: '序幕', title: '從晶圓到電晶體', badges: ['official', 'media'],
+      pa: ['①', '由遠到近（示意）'], pb: ['②', '數字小知識'],
+      plain: '先從尺度開始：一片 12 吋晶圓上排滿一顆顆晶片，每顆晶片裡有數量龐大的電晶體。這份頁面要看的，就是 N2 的電晶體怎麼一步步做出來，以及做好之後怎麼變成可以出貨的晶片。',
+      detail: ['台積電的 12 吋超大晶圓廠（GIGAFAB）目前有六座：Fab 12、14、15、18、20、22；截至 2025 年，合計產能超過 1,300 萬片 12 吋約當晶圓，製程涵蓋 0.13 微米到 2 奈米（台積電官網）。', '「2nm」「N2」是製程世代的名稱，不是電晶體上某個部位的實際尺寸。IEEE Spectrum 2013 年的報導指出，節點名稱早已不對應晶片上任何特定的尺寸；Intel 的 Mark Bohr 也說，他指不出哪一個尺寸剛好是 32、22 或 14 奈米。', '台積電沒有公開 N2 奈米片的片數、片寬與片厚；圖中畫三片只是示意。'],
+      beats: [
+        { now: '一片 12 吋（300mm）晶圓，上面排滿晶片。', a: '晶圓上的每個小方塊都是一顆晶片（示意）。', b: '台積電的 12 吋晶圓廠。' },
+        { now: '拉近：一顆晶片裡分成許多電路區塊。', a: '一顆晶片（示意）；框起來的地方再拉近。', b: '晶片尺寸依產品而定。' },
+        { now: '再拉近：電路是由一顆顆電晶體組成，N2 用的是奈米片電晶體。', a: '一顆奈米片電晶體的剖面（示意）。', b: '「2nm」是世代名稱，不是實際尺寸。' },
+      ],
+      supNote: '序幕不列廠商。',
+      sources: ['tsmc_gigafab', 'spectrum2013'] },
+    { n: 1, act: 1, title: '設計規則與 PDK', badges: ['official', 'vendor'],
+      pa: ['①', '台積電交給設計者的工具'], pb: ['②', 'NanoFlex：高矮單元混排（示意）'],
+      plain: '晶片設計公司要先知道製程做得到什麼。台積電把「版圖可以怎麼畫」寫成設計規則手冊（DRM），把製程資料包成製程設計套件（PDK），交給設計軟體使用。N2 還多了 NanoFlex：同一個設計區塊裡可以混用矮單元與高單元。',
+      detail: ['台積電的開放創新平台（OIP）把設計軟體（EDA）、矽智財（IP）與設計服務夥伴串在一起。台積電會針對每個新製程認證 EDA 工具，狀態分為「已認證」與「進行中」，項目包括佈局佈線、時序與功耗、電遷移與壓降、實體驗證、寄生參數萃取、模擬與熱分析。台積電官網的認證表目前列的是 A14、A16、N2P、N3C；N2 本身的認證資訊來自 EDA 廠 2023–2024 年的新聞稿。', 'Cadence 在 2023 年 4 月宣布，它的設計流程通過台積電 N2 設計規則手冊的認證，雙方並交付 N2 的 PDK（廠商聲明）。', '標準單元（standard cell）是晶片設計的基本積木。NanoFlex 讓設計者在同一個設計區塊裡混用矮單元（強調小面積與省電）與高單元（強調效能）；台積電 2025 年宣布把它演進為 NanoFlex Pro。'],
+      beats: [
+        { now: '台積電把設計規則手冊與製程設計套件交給設計端。', a: '設計規則手冊與 PDK。', b: '一個設計區塊，分成高度不同的列。' },
+        { now: 'EDA 軟體接受台積電認證；NanoFlex 讓高矮單元在同一區塊混排。', a: '台積電逐項認證 EDA 軟體。', b: '淺藍是矮單元，黃色是高單元。' },
+      ],
+      sources: ['tsmc_oip', 'tsmc_eda', 'cadence2023', 'pr3136', 'pr3228'] },
+    { n: 2, act: 1, title: '設計實作與驗證', badges: ['official', 'vendor', 'generic'],
+      pa: ['①', '設計流程'], pb: ['②', '版圖（示意）'],
+      plain: '設計團隊用 EDA 軟體把電路變成實際的版圖：先把標準單元擺好、用金屬線連起來，再一關關驗證：訊號能不能準時抵達、耗電與壓降是否在範圍內、版圖有沒有違反設計規則、版圖和電路圖是否一致。全部通過才能 tape-out。',
+      detail: ['台積電列出的 EDA 認證項目，就是這一段要過的關卡：佈局佈線（APR）、時序與功耗驗證（STA）、電遷移與壓降（EMIR）、實體驗證（DRC、LVS、dummy fill）、寄生參數萃取等。', 'Cadence 在 N3E／N2 的認證新聞稿中列出工具支援的新設計功能，例如混合單元列（hybrid cell row）最佳化（原文標明用於 N3E）與單元接腳對齊。Siemens 的 Calibre 實體驗證工具在 2023 年 9 月取得 N2 認證；Synopsys 同月宣布 N2 數位流程已有多個 tape-out（廠商聲明）。', 'sign-off（簽核）是 tape-out 前必須通過的一系列驗證步驟的統稱。DRC（Design Rule Check）檢查版圖是否符合設計規則，LVS（Layout Versus Schematic）比對版圖和電路圖是否一致。'],
+      beats: [
+        { now: '佈局佈線：擺好標準單元，再用金屬線連起來。', a: '流程走到佈局佈線。', b: '淺藍是標準單元，灰色是金屬繞線。' },
+        { now: '時序與功耗驗證：檢查訊號能不能在時限內走完延遲最長的路徑。', a: '流程走到時序與功耗驗證。', b: '橘線標出延遲最長、最容易來不及的路徑（示意）。' },
+        { now: '實體驗證：DRC 抓出違反設計規則的地方，LVS 比對版圖和電路圖。', a: '最後一關：實體驗證。', b: '圈起來的兩條線靠得太近，要修改後重跑。' },
+      ],
+      sources: ['tsmc_eda', 'cadence2023', 'siemens2023', 'synopsys2023', 'wiki_signoff'] },
+    { n: 3, act: 1, title: 'Tape-out 定稿', badges: ['official', 'generic'],
+      pa: ['①', '從版圖到光罩服務'], pb: ['②', '一套光罩放幾個設計'],
+      plain: 'Tape-out 是設計定稿、把整顆晶片的版圖資料交給晶圓廠的那一刻，也是光罩製作的起點。台積電的光罩服務就是設計者與晶圓廠之間的介面。',
+      detail: ['版圖資料記錄了晶片每一層的幾何圖形，台積電公開頁面稱為 GDS 資料。依維基百科的描述，實務上晶圓廠也會針對自己的製程檢查並修改光罩資料。台積電 N2 專屬的 tape-out 審核流程沒有公開。', '原型階段可以走台積電的 CyberShuttle：多個設計共用一套「多專案光罩」，分攤光罩費用。台積電稱涵蓋 0.5 微米到 A14，每月最多 10 個梯次。'],
+      beats: [
+        { now: '把每一層的圖形打包成版圖資料。', a: '晶片的每一層都是一張圖，打包成 GDS 資料。', b: '一般做法：一套光罩只放一個設計。' },
+        { now: '版圖資料交給台積電光罩服務，光罩製作從這裡開始。', a: '光罩服務是設計者與晶圓廠之間的介面。', b: 'CyberShuttle：多個設計共用一套光罩，分攤費用。' },
+      ],
+      supNote: '這一步沒有另列相關廠商。',
+      sources: ['wiki_tapeout', 'tsmc_mask', 'tsmc_shuttle'] },
+    { n: 4, act: 1, title: '光罩資料修正', badges: ['official', 'paper', 'vendor', 'generic'],
+      pa: ['①', '光罩上的圖形'], pb: ['②', '印到晶圓上的結果'],
+      plain: '受限於曝光機的光學解析度，直接照設計畫光罩，印出來會轉角變圓、線端縮短、線寬走樣。所以光罩上的圖形要先「故意改形」：線端加寬、轉角補上小方塊、旁邊加上不會印出來的輔助線，讓印出來的結果接近設計。這叫光學鄰近修正（OPC）。',
+      detail: ['台積電官網說，先進製程的光罩會例行對客戶的 GDS 資料做 OPC 轉換，OPC 模型涵蓋製程設備、材料與可製造性設計（DFM）的要求。', '更進一步的做法是曲線光罩：修正後的形狀不再只是直角，而是自由曲線。台積電作者的論文提到曲線 OPC 設計的光罩檢測，但台積電沒有公開 N2 是否採用。', '運算量非常大。NVIDIA 稱一套光罩的運算可能要 3,000 萬 CPU 小時以上（本頁換算：若以單一 CPU 計算，約等於不停跑 3,400 年）；台積電 2024 年起把 NVIDIA 的 cuLitho（用 GPU 加速運算微影）導入生產，台積電執行長在 NVIDIA 新聞稿中表示（廠商聲明）。'],
+      beats: [
+        { now: '直接照設計畫光罩：印出來轉角變圓、線端縮短。', a: '光罩上的圖形和設計一模一樣。', b: '虛線是設計，綠色是實際印出來的形狀。' },
+        { now: 'OPC：故意在光罩上加寬線端、補轉角、加輔助線。', a: '線端加寬、轉角補小方塊；最左邊的細線是不會印出來的輔助圖形。', b: '印出來的形狀接近設計，轉角仍略圓：轉角圓化很難完全補償。' },
+        { now: '更進一步：曲線光罩，以及龐大的運算量。', a: '曲線光罩：修正形狀變成自由曲線（台積電未公開 N2 是否採用）。', b: '一套光罩的運算量。', pa: ['①', '光罩上的圖形（曲線光罩）'], pb: ['②', '運算量'] },
+      ],
+      sources: ['wiki_opc', 'tsmc_mask', 'spie2024', 'nvidia_culitho'] },
+    { n: 5, act: 1, title: '光罩製作與檢測', badges: ['official', 'paper', 'media', 'generic'],
+      pa: ['①', 'EUV 光罩剖面（示意）'], pb: ['②', '光罩俯視（示意）'],
+      plain: 'EUV 光罩不是透光的玻璃片，而是一面會反射的鏡子：基板上疊了幾十層鉬與矽交替的薄膜，上面再做一層會吸收 EUV 光的圖形。圖形寫好後要檢測、修補，再視需要貼上保護膜（pellicle）。',
+      detail: ['光罩寫入機用電子束（或雷射）把設計圖形寫到光罩上。台積電有自己的光罩廠，官網稱擁有全球最大的光罩製造能力。', '台積電作者 2023 年的論文指出，EUV 光罩上每個可能的缺陷，原本都要實際印到晶圓上評估，將近 3 天。同一篇論文介紹了一套直接用 EUV 光源檢視光罩的系統，可處理 N5、N3 及更先進節點的缺陷，每小時檢查超過 80 個位置（論文沒有點名 N2）。', '保護膜（pellicle）是撐在框架上的透明薄膜，讓灰塵落在離圖形夠遠的地方，不會被印出來。媒體轉述台積電 2024 年中的報告：自製的 EUV 保護膜壽命延長 4 倍、缺陷減少 80 倍（台積電原始報告未取得）。台積電 N2 的光罩是否全部貼保護膜，沒有公開資料。', '目前 EUV 光罩是 6 吋；台積電與 ASML 的目標是 2031 年前建立 12 吋光罩試產線。台積電官網列出的光罩例行檢查包括靜電損傷、刮傷、微粒、保護膜框架與老化。'],
+      beats: [
+        { now: '空白光罩：基板、鉬／矽多層膜、覆蓋層，最上面是吸收層。', a: '層數與厚度非依比例。', b: '光罩俯視。' },
+        { now: '電子束把圖形寫上去，蝕刻後吸收層只留在需要的地方。', a: '沒有吸收層的地方會反射 EUV 光（示意，省略光阻等中間步驟）。', b: '圖形一條條寫上光罩。' },
+        { now: '檢測：抓出缺陷、修補，再用 EUV 光確認能不能印出來。', a: '橘圈是一個缺陷。', b: '檢測系統掃過整片光罩。' },
+        { now: '貼上保護膜（pellicle）。N2 是否每片光罩都貼，沒有公開資料。', a: '保護膜撐在框架上，和圖形隔一段距離。', b: '保護膜蓋住整片圖形區。' },
+      ],
+      sources: ['wiki_euv', 'wiki_photomask', 'tsmc_mask', 'spie_amrs', 'toms_pellicle', 'pr3338'] },
+    { n: 6, act: 2, title: '空白晶圓進廠', badges: ['generic'],
+      pa: ['A–A′', '順著電流方向切開'], pb: ['B–B′', '在閘極的位置橫著切開'],
+      plain: '一切從一片拋光到近乎完美的單晶矽晶圓開始。圖中下方的深藍色區塊就是矽基板，之後的電晶體都長在它的表面上。',
+      detail: ['接下來兩張圖會一直同步播放。左圖（A–A′）順著電流的方向把電晶體切開，看得到載子從左邊的源極走到右邊的汲極；右圖（B–B′）在之後閘極所在的位置橫著切開，看得到閘極怎麼包住通道。'],
+      beats: [{ now: '矽基板就位。', a: '矽基板。', b: '矽基板。' }],
+      sources: ['pmc9920338'] },
+    { n: 7, act: 2, title: '矽與矽鍺交錯堆疊', badges: ['generic'],
+      pa: ['A–A′', '順著電流方向切開'], pb: ['B–B′', '在閘極的位置橫著切開'],
+      plain: '在矽基板上一層矽鍺、一層矽，交替往上長。矽層之後會變成電流通過的「奈米片」；矽鍺層只是暫時墊在中間，最後會被挖掉。',
+      detail: ['這種一層層長上去、而且新長的層會延續底下矽晶格排列的做法，叫做磊晶。關鍵在於兩種材料對某些蝕刻的反應不同，後面才能只挖掉矽鍺、留下矽。', '台積電沒有公開 N2 疊了幾層、每層多厚。學術論文的例子是矽與矽鍺各約 9 奈米、交替三組（非 N2 數據）。圖中畫三片矽。'],
+      beats: [{ now: '矽鍺與矽交替磊晶，由下往上長出三組。', a: '黃色是矽鍺，淺藍是矽。', b: '橫切面看到的也是同樣的疊層。' }],
+      sources: ['pmc9920338', 'pmc11173960'] },
+    { n: 8, act: 2, title: '刻出鰭狀疊層', badges: ['generic', 'official', 'media'],
+      pa: ['A–A′', '順著電流方向切開'], pb: ['B–B′', '在閘極的位置橫著切開'],
+      plain: '先在表面蓋上硬遮罩，標出要保留的地方，再用電漿從上往下垂直蝕刻，把整片疊層切成一條條細長的鰭。鰭與鰭之間的溝槽底部再填入絕緣氧化層，把相鄰的元件隔開。',
+      detail: ['這一步沿用 FinFET 時代的鰭圖形化做法。填在溝槽底部的絕緣層叫淺溝槽隔離（STI）。以 Applied Materials 的一份專利為例，氧化層會沉積在疊層的周圍；圖中省略了襯層等細節，實際做法各廠不同。', '右圖刻意畫成一寬一窄兩條鰭，代表同一顆晶片上兩種不同的設計（示意）。這對應台積電的 NanoFlex：官方說法是 N2 的標準單元（standard cell，晶片設計的基本積木）分成「矮單元」（省面積、省電）與「高單元」（拚效能），可以在同一個設計區塊裡混用；IEEE Spectrum 的報導則描述為同一顆晶片上可以用不同寬度的奈米片做成不同的邏輯單元。官方沒有直接說矮單元就是窄片。', '台積電沒有公開這一層是否使用 EUV（極紫外光微影，目前最先進的曝光技術）。'],
+      beats: [
+        { now: '蓋上硬遮罩，標出要留下的鰭。', a: '左圖順著鰭的方向看，整條都被遮罩蓋住。', b: '遮罩只蓋在兩條鰭的位置。' },
+        { now: '垂直蝕刻：沒被遮住的疊層和底下一點點矽被挖掉。', a: '順著鰭的方向切，看不到切割發生，疊層完整保留。', b: '疊層被切成一寬一窄兩條鰭，代表兩種不同的設計（示意）。' },
+        { now: '溝槽底部填入絕緣氧化層，高度回蝕到鰭的底部。', a: '這個剖面切在鰭上，看不到隔離層。', b: '灰青色的淺溝槽隔離填在兩條鰭之間。' },
+        { now: '移除遮罩，鰭狀疊層完成。', a: '鰭狀疊層。', b: '寬鰭與窄鰭並排，底部由隔離層隔開。' },
+      ],
+      sources: ['pmc9920338', 'amatsti', 'pr3136', 'spectrum'] },
+    { n: 9, act: 2, title: '假閘極與內側間隔層', badges: ['generic'],
+      pa: ['A–A′', '順著電流方向切開'], pb: ['B–B′', '在閘極的位置橫著切開'],
+      plain: '先放一條「假閘極」佔住未來真閘極的位置，再把兩側的疊層挖掉、留給源極和汲極，最後在矽鍺層的兩端補上小塊絕緣體。',
+      detail: ['先做假閘極、最後才換成金屬閘極，是為了讓真正的閘極材料不必承受源汲極步驟的高溫。', '內側間隔層（inner spacer）是奈米片電晶體才有的關鍵模組：先從凹槽側面把矽鍺往內淺淺蝕刻出小凹洞，再填入絕緣材料、回蝕。它降低閘極與源汲極之間的寄生電容，也在後面挖除矽鍺時保護源汲極。', '難點在控制精度。論文的例子做到凹洞深度在 5±0.3 奈米以內、各層之間相當一致（非 N2 數據）。有效閘極長度同時取決於假閘極的寬度與內側間隔層的厚度。', '寄生電容是兩個導體靠得很近時自然形成、但設計上不想要的電容，會拖慢電晶體的開關速度。'],
+      beats: [
+        { now: '假閘極橫跨在鰭上，兩側貼上絕緣側壁。', a: '紅褐色是假閘極，淺綠是側壁。', b: '假閘極從上方和兩側罩住鰭。' },
+        { now: '挖掉假閘極兩側的疊層，留出源極和汲極的位置。', a: '只剩閘極和側壁底下的疊層。', b: '這個剖面切在閘極中央，沒有變化。' },
+        { now: '從側面把矽鍺兩端蝕刻出小凹洞，填入絕緣材料。', a: '矽鍺兩端換成淺綠色的內側間隔層。', b: '這個剖面切在閘極中央，看不到內側間隔層。' },
+      ],
+      sources: ['pmc7221596', 'pmc11173960', 'pmc12844779'] },
+    { n: 10, act: 2, title: '長出源極與汲極', badges: ['generic', 'media'],
+      pa: ['A–A′', '順著電流方向切開'], pb: ['B–B′', '在閘極的位置橫著切開'],
+      plain: '在凹槽裡用磊晶長出源極和汲極，緊貼著每一片矽的兩端。電晶體導通時，載子（電子或電洞）從源極出發，經過奈米片抵達汲極。',
+      detail: ['台積電在 IEDM 2024（國際電子元件會議，半導體業最重要的研討會之一）的論文提到，N2 優化了奈米片厚度、接面、摻雜活化與應力工程（媒體轉述），但沒有公開源汲極的材料與結構。', '難點：奈米片末端如果在前面的步驟受損，源汲極就長不好，接觸電阻跟著上升。源汲極對通道施加的應力，也可能在之後讓懸空的奈米片變形。'],
+      beats: [{ now: '源極與汲極從凹槽裡露出的矽表面長出來，接住每一片矽的兩端。', a: '綠色是源極（左）和汲極（右）。', b: '這個剖面切在閘極中央，看不到源汲極。' }],
+      sources: ['pmc12844779', 'pmc9920338', 'toms'] },
+    { n: 11, act: 2, title: '挖空矽鍺，奈米片懸空', badges: ['generic'],
+      pa: ['A–A′', '順著電流方向切開'], pb: ['B–B′', '在閘極的位置橫著切開'],
+      plain: '先用絕緣材料把源汲極蓋住，再拔掉假閘極，最後從閘極的溝槽把矽鍺全部挖掉。矽奈米片從此懸空，只靠兩端撐住。',
+      detail: ['能「只挖矽鍺、不傷矽」，靠的是化學性質的差異：矽鍺之間的鍵結比矽與矽之間弱，氟系的蝕刻物質會優先和矽鍺反應。論文的例子中，矽鍺對矽的蝕刻選擇比達到 168:1，也就是挖掉 168 份矽鍺只損失 1 份矽（非 N2 數據）。', '難點有三個：懸空的奈米片可能因為應力變形；片與片之間的距離不一致，後面填入的功函數金屬厚度就不同，電晶體的臨界電壓（開始導通的電壓）跟著飄移；寬窄不同的片要同時釋放。論文也指出，濕式蝕刻在高深寬比的結構裡會受毛細作用影響而不穩定。', '台積電沒有公開 N2 用哪一種方法釋放通道。'],
+      beats: [
+        { now: '填入層間介電質並磨平，只露出假閘極頂部。', a: '淺青色的絕緣材料蓋住源汲極。', b: '這個剖面沒有變化。' },
+        { now: '拔除假閘極，留下一條溝槽。', a: '閘極位置變成空的溝槽。', b: '假閘極拿掉後，鰭露了出來。' },
+        { now: '選擇性蝕刻掉矽鍺，矽奈米片懸空。', a: '矽片之間空了，兩端靠內側間隔層與源汲極撐住。', b: '每條鰭變成三片懸空的矽片。' },
+      ],
+      sources: ['pmc7221596', 'pmc9920338'] },
+    { n: 12, act: 2, title: '金屬閘極四面包覆', badges: ['generic', 'media'],
+      pa: ['A–A′', '順著電流方向切開'], pb: ['B–B′', '在閘極的位置橫著切開'],
+      plain: '用原子層沉積在每一片矽外面均勻包上極薄的絕緣層與功函數金屬，再把金屬填滿所有空隙。閘極從上、下、左、右四面包住每一片矽，這就是「全環繞閘極」（GAA）這個名字的由來。',
+      detail: ['閘極從四面控制通道，電流比較關得住、漏電比較少；而且多疊幾片，就能在不增加佔地的情況下提高驅動電流。FinFET 只能靠增加鰭的數量來改變電晶體的通道寬度，奈米片則可以直接把片做寬或做窄。', '台積電 N2 提供 6 種臨界電壓（電晶體開始導通的電壓），範圍橫跨 200mV，用的是台積電第三代的偶極（dipole）整合技術，這是 N2 用來調出多種臨界電壓的方法（媒體轉述 IEDM 2024 論文）。臨界電壓越多種，設計者越能在速度和耗電之間細調。功函數金屬的材料與層數，台積電沒有公開。'],
+      beats: [
+        { now: '原子層沉積：每片矽外面包上一層極薄的高介電常數材料與功函數金屬。', a: '紫色薄層包住閘極範圍內的每一片矽。', b: '每片矽都被紫色薄層包住。' },
+        { now: '金屬填滿所有空隙，真正的閘極完成。', a: '金屬閘極伸進矽片之間；兩端由內側間隔層隔開源汲極。', b: '金屬閘極從四面包住每一片矽。' },
+        { now: '全環繞閘極：上、下、左、右四面都由閘極控制。', a: '虛線箭頭示意載子的路徑：從左邊的源極出發，穿過奈米片抵達右邊的汲極。', b: '箭頭標出閘極包覆中間那片矽的四個方向。' },
+      ],
+      sources: ['pmc9920338', 'pmc12844779', 'spectrum', 'toms', 'semiwiki'] },
+    { n: 13, act: 3, title: '中段接點', badges: ['media', 'paper'],
+      pa: ['①', '電晶體上方的接點（示意）'], pb: ['②', '閘極接點電阻'],
+      plain: '電晶體做好之後，要先用一層「中段」接點把源極、汲極和閘極接出來，才能連到上面的金屬導線。',
+      detail: ['依媒體轉述台積電 IEDM 2024 論文，N2 的中段改用免阻障層（barrier-free）的鎢線路，閘極接點（VG）電阻降低 55%，環形振盪器頻率提高約 6.2%；比較基準原文沒有寫明。', '論文 Fig.11 的圖內文字寫道，中段與後段合起來的 RC（電阻乘以電容，影響訊號延遲）降低約 20%。'],
+      beats: [
+        { now: '在電晶體上方覆蓋一層絕緣材料。', a: '電晶體（簡化）上方蓋上絕緣層。', b: '媒體轉述的閘極接點電阻變化。' },
+        { now: '挖出接點孔、填入金屬，把源極、閘極、汲極接上來。', a: '三根接點：源極、閘極（VG）、汲極。', b: 'N2 改用免阻障層鎢，閘極接點電阻降 55%（比較基準未寫明）。' },
+      ],
+      sources: ['toms', 'iedm_fig11'] },
+    { n: 14, act: 3, title: '後段金屬導線', badges: ['official', 'paper', 'media'],
+      pa: ['①', '金屬導線堆疊（示意）'], pb: ['②', '台積電論文圖：IEDM 2024 Fig.11'],
+      plain: '接點之上是一層層的金屬導線，把電晶體連成電路。從右邊的台積電論文剖面可以看到，越下層的導線越細越密，越上層越粗。N2 的最上方還有高效能電容與銅重布線層（RDL），負責穩定供電、銜接先進封裝。',
+      detail: ['依媒體轉述 IEDM 2024 論文，N2 的第一層金屬（M1）改用 EUV「一次曝光、一次蝕刻」（1P1E）完成，減少製程步驟與光罩數，標準單元電容降低近 10%（比較基準原文未寫明）。', '超高效能 MiM 電容（SHP-MiM）約 200 fF/mm²（論文 Fig.11 圖內文字），媒體轉述它能減少瞬間電壓下降、提高最高運作頻率。', '台積電官網與年報說，N2 開發了低電阻的重布線層（RDL）與超高效能 MiM 電容。論文 Fig.11 的圖說指出，新的銅 RDL 與保護層讓 N2 能和 3DFabric（SoIC、InFO、CoWoS）封裝整合。', '金屬層的間距與總層數，台積電沒有公開。'],
+      beats: [
+        { now: '第一層金屬（M1）：N2 用 EUV 一次曝光、一次蝕刻完成（媒體轉述）。', a: '最下層、最密的是 M1。', b: '論文剖面：最下方是奈米片電晶體，往上是中段與後段金屬。' },
+        { now: '一層層往上疊：導線越往上越粗，層與層之間用通孔連接。', a: '越往上的金屬層越粗（層數為示意）。', b: '論文剖面：金屬層由下往上變粗。' },
+        { now: '最上方：超高效能 MiM 電容與銅重布線層，銜接先進封裝。', a: 'MiM 電容（約 200 fF/mm²）、銅 RDL 與保護層。', b: '論文剖面：銅 RDL、MiM 電容與保護層。' },
+      ],
+      sources: ['toms', 'iedm_fig11', 'l2nm', 'ar2025', 'research97'] },
+    { n: 15, act: 4, title: '晶圓測試與針測', badges: ['official', 'media', 'generic'],
+      pa: ['①', '晶圓俯視（示意）'], pb: ['②', '測試結構與探針（示意）'],
+      plain: '晶圓做完後要先測。WAT 量測晶圓上專門的測試結構，確認製程參數正常；接著針測（wafer sort）用探針一顆顆測晶片，把壞的標記起來，不送去封裝。',
+      detail: ['WAT（晶圓允收測試）資料由晶圓廠在製造結束時產生，一般會提供給客戶；通常有四十到一百項測試，每項在晶圓上的每個測試點都有結果（業界通用說明）。', '針測是在晶圓狀態下做的簡單電性測試，主要目的是找出不良晶片，避免它們被封裝（業界通用說明）。', '台積電官網說，它提供包含業界領先探針卡與熱管理技術的完整測試方案，並和客戶共同開發測試程式。台積電 N2 的 WAT 與針測細節沒有公開。', '奈米片結構讓檢測更難：很多會讓電晶體失效的缺陷不在視線範圍內，而是在奈米片底面等難以觸及的地方（Semiconductor Engineering 引述 IBM）。'],
+      beats: [
+        { now: 'WAT：量測晶圓上專門的測試結構，確認製程參數正常。', a: '橘點是測試結構（位置為示意）。', b: '測試結構是專門用來量測製程的，不是客戶的電路。' },
+        { now: '針測：探針卡接觸晶片上的接點，做快速電性測試。', a: '探針逐顆測試晶片（示意）。', b: '探針卡的針壓在晶片的接點上。' },
+        { now: '測完的結果：壞的晶片標記起來，不送去封裝。', a: '橘色是測試沒過的晶片（示意，不是實際良率）。', b: '只有好的晶片會繼續往下走。' },
+      ],
+      sources: ['semi_wat', 'anysilicon', 'tsmc_ap', 'semi_ns'] },
+    { n: 16, act: 4, title: '良率學習', badges: ['official', 'media'],
+      pa: ['①', '缺陷密度隨時間下降（示意）'], pb: ['②', '各方說法'],
+      plain: '新製程剛開始時缺陷比較多，隨著量產經驗累積，缺陷密度（D0）一路下降，良率跟著上升。台積電沒有公開 N2 的產品良率數字，法說會只說「良率良好」；論文揭露的是 SRAM 測試陣列的良率，不是產品良率。',
+      detail: ['台積電在 2025 年北美技術論壇比較了 N2 與前幾代在同一開發階段的缺陷密度，但原始投影片沒有公開。媒體轉述有出入：Tom\'s Hardware 說 N2 低於 N3、N5、N7；TechPowerUp 轉引工商時報說與 5 奈米家族相當、優於 7 奈米與 3 奈米。', '2026 年論壇上，台積電表示 N2 缺陷密度下降的狀況比 N3 好（Semiconductor Engineering 轉述）。', '依 SemiWiki 對 IEDM 2024 論文的分析，N2 的 256Mb SRAM 測試陣列平均良率超過 80%、最高超過 90%。SRAM 測試載具的良率不等於產品良率。', '網路上流傳的 D0 數值是推算，不是台積電公布的，本頁不採用。'],
+      beats: [
+        { now: '缺陷密度隨量產經驗下降，良率跟著上升。', a: '示意曲線，沒有台積電公開的數值。', b: '法說會的官方說法。' },
+        { now: '技術論壇與論文透露的線索，以及媒體說法的出入。', a: '台積電 2026 年論壇：N2 缺陷密度下降比 N3 好（媒體轉述）。', b: '各方說法並列。' },
+      ],
+      sources: ['q4_25', 'q1_26', 'q3_26', 'toms_d0', 'tpu_d0', 'semi2026', 'semiwiki_sram'] },
+    { n: 17, act: 4, title: '切割與先進封裝', badges: ['official', 'generic'],
+      pa: ['①', '從晶圓到封裝（示意）'], pb: ['②', '由誰做'],
+      plain: '好的晶片從晶圓上切下來，再依產品需要做先進封裝（SoIC 也有晶圓直接對晶圓堆疊的做法）。台積電的 3DFabric 包括 SoIC（把晶片垂直堆疊）、CoWoS（把運算晶片和高頻寬記憶體一起放在中介層上）與 InFO（整合扇出型封裝）。',
+      detail: ['台積電官網說，SoIC Gen-2 製程能與 N2 以後的先進 SoC 相容；SoIC 可以把不同尺寸、功能與製程的已知良好晶片（known good die）整合在一起，支援晶片對晶圓（CoW）與晶圓對晶圓（WoW）兩種方式。', 'CoWoS 把多顆 SoC 與高頻寬記憶體（HBM）整合在一起，是 AI 與高效能運算產品的基礎；CoWoS-L（3.5 倍光罩尺寸）自 2024 年量產。台積電 2026 年 10 月法說會表示已在量產 5 倍光罩尺寸的產品。', '哪個 N2 產品用哪種封裝，台積電沒有公開對照表。台積電 20-F 說封裝與測試由自己做或外包；2026 年 4 月法說會表示先進封裝產能很緊，需要和封測夥伴（OSAT）合作。', '晶圓切割與凸塊由誰執行，台積電沒有公開；封測廠如 Amkor 提供凸塊、針測、組裝與最終測試的一站式服務（業界通用）。'],
+      beats: [
+        { now: '切割：把晶圓上的晶片切成一顆顆。', a: '晶圓切割成單顆晶片（示意）。', b: '封裝與測試由誰做的公開說法。' },
+        { now: 'SoIC：把晶片堆疊在另一顆晶片上。', a: 'SoIC：上下兩顆晶片堆疊（示意）。', b: '官方圖：用一般 SoC 與用 SoIC 的 CoWoS、InFO_PoP 對照。', pb: ['②', '官方圖：TSMC-SoIC 對照'] },
+        { now: 'CoWoS：運算晶片與高頻寬記憶體放在中介層上，再接到封裝基板。', a: 'CoWoS 的結構（示意）。', b: '官方圖：CoWoS-S 結構。', pb: ['②', '官方圖：CoWoS-S 結構'] },
+      ],
+      sources: ['tsmc_3dfabric', 'tsmc_soic', 'tsmc_cowos', 'sec20f', 'q1_26', 'q3_26', 'amkor_bump'] },
+    { n: 18, act: 4, title: '最終測試與出貨', badges: ['official', 'generic'],
+      pa: ['①', '封裝後的測試（示意）'], pb: ['②', '台積電的測試能量'],
+      plain: '封裝好的晶片還要做最後一輪測試，可能包括預燒（burn-in）與系統級測試，通過才出貨。台積電沒有公開出貨前的流程細節。',
+      detail: ['台積電 2023 年啟用的先進封測六廠，是台積電第一座整合封裝與測試的自動化工廠，預估每年能提供超過 1,000 萬小時的測試服務，並能追溯每顆晶片的完整生產履歷。', '2026 年 7 月法說會上，台積電提到有些客戶的產品需要更多測試機台，測試機台不足，因此要投入更多資本支出。', '封測廠如 Amkor 提供最終測試、預燒與系統級測試等服務（業界通用）。'],
+      beats: [
+        { now: '最終測試：把封裝好的晶片放進測試座，接上測試機。', a: '晶片放進測試座，由測試機檢查功能（示意）。', b: '先進封測六廠的測試能量。' },
+        { now: '通過測試的晶片出貨；出貨前的流程細節沒有公開。', a: '出貨（示意，流程細節沒有公開）。', b: '2026 年 7 月法說會提到測試機台不足。' },
+      ],
+      sources: ['pr3033', 'q2_26', 'amkor_test', 'tsmc_ipf'] },
+    { n: 19, act: 5, short: '終', label: '終章', title: '節點演變與藍圖', badges: ['official', 'media', 'vendor'],
+      pa: ['①', '節點時間軸'], pb: ['②', 'N2 的規格'],
+      plain: '台積電約每兩到三年推出一個新世代。N2 是第一個改用奈米片的世代；之後的 A16、A14、A13、A12 已公布到 2029 年。這些時程是公司預告，可能修改；背面供電（把供電線路改走晶圓背面，讓正面專心走訊號）的路線就已經改過好幾次。',
+      detail: ['N2 相對 N3E（台積電 3 奈米家族的強化版）的官方規格：同功耗下速度提高 10～15%、同速度下功耗降低 25～30%、晶片密度增加 15% 以上（2024 年 7 月起的法說口徑）。2022 到 2024 年間這組數字出現過三種口徑，差別主要在功耗下限與密度的定義。', 'N2P 原訂 2026 下半年量產，但 2026 年 4 月起的法說會不再重述時程，目前查不到台積電宣布 N2P 量產的資料。A16：法說會到 2026 年 1 月都說 2026 下半年量產；2026 年 4 月技術論壇後，媒體報導路線圖改成 2027。台積電主管 Kevin Zhang 當時表示，A16 會在 2026 年具備量產能力，量產爬坡預計從 2027 年開始（媒體轉述）；台積電官網寫的是目標 2026 年具備量產能力（production ready），兩種說法可以同時成立。', '背面供電（Super Power Rail）的路線：2022 年 7 月是 N2 平台的選配 → 2024 年 1 月說 N2 加背面供電、2026 年量產 → 2024 年 4 月獨立成 A16 → 2025 年 7 月說 A14 加背面供電、2029 年 → 2026 年 4 月命名為 A12（2029）。A16 是台積電第一代背面供電，A12 是第二代。台積電 2026 年 10 月表示，是否採用背面供電看產品需求，有些加速器可能會用，手機不用。', '研發投入：2025 年研發費用新台幣 2,464 億元，占營收 6.5%，年增 20.7%（20-F）；年報預估 2026 年研發預算約為營收的 7%。', 'N2 占台積電晶圓營收：2026 年第 2 季 3%、第 3 季 8%；台積電預估 2027 年 N2 家族年產能增加一倍以上。', '對手：Samsung 在 2026 年 1 月的業績新聞稿宣布已開始量產第一代 2 奈米產品；1.4 奈米原訂 2027 年，2026 年媒體報導延到 2029 年。Intel 2025 年度 10-K 寫「In 2025, we ramped Intel 18A into high-volume production」（2025 年把 18A 爬升到大量生產），所以圖上把 18A 畫在 2025 年；2026 年 1 月的第 4 季業績新聞稿也寫 18A 已在亞利桑那與奧勒岡爬升到大量生產；10-Q 另說 2026 年初已推出以 18A 量產的產品；14A 依 Intel 執行長的說法，預計 2027 下半年風險試產（量產前的小量試產）、2028 年量產（媒體轉述）；Intel 在 10-Q 也說，擴產規模最終取決於 14A 能拿到多少客戶承諾的需求。各家的節點名稱是各自的世代命名，數字不代表實際尺寸（見序幕）。'],
+      beats: [
+        { now: '過去八年：N7 → N5 → N3 → N2，N2 改用奈米片。', a: '實心點是已量產的節點與年份。', b: 'N2 相對 N3E 的官方規格。' },
+        { now: '台積電已公布到 2029 年的節點；時程是預告，可能修改。', a: '虛線圈是預告的節點；A16 預計 2026 年具備量產能力、2027 年開始量產（媒體轉述）。', b: '背面供電的路線改過好幾次。', pb: ['②', '背面供電的路線'] },
+        { now: '對手的 2 奈米與之後的節點。', a: '三家的已量產節點（實心）與預告或媒體報導的時程（虛線），位置是約略年份；各家的其他節點沒有畫出。', b: 'N2 的營收占比與產能。', pa: ['①', '三家對照'], pb: ['②', 'N2 的營收與產能'] },
+      ],
+      supNote: '終章不列廠商。',
+      sources: ['tsmc_logic', 'tsmc_hpc', 'pr3136', 'pr3302', 'q2_22', 'q4_23', 'q2_24', 'q2_25', 'q2_26', 'q3_26', 'toms_roadmap', 'semi2026', 'q4_25', 'q1_26', 'sec20f', 'ar2025', 'samsung_q4', 'samsung2024', 'trendforce_sf14', 'intel10k', 'intel10q', 'intel_q4_25', 'toms_intel'] },
+  ];
+  // 每一步列出的廠商類別（SUP 的 key）；第二幕另加線上檢測。沒列的步驟顯示 supNote
+  const STEP_SUP = { 1: ['eda'], 2: ['eda'], 4: ['opcsw'], 5: ['mask'], 6: ['wafer'], 7: ['epi'], 8: ['litho', 'etch', 'depo'], 9: ['depo', 'etch'], 10: ['epi'], 11: ['depo', 'cmp', 'etch', 'wet'], 12: ['depo', 'metal'], 13: ['beol', 'inspect'], 14: ['beol', 'litho', 'inspect'], 15: ['wtest'], 16: ['inspect'], 17: ['pkg'], 18: ['ftest'] };
+  STEPS.forEach(s => { if (STEP_SUP[s.n]) s.sup = s.act === 2 ? [...STEP_SUP[s.n], 'inspect'] : STEP_SUP[s.n]; });
+
+  // 場景：on／off 寫成「步號.拍號」，拍號從 1 起；元件在 on 之後、off 之前顯示，off 留空就一直顯示。
+  // 要給連接檢查工具的元件只用 <rect>，並標 id、data-net、data-kind（wire｜via｜node）。
+  function buildScene(A, B, { el, R, T, C, card, photo }) {
+    // 疊層由下往上：矽鍺、矽交替三組
+    const LAYERS = [
+      { p: 'sige', y: 214, h: 16 }, { p: 'si-sheet', y: 194, h: 20 },
+      { p: 'sige', y: 178, h: 16 }, { p: 'si-sheet', y: 158, h: 20 },
+      { p: 'sige', y: 142, h: 16 }, { p: 'si-sheet', y: 122, h: 20 },
+    ];
+    const SI = LAYERS.filter(l => l.p === 'si-sheet');
+    const SIGE = LAYERS.filter(l => l.p === 'sige');
+
+    el(A, 'si-sub', 'rect', R(0, 230, 400, 70), '6.1', null, 'rise');
+    el(A, 'ild', 'rect', R(0, 40, 138, 190), '11.1', null, 'grow');
+    el(A, 'ild', 'rect', R(262, 40, 138, 190), '11.1', null, 'grow');
+    el(A, 'metal', 'rect', R(150, 40, 100, 190), '12.2', null, 'grow');
+    SI.forEach((l, i) => el(A, 'highk', 'rect', R(150, l.y - 3, 100, l.h + 6), '12.1', null, 'fade', i * 90));
+    el(A, 'highk', 'rect', R(150, 40, 3, 190), '12.1');
+    el(A, 'highk', 'rect', R(247, 40, 3, 190), '12.1');
+    el(A, 'highk', 'rect', R(150, 227, 100, 3), '12.1');
+    const segA = [[0, 138, 'outer'], [138, 150, 'spz'], [150, 250, 'core'], [250, 262, 'spz'], [262, 400, 'outer']];
+    LAYERS.forEach((l, i) => segA.forEach(([x0, x1, zone]) => {
+      let off = null;
+      if (zone === 'outer') off = '9.2';
+      else if (l.p === 'sige') off = zone === 'spz' ? '9.3' : '11.3';
+      el(A, l.p, 'rect', R(x0, l.y, x1 - x0, l.h), '7.1', off, 'grow', i * 110);
+    }));
+    SIGE.forEach(l => { el(A, 'inner', 'rect', R(138, l.y, 12, l.h), '9.3', null, 'fade', 380); el(A, 'inner', 'rect', R(250, l.y, 12, l.h), '9.3', null, 'fade', 380); });
+    el(A, 'sd', 'path', { d: 'M20,230 L20,128 L40,110 L126,110 L138,116 L138,230 Z' }, '10.1', null, 'grow');
+    el(A, 'sd', 'path', { d: 'M380,230 L380,128 L360,110 L274,110 L262,116 L262,230 Z' }, '10.1', null, 'grow', 120);
+    el(A, 'gspacer', 'rect', R(138, 40, 12, 82), '9.1', null, 'drop', 260);
+    el(A, 'gspacer', 'rect', R(250, 40, 12, 82), '9.1', null, 'drop', 260);
+    el(A, 'dummy', 'rect', R(150, 40, 100, 82), '9.1', '11.2', 'drop');
+    el(A, 'hardmask', 'rect', R(0, 108, 400, 14), '8.1', '8.4', 'drop');
+    [['源極', 79], ['汲極', 321]].forEach(([t, x]) => {
+      const tx = el(A, null, 'text', { x, y: 30, 'text-anchor': 'middle', class: 'axis' }, '10.1');
+      tx.textContent = t; tx.classList.add('axis');
+    });
+    const flow = el(A, null, 'path', { d: 'M60,168 L340,168', 'stroke-dasharray': '6 5', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, '12.3');
+    flow.classList.add('arrow'); flow.style.stroke = 'var(--accent)'; flow.style.fill = 'none';
+    el(A, null, 'polygon', { points: '338,162 350,168 338,174', class: 'arrow' }, '12.3').classList.add('arrow');
+
+    el(B, 'si-sub', 'rect', R(0, 256, 400, 44), '6.1', null, 'rise');
+    // 閘極畫在鰭底座之前，底座才不會被蓋住
+    el(B, 'dummy', 'rect', R(24, 40, 352, 216), '9.1', '11.2', 'drop');
+    el(B, 'metal', 'rect', R(24, 40, 352, 216), '12.2', null, 'grow');
+    [[0, 60, 'gap'], [60, 180, 'fin'], [180, 250, 'gap'], [250, 320, 'fin'], [320, 400, 'gap']].forEach(([x0, x1, z]) => {
+      el(B, 'si-sub', 'rect', R(x0, 230, x1 - x0, 26), '6.1', z === 'gap' ? '8.2' : null, 'rise');
+      // 淺溝槽隔離：蝕刻後填回溝槽，畫在閘極之後，閘極才會坐在它上面
+      if (z === 'gap') el(B, 'sti', 'rect', R(x0, 230, x1 - x0, 26), '8.3', null, 'grow');
+    });
+    // 高介電常數層也鋪在隔離層與鰭底座的頂面，與 A 圖底部的襯層一致
+    el(B, 'highk', 'rect', R(24, 227, 352, 3), '12.1');
+    const FINS = [[60, 120], [250, 70]];
+    FINS.forEach(([x, w]) => SI.forEach((l, i) => el(B, 'highk', 'rect', R(x - 3, l.y - 3, w + 6, l.h + 6), '12.1', null, 'fade', i * 90)));
+    const segB = [[0, 60, 'gap'], [60, 180, 'fin'], [180, 250, 'gap'], [250, 320, 'fin'], [320, 400, 'gap']];
+    LAYERS.forEach((l, i) => segB.forEach(([x0, x1, z]) => {
+      let off = null;
+      if (z === 'gap') off = '8.2';
+      else if (l.p === 'sige') off = '11.3';
+      el(B, l.p, 'rect', R(x0, l.y, x1 - x0, l.h), '7.1', off, 'grow', i * 110);
+    }));
+    el(B, 'hardmask', 'rect', R(60, 108, 120, 14), '8.1', '8.4', 'drop');
+    el(B, 'hardmask', 'rect', R(250, 108, 70, 14), '8.1', '8.4', 'drop');
+    ['40,162 52,168 40,174', '200,162 188,168 200,174', '113,145 127,145 120,155', '113,191 127,191 120,181']
+      .forEach((p, i) => el(B, null, 'polygon', { points: p, class: 'arrow' }, '12.3', null, 'fade', i * 80).classList.add('arrow'));
+    [['寬片', 120], ['窄片', 285]].forEach(([t, x]) => {
+      const tx = el(B, null, 'text', { x, y: 30, 'text-anchor': 'middle' }, '8.2');
+      tx.textContent = t; tx.classList.add('axis');
+    });
+
+    // 第二幕元素原本一直顯示到最後；第三幕起換場景，所以在 13.1 收起
+    document.querySelectorAll('svg .el').forEach(e => { if (!e.dataset.off) e.dataset.off = '13.1'; });
+
+    // ---------- 第一幕場景 ----------
+    const styled = (e, css) => { Object.assign(e.style, css); return e; };
+
+    // 步驟 1：DRM／PDK 與 NanoFlex
+    C(A, 'nbox', 'rect', { x: 16, y: 110, width: 92, height: 80, rx: 8 }, '1.1', '2.1');
+    T(A, 62, 146, '台積電', '1.1', '2.1', 'lbl', 'middle'); T(A, 62, 168, '製程開發', '1.1', '2.1', 'lbl-s', 'middle');
+    C(A, 'ln', 'path', { d: 'M108,140 L160,87' }, '1.1', '2.1'); C(A, 'ln', 'path', { d: 'M108,160 L160,175' }, '1.1', '2.1');
+    el(A, 'kit', 'rect', { x: 160, y: 52, width: 224, height: 70, rx: 8 }, '1.1', '2.1', 'drop', 80);
+    T(A, 174, 82, '設計規則手冊（DRM）', '1.1', '2.1', 'lbl', 'start', 80); T(A, 174, 104, '規定版圖可以怎麼畫', '1.1', '2.1', 'lbl-s', 'start', 80);
+    el(A, 'kit', 'rect', { x: 160, y: 140, width: 224, height: 70, rx: 8 }, '1.1', '2.1', 'drop', 200);
+    T(A, 174, 170, '製程設計套件（PDK）', '1.1', '2.1', 'lbl', 'start', 200); T(A, 174, 192, '給設計軟體用的製程資料', '1.1', '2.1', 'lbl-s', 'start', 200);
+    C(A, 'ln', 'path', { d: 'M272,210 L272,228' }, '1.2', '2.1');
+    el(A, 'eda', 'rect', { x: 160, y: 228, width: 224, height: 56, rx: 8 }, '1.2', '2.1', 'drop');
+    T(A, 174, 252, 'EDA 設計軟體', '1.2', '2.1'); T(A, 174, 272, '台積電逐項認證各種工具', '1.2', '2.1', 'lbl-s');
+    T(A, 16, 226, ['OIP 平台', '串起設計夥伴'], '1.2', '2.1', 'lbl-s');
+    C(B, 'nbox', 'rect', { x: 24, y: 30, width: 352, height: 214, rx: 4 }, '1.1', '2.1');
+    const ROWS = [[30, 36, 's'], [66, 52, 't'], [118, 36, 's'], [154, 52, 't'], [206, 38, 's']];
+    ROWS.forEach(([y], i) => { if (i) C(B, 'ln', 'path', { d: `M24,${y} L376,${y}` }, '1.1', '2.1'); });
+    const CW = [34, 22, 46, 28, 40, 30, 52, 26, 38, 24, 44];
+    ROWS.forEach(([y, h, k], ri) => {
+      let x = 28, j = ri * 3;
+      for (;;) {
+        const w = CW[j % CW.length]; j++;
+        if (x + w > 372) break;
+        el(B, k === 's' ? 'cell-short' : 'cell-tall', 'rect', R(x, y + 3, w, h - 6), '1.2', '2.1', 'grow', ri * 90);
+        x += w + 4;
+      }
+    });
+    el(B, 'cell-short', 'rect', R(24, 262, 14, 14), '1.2', '2.1'); T(B, 44, 274, '矮單元：省面積、省電', '1.2', '2.1', 'lbl-s');
+    el(B, 'cell-tall', 'rect', R(210, 262, 14, 14), '1.2', '2.1'); T(B, 230, 274, '高單元：拚效能', '1.2', '2.1', 'lbl-s');
+
+    // 步驟 2：設計流程與版圖
+    const FLOW = ['邏輯設計（RTL）', '邏輯合成', '佈局佈線（APR）', '時序與功耗驗證', '實體驗證（DRC／LVS）'];
+    const FY = [20, 74, 128, 182, 236];
+    FLOW.forEach((t, i) => {
+      C(A, 'nbox', 'rect', { x: 40, y: FY[i], width: 320, height: 38, rx: 6 }, '2.1', '3.1');
+      T(A, 200, FY[i] + 24, t, '2.1', '3.1', 'lbl', 'middle');
+      if (i < 4) C(A, 'ln', 'path', { d: `M200,${FY[i] + 38} L200,${FY[i] + 54}` }, '2.1', '3.1');
+    });
+    [['2.1', '2.2', 2], ['2.2', '2.3', 3], ['2.3', '3.1', 4]].forEach(([on, off, i]) =>
+      C(A, 'hl', 'rect', { x: 37, y: FY[i] - 3, width: 326, height: 44, rx: 8 }, on, off));
+    [['2.1', 0], ['2.1', 1], ['2.2', 2], ['2.3', 3]].forEach(([on, i]) => T(A, 340, FY[i] + 24, '✓', on, '3.1', 'lbl', 'middle'));
+    const NET_TOP = ['A', 'B', 'B', 'C', 'D'], NET_BOT = ['E', 'E', 'A', 'C', 'D'];
+    [[30, 50], [90, 50], [150, 70], [230, 60], [300, 70]].forEach(([x, w], i) => el(B, 'stdcell', 'rect', { id: `s2-top${i + 1}`, 'data-net': NET_TOP[i], 'data-kind': 'node', ...R(x, 52, w, 40) }, '2.1', '3.1', 'grow', i * 50));
+    [[30, 70], [110, 50], [170, 70], [250, 60], [320, 50]].forEach(([x, w], i) => el(B, 'stdcell', 'rect', { id: `s2-bot${i + 1}`, 'data-net': NET_BOT[i], 'data-kind': 'node', ...R(x, 196, w, 40) }, '2.1', '3.1', 'grow', 250 + i * 50));
+    // 五個網路，每條線兩端都接到單元，網路之間不交叉：
+    // A 上1→下3（關鍵路徑）；B 上2→上3（與 A 間距 4，供 DRC 示範；其他網路間距 ≥17）；C 上4→下4；D 上5→下5；E 下1→下2
+    [[55, 118, 156, 'A'], [118, 108, 70, 'B'], [236, 140, 60, 'C'], [316, 126, 42, 'D'], [75, 165, 66, 'E']].forEach(([x, y, l, net], i) =>
+      el(B, 'wire', 'rect', { id: `s2-h${i + 1}`, 'data-net': net, 'data-kind': 'wire', ...R(x, y, l, 6) }, '2.1', '3.1', 'fade', 500 + i * 60));
+    [[55, 92, 32, 'A'], [205, 118, 78, 'A'], [118, 92, 22, 'B'], [182, 92, 22, 'B'], [236, 92, 54, 'C'], [290, 140, 56, 'C'], [316, 92, 40, 'D'], [352, 126, 70, 'D'], [75, 165, 31, 'E'], [135, 165, 31, 'E']].forEach(([x, y, h, net], i) =>
+      el(B, 'wire', 'rect', { id: `s2-v${i + 1}`, 'data-net': net, 'data-kind': 'wire', ...R(x, y, 6, h) }, '2.1', '3.1', 'fade', 600 + i * 40));
+    C(B, 'crit', 'path', { d: 'M58,92 L58,121 L208,121 L208,196' }, '2.2', '2.3');
+    T(B, 24, 32, '橘線：延遲最長、最容易來不及的路徑', '2.2', '2.3', 'lbl-s');
+    el(B, 'drc', 'ellipse', { cx: 150, cy: 116, rx: 44, ry: 13 }, '2.3', '3.1');
+    T(B, 24, 268, ['DRC：兩條線太近，違反設計規則', 'LVS：比對版圖和電路圖是否一致'], '2.3', '3.1', 'lbl-s');
+
+    // 步驟 3：tape-out
+    ['m-si', 'm-sige', 'm-highk', 'm-sd'].forEach((c, i) => {
+      const y = 34 + i * 30;
+      styled(el(A, 'gds', 'polygon', { points: `40,${y} 200,${y} 236,${y + 28} 76,${y + 28}` }, '3.1', '4.1', 'drop', i * 120), { fill: `var(--${c})` });
+    });
+    T(A, 40, 186, '晶片的每一層圖形', '3.1', '4.1', 'lbl-s');
+    C(A, 'ln', 'path', { d: 'M244,100 L284,100' }, '3.1', '4.1'); C(A, 'arrow-m', 'polygon', { points: '284,95 294,100 284,105' }, '3.1', '4.1');
+    C(A, 'nbox', 'path', { d: 'M298,60 L352,60 L370,78 L370,150 L298,150 Z' }, '3.1', '4.1', 'drop', 300);
+    T(A, 334, 112, 'GDS', '3.1', '4.1', 'mono-t', 'middle', 300); T(A, 334, 172, '版圖資料', '3.1', '4.1', 'lbl-s', 'middle', 300);
+    C(A, 'ln', 'path', { d: 'M334,180 L334,212' }, '3.2', '4.1'); C(A, 'arrow-m', 'polygon', { points: '329,210 334,220 339,210' }, '3.2', '4.1');
+    el(A, 'masksvc', 'rect', { x: 150, y: 222, width: 234, height: 62, rx: 8 }, '3.2', '4.1', 'drop');
+    T(A, 164, 248, '台積電光罩服務', '3.2', '4.1'); T(A, 164, 270, '設計者與晶圓廠之間的介面', '3.2', '4.1', 'lbl-s');
+    C(B, 'nbox', 'rect', { x: 90, y: 30, width: 220, height: 220, rx: 4 }, '3.1', '4.1');
+    el(B, 'design', 'rect', R(110, 50, 180, 180), '3.1', '3.2', 'grow');
+    T(B, 200, 272, ['一般做法：一套光罩只放一個設計', '（一套光罩有很多片，這裡只畫一片）'], '3.1', '3.2', 'lbl-s', 'middle');
+    const TILE = ['m-si', 'm-sige', 'm-sd', 'm-highk', 'm-poly'];
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++)
+      styled(el(B, 'shuttle', 'rect', R(110 + c * 62, 50 + r * 62, 56, 56), '3.2', '4.1', 'fade', (r * 3 + c) * 50), { fill: `var(--${TILE[(r * 3 + c) % TILE.length]})` });
+    T(B, 200, 280, 'CyberShuttle：多個設計共用一套光罩', '3.2', '4.1', 'lbl-s', 'middle');
+
+    // 步驟 4：OPC
+    const LPOLY = '240,60 280,60 280,200 340,200 340,240 240,240';
+    el(A, 'target', 'rect', R(80, 60, 40, 180), '4.1', '4.3'); el(A, 'target', 'rect', R(160, 60, 40, 180), '4.1', '4.3');
+    el(A, 'target', 'polygon', { points: LPOLY }, '4.1', '4.3');
+    [[72, 50, 56, 14], [72, 236, 56, 14], [152, 50, 56, 14], [152, 236, 56, 14], [232, 50, 56, 14], [334, 192, 14, 56], [226, 234, 16, 16]].forEach(([x, y, w, h], i) =>
+      el(A, 'opc', 'rect', R(x, y, w, h), '4.2', '4.3', 'fade', i * 60));
+    el(A, 'sraf', 'rect', R(46, 70, 6, 160), '4.2', '5.1', 'fade', 450);
+    ['M78,60 Q100,44 122,60 L118,110 Q126,150 118,190 L122,240 Q100,256 78,240 L82,190 Q74,150 82,110 Z',
+     'M158,60 Q180,44 202,60 L198,110 Q206,150 198,190 L202,240 Q180,256 158,240 L162,190 Q154,150 162,110 Z',
+     'M236,58 Q260,42 284,58 L282,186 Q290,198 330,196 Q352,198 350,220 Q352,250 330,248 L248,248 Q232,250 234,232 Z']
+      .forEach((d, i) => el(A, 'curvy', 'path', { d }, '4.3', '5.1', 'fade', i * 120));
+    C(B, 'ghost', 'rect', R(80, 60, 40, 180), '4.1', '4.3'); C(B, 'ghost', 'rect', R(160, 60, 40, 180), '4.1', '4.3');
+    C(B, 'ghost', 'polygon', { points: LPOLY }, '4.1', '4.3');
+    [['100,84 100,216'], ['180,84 180,216'], ['260,84 260,222 318,222']].forEach(([p]) =>
+      el(B, 'printed', 'polyline', { points: p, 'stroke-width': 30, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, '4.1', '4.2'));
+    ['M87,62 L113,62 Q119,62 119,68 L119,232 Q119,238 113,238 L87,238 Q81,238 81,232 L81,68 Q81,62 87,62 Z',
+     'M167,62 L193,62 Q199,62 199,68 L199,232 Q199,238 193,238 L167,238 Q161,238 161,232 L161,68 Q161,62 167,62 Z',
+     'M248,62 L273,62 Q279,62 279,68 L279,191 Q279,201 289,201 L332,201 Q338,201 338,207 L338,232 Q338,238 332,238 L248,238 Q242,238 242,232 L242,68 Q242,62 248,62 Z']
+      .forEach(d => styled(el(B, 'printed', 'path', { d }, '4.2', '4.3'), { fill: 'var(--m-sd)' }));
+    C(B, 'nbox', 'rect', { x: 20, y: 40, width: 360, height: 220, rx: 8 }, '4.3', '5.1');
+    T(B, 44, 76, ['運算量非常大', ' ', '一套光罩可能要 3,000 萬 CPU 小時以上', '（NVIDIA 說法）；本頁換算：若以單一 CPU', '計算，約等於不停跑 3,400 年', ' ', '台積電 2024 年起導入 NVIDIA cuLitho，', '用 GPU 加速運算微影（NVIDIA 新聞稿）'], '4.3', '5.1');
+
+    // 步驟 5：EUV 光罩
+    styled(el(A, 'mask-sub', 'rect', R(20, 200, 230, 60), '5.1', '6.1', 'rise'), { fill: 'var(--m-sub)' }); T(A, 262, 236, '基板', '5.1', '6.1', 'lbl-s');
+    for (let i = 0; i < 10; i++) styled(el(A, 'ml', 'rect', R(20, 160 + i * 4, 230, 4), '5.1', '6.1', 'grow', i * 40), { fill: `var(--${i % 2 ? 'm-highk' : 'm-si'})` });
+    T(A, 262, 180, ['鉬／矽多層膜', '（反射 EUV 光）'], '5.1', '6.1', 'lbl-s');
+    el(A, 'cap', 'rect', R(20, 154, 230, 6), '5.1', '6.1', 'grow', 420); T(A, 262, 160, '覆蓋層', '5.1', '6.1', 'lbl-s');
+    el(A, 'absorber', 'rect', R(20, 128, 230, 26), '5.1', '5.2', 'grow', 480); T(A, 262, 142, '吸收層（鉭系）', '5.1', '6.1', 'lbl-s');
+    [72, 135, 198].forEach((x, i) => C(A, 'beam', 'path', { d: `M${x},40 L${x},128` }, '5.2', '5.3', 'fade', i * 150));
+    // 圖形區 x36–234；左右兩端各留空白，保護膜的框架立在空白處
+    [[36, 28], [80, 40], [150, 40], [206, 28]].forEach(([x, w]) => el(A, 'absorber', 'rect', R(x, 128, w, 26), '5.2', '6.1', 'fade', 500));
+    T(A, 20, 24, '電子束把圖形寫上光罩（省略光阻等中間步驟）', '5.2', '5.3', 'lbl-s');
+    el(A, 'defect', 'circle', { cx: 135, cy: 149, r: 5 }, '5.3', '5.4'); C(A, 'ring', 'circle', { cx: 135, cy: 149, r: 16 }, '5.3', '5.4');
+    T(A, 20, 24, '檢測 → 修補 → 用 EUV 光確認能否印出', '5.3', '5.4', 'lbl-s');
+    // 框架柱從頂膜一路立到光罩表面（覆蓋層頂 y154），位置在圖形區之外
+    styled(el(A, 'pellicle', 'rect', R(20, 62, 10, 92), '5.4', '6.1', 'drop'), { fill: 'var(--m-poly)' });
+    styled(el(A, 'pellicle', 'rect', R(240, 62, 10, 92), '5.4', '6.1', 'drop'), { fill: 'var(--m-poly)' });
+    styled(el(A, 'pellicle', 'rect', R(20, 58, 230, 4), '5.4', '6.1', 'drop'), { fill: 'var(--m-poly)' }); T(A, 262, 64, '保護膜', '5.4', '6.1', 'lbl-s');
+    styled(el(B, 'mask-sub', 'rect', R(80, 26, 240, 240), '5.1', '6.1', 'rise'), { fill: 'var(--m-sub)' }); T(B, 200, 290, '目前的 EUV 光罩是 6 吋', '5.1', '6.1', 'lbl-s', 'middle');
+    for (let i = 0; i < 10; i++) el(B, 'absorber', 'rect', R(104, 48 + i * 21, 192, 9), '5.2', '6.1', 'grow', i * 70);
+    C(B, 'band', 'rect', R(80, 120, 240, 34), '5.3', '5.4');
+    el(B, 'defect', 'circle', { cx: 200, cy: 147, r: 5 }, '5.3', '5.4'); C(B, 'ring', 'circle', { cx: 200, cy: 147, r: 16 }, '5.3', '5.4');
+    styled(el(B, 'pellicle', 'rect', R(88, 34, 224, 224), '5.4', '6.1', 'drop'), { fillOpacity: '0.35', stroke: 'var(--m-poly)', strokeWidth: '6px' });
+
+    // ---------- 第三、四幕場景 ----------
+
+    // 步驟 13：中段接點
+    el(A, 'si-sub', 'rect', R(0, 250, 400, 50), '13.1', '14.1', 'rise');
+    // 層間介電質與閘極側壁沿用步驟 11、12 的材料，畫在電晶體之前，源汲極與閘極之間才不會是空洞
+    el(A, 'ild', 'rect', R(0, 190, 400, 60), '13.1', '14.1');
+    el(A, 'gspacer', 'rect', R(140, 190, 10, 60), '13.1', '14.1'); el(A, 'gspacer', 'rect', R(250, 190, 10, 60), '13.1', '14.1');
+    el(A, 'sd', 'rect', { id: 's13-src', 'data-net': 'S', 'data-kind': 'node', ...R(40, 190, 100, 60) }, '13.1', '14.1'); el(A, 'sd', 'rect', { id: 's13-drn', 'data-net': 'D', 'data-kind': 'node', ...R(260, 190, 100, 60) }, '13.1', '14.1');
+    el(A, 'metal', 'rect', { id: 's13-gate', 'data-net': 'G', 'data-kind': 'node', ...R(150, 190, 100, 60) }, '13.1', '14.1');
+    [202, 218, 234].forEach(y => el(A, 'si-sheet', 'rect', R(140, y, 120, 8), '13.1', '14.1'));
+    el(A, 'ild2', 'rect', R(0, 130, 400, 60), '13.1', '14.1', 'grow', 200);
+    [[80, '源極接點', 'S'], [190, '閘極接點（VG）', 'G'], [300, '汲極接點', 'D']].forEach(([x, t, net], i) => {
+      el(A, 'contact', 'rect', { id: `s13-c${net}`, 'data-net': net, 'data-kind': 'via', ...R(x, 130, 20, 60) }, '13.2', '14.1', 'grow', i * 120);
+      T(A, x + 10, 118, t, '13.2', '14.1', 'lbl-s', 'middle', i * 120);
+    });
+    T(B, 30, 52, '閘極接點（VG）電阻', '13.1', '14.1');
+    T(B, 30, 90, '比較基準（原文未寫明）', '13.1', '14.1', 'lbl-s');
+    C(B, 'bar', 'rect', R(30, 100, 300, 34), '13.1', '14.1', 'growx'); T(B, 338, 123, '100%', '13.1', '14.1', 'lbl-s');
+    T(B, 30, 168, 'N2：免阻障層鎢', '13.1', '14.1', 'lbl-s');
+    C(B, 'bar hi', 'rect', R(30, 178, 135, 34), '13.1', '14.1', 'growx', 300); T(B, 173, 201, '45%（−55%）', '13.1', '14.1', 'lbl', 'start', 300);
+    T(B, 30, 250, ['媒體轉述台積電 IEDM 2024 論文', '比較基準原文未寫明'], '13.1', '14.1', 'lbl-s');
+
+    // 步驟 14：後段金屬堆疊
+    C(A, 'nbox', 'rect', { x: 10, y: 262, width: 380, height: 30 }, '14.1', '15.1');
+    T(A, 200, 282, '電晶體與中段接點', '14.1', '15.1', 'lbl-s', 'middle');
+    el(A, 'ild2', 'rect', R(10, 56, 290, 206), '14.1', '15.1');
+    const MROWS = [[244, 6, 8, 16, '14.1', 'M1（EUV 1P1E）'], [222, 8, 10, 20, '14.2', ''], [196, 10, 14, 28, '14.2', ''], [162, 14, 20, 40, '14.2', '中間層'], [118, 20, 30, 60, '14.2', '上層金屬']];
+    // 連接檢查的網路：x=18 一列通孔接 RDL 與 MiM 上極板（rdl），x=100 一列接 MiM 下極板（mim）；
+    // x=178、x=258 是迴圈產生的層間通孔（v178、v258）；其餘金屬截面各自一個網路
+    const NET14 = (r, x, w, j) => (x <= 18 && x + w >= 22 ? 'rdl' : x <= 100 && x + w >= 104 ? 'mim'
+      : r <= 1 && x <= 178 && x + w >= 182 ? 'v178' : r >= 3 && x <= 258 && x + w >= 262 ? 'v258' : `m${r}-${j}`);
+    MROWS.forEach(([y, h, w, p, on, label], r) => {
+      for (let x = 16, j = 0; x + w <= 296; x += p, j++) el(A, 'beol', 'rect', { id: `s14-m${r}-${j}`, 'data-net': NET14(r, x, w, j), 'data-kind': 'node', ...R(x, y, w, h) }, on, '15.1', 'fade', r * 120 + j * 8);
+      if (label) T(A, 306, y + h - 1, label, on, '15.1', 'lbl-s', 'start', r * 120);
+      if (r) { const [py, ph, pw, pp] = MROWS[r - 1]; for (let x = 16; x + pw <= 296; x += pp * 2) if ((x - 16) % p === 0) el(A, 'beol', 'rect', { id: `s14-v${r}-${x + 2}`, 'data-net': NET14(r, x + 2, 4, 0), 'data-kind': 'via', ...R(x + 2, y + h, 4, py - y - h) }, on, '15.1', 'fade', r * 120); }
+    });
+    el(A, 'mim', 'rect', R(30, 92, 120, 6), '14.3', '15.1', 'fade'); el(A, 'beol', 'rect', { id: 's14-mim-top', 'data-net': 'rdl', 'data-kind': 'node', ...R(30, 86, 120, 6) }, '14.3', '15.1'); el(A, 'beol', 'rect', { id: 's14-mim-bot', 'data-net': 'mim', 'data-kind': 'node', ...R(30, 98, 120, 6) }, '14.3', '15.1');
+    T(A, 306, 100, 'MiM 電容', '14.3', '15.1', 'lbl-s');
+    // 通孔：M1 往下接電晶體與中段接點；x=100 一整排通孔把 MiM 下極板接到電晶體；
+    // x=18 把 RDL 接上層金屬與下方堆疊；x=140 把 MiM 上極板接 RDL（上下極板各走一條路，不短路）
+    [[100, 250, 12, '14.1', 'mim'], [100, 230, 14, '14.2', 'mim'], [100, 206, 16, '14.2', 'mim'], [100, 176, 20, '14.2', 'mim'], [100, 138, 24, '14.2', 'mim'], [100, 104, 14, '14.3', 'mim'], [18, 250, 12, '14.1', 'rdl'], [18, 78, 40, '14.3', 'rdl'], [140, 78, 8, '14.3', 'rdl']]
+      .forEach(([x, y, h, on, net]) => el(A, 'beol', 'rect', { id: `s14-v-${x}-${y}`, 'data-net': net, 'data-kind': 'via', ...R(x, y, 4, h) }, on, '15.1', 'fade', 700));
+    el(A, 'rdl', 'rect', { id: 's14-rdl', 'data-net': 'rdl', 'data-kind': 'wire', ...R(16, 58, 280, 20) }, '14.3', '15.1', 'grow', 200); T(A, 306, 74, '銅 RDL', '14.3', '15.1', 'lbl-s', 'start', 200);
+    el(A, 'passiv', 'rect', R(10, 46, 290, 10), '14.3', '15.1', 'grow', 400); T(A, 306, 54, '保護層', '14.3', '15.1', 'lbl-s', 'start', 400);
+    photo('img/fig11.png', "台積電 IEDM 2024 論文 Fig.11（經 Tom's Hardware 轉載）", '14.1', '15.1', SRC.iedm_fig11.url);
+
+    // 步驟 15：晶圓測試
+    el(A, 'wafer', 'circle', { cx: 200, cy: 152, r: 122 }, '15.1', '16.1');
+    const DIES = [];
+    for (let m = -5; m < 5; m++) for (let k = -5; k < 5; k++) {
+      const x = 200 + k * 26 + 3, y = 152 + m * 26 + 3;
+      if ([[x, y], [x + 20, y], [x, y + 20], [x + 20, y + 20]].every(([px, py]) => Math.hypot(px - 200, py - 152) <= 118)) DIES.push([x, y]);
+    }
+    DIES.forEach(([x, y], i) => el(A, 'die', 'rect', R(x, y, 20, 20), '15.1', '16.1', 'fade', i * 6));
+    [[-2, -1], [1, 2], [3, -2], [-3, 2], [0, 0], [2, 1]].forEach(([k, m]) => el(A, 'wat', 'rect', R(200 + k * 26 - 2, 152 + m * 26 - 2, 6, 6), '15.1', '15.2', 'fade', 400));
+    const mid = DIES.reduce((a, d) => (Math.hypot(d[0] - 190, d[1] - 142) < Math.hypot(a[0] - 190, a[1] - 142) ? d : a));
+    C(A, 'hl', 'rect', { x: mid[0] - 4, y: mid[1] - 4, width: 28, height: 28, rx: 3 }, '15.2', '15.3');
+    DIES.forEach(([x, y], i) => { if ((i * 7 + 3) % 11 === 0) el(A, 'fail', 'rect', R(x, y, 20, 20), '15.3', '16.1', 'fade', i * 6); });
+    el(B, 'die', 'rect', R(30, 60, 140, 150), '15.1', '15.2'); el(B, 'die', 'rect', R(230, 60, 140, 150), '15.1', '15.2');
+    [90, 130, 170].forEach(y => el(B, 'wat', 'rect', R(193, y, 14, 14), '15.1', '15.2', 'fade', 300));
+    T(B, 200, 40, '測試結構（位置為示意）', '15.1', '15.2', 'lbl-s', 'middle');
+    T(B, 100, 236, '晶片', '15.1', '15.2', 'lbl-s', 'middle'); T(B, 300, 236, '晶片', '15.1', '15.2', 'lbl-s', 'middle');
+    C(B, 'nbox', 'rect', { x: 60, y: 36, width: 280, height: 44, rx: 6 }, '15.2', '15.3'); T(B, 200, 64, '探針卡', '15.2', '15.3', 'lbl', 'middle');
+    el(B, 'die', 'rect', R(40, 160, 320, 80), '15.2', '15.3'); T(B, 200, 262, '晶片', '15.2', '15.3', 'lbl-s', 'middle');
+    for (let x = 80; x <= 320; x += 40) { el(B, 'pad', 'rect', R(x - 6, 154, 12, 6), '15.2', '15.3'); C(B, 'ln', 'path', { d: `M${x},80 L${x},154` }, '15.2', '15.3', 'drop', 200); }
+    card('15.3', '16.1', ['測試結果標在晶圓圖上：', '沒通過的晶片會被標記，', '不送去封裝', ' ', '台積電 N2 的 WAT 與針測', '細節沒有公開']);
+
+    // 步驟 16：良率學習
+    C(A, 'ln', 'path', { d: 'M50,40 L50,250 L370,250' }, '16.1', '17.1');
+    T(A, 56, 36, '缺陷密度（示意）', '16.1', '17.1', 'lbl-s'); T(A, 370, 274, '時間 →', '16.1', '17.1', 'lbl-s', 'end');
+    C(A, 'ghost', 'path', { d: 'M230,40 L230,250' }, '16.1', '17.1'); T(A, 236, 60, '開始量產', '16.1', '17.1', 'lbl-s');
+    C(A, 'crit', 'path', { d: 'M60,70 C120,90 150,170 220,205 S320,232 360,236' }, '16.1', '17.1');
+    T(A, 240, 112, ['N2 缺陷密度下降', '比 N3 好（台積電', '2026 論壇，媒體轉述）'], '16.2', '17.1', 'lbl-s');
+    card('16.1', '16.2', ['法說會（2026 年 1、4、10 月）：', '「N2 已在 2025 年第 4 季', '　量產，良率良好」', ' ', '沒有百分比，', '也沒有缺陷密度數值']);
+    card('16.2', '17.1', ["Tom's Hardware：", '　N2 低於 N3、N5、N7', 'TechPowerUp：與 5 奈米相當，', '　優於 7 奈米與 3 奈米', 'SemiEngineering：下降比 N3 好', 'SemiWiki 轉述論文：SRAM 測試陣列', '　平均 >80%（不是產品良率）']);
+
+    // 步驟 17：切割與先進封裝
+    el(A, 'wafer', 'circle', { cx: 110, cy: 140, r: 80 }, '17.1', '17.2');
+    for (let m = -4; m < 4; m++) for (let k = -4; k < 4; k++) {
+      const x = 110 + k * 19 + 2, y = 140 + m * 19 + 2;
+      if ([[x, y], [x + 15, y], [x, y + 15], [x + 15, y + 15]].every(([px, py]) => Math.hypot(px - 110, py - 140) <= 76)) el(A, 'die', 'rect', R(x, y, 15, 15), '17.1', '17.2');
+    }
+    C(A, 'ln', 'path', { d: 'M200,140 L236,140' }, '17.1', '17.2'); C(A, 'arrow-m', 'polygon', { points: '236,135 246,140 236,145' }, '17.1', '17.2');
+    [[262, 96], [318, 96], [262, 152], [318, 152]].forEach(([x, y], i) => el(A, 'die', 'rect', R(x, y, 44, 44), '17.1', '17.2', 'drop', 200 + i * 80));
+    T(A, 110, 244, '晶圓', '17.1', '17.2', 'lbl-s', 'middle'); T(A, 312, 220, '切開的晶片', '17.1', '17.2', 'lbl-s', 'middle');
+    el(A, 'die', 'rect', R(80, 180, 240, 44), '17.2', '17.3', 'rise');
+    el(A, 'die2', 'rect', R(120, 132, 160, 44), '17.2', '17.3', 'drop', 250);
+    C(A, 'hl', 'path', { d: 'M120,178 L280,178' }, '17.2', '17.3', 'fade', 500);
+    T(A, 300, 158, '上層晶片', '17.2', '17.3', 'lbl-s'); T(A, 328, 206, '下層晶片', '17.2', '17.3', 'lbl-s');
+    T(A, 200, 260, '橘線：兩顆晶片堆疊的介面（示意）', '17.2', '17.3', 'lbl-s', 'middle');
+    el(A, 'pkgsub', 'rect', R(30, 232, 340, 30), '17.3', '18.1', 'rise');
+    el(A, 'interposer', 'rect', R(50, 198, 300, 30), '17.3', '18.1', 'rise', 150);
+    el(A, 'die', 'rect', R(140, 142, 120, 52), '17.3', '18.1', 'drop', 300);
+    el(A, 'hbm', 'rect', R(64, 130, 62, 64), '17.3', '18.1', 'drop', 400); el(A, 'hbm', 'rect', R(274, 130, 62, 64), '17.3', '18.1', 'drop', 400);
+    [146, 162, 178].forEach(y => { C(A, 'ln', 'path', { d: `M64,${y} L126,${y}` }, '17.3', '18.1', 'fade', 450); C(A, 'ln', 'path', { d: `M274,${y} L336,${y}` }, '17.3', '18.1', 'fade', 450); });
+    T(A, 95, 120, 'HBM', '17.3', '18.1', 'lbl-s', 'middle'); T(A, 200, 132, '運算晶片（SoC）', '17.3', '18.1', 'lbl-s', 'middle'); T(A, 305, 120, 'HBM', '17.3', '18.1', 'lbl-s', 'middle');
+    T(A, 356, 218, '中介層', '17.3', '18.1', 'lbl-s'); T(A, 200, 284, '封裝基板', '17.3', '18.1', 'lbl-s', 'middle');
+    card('17.1', '17.2', ['切割、凸塊由誰做？', '台積電沒有公開。', ' ', '20-F：封裝與測試由台積電', '　自己做或外包', '法說會：先進封裝產能很緊，', '　需要和封測夥伴合作']);
+    photo('img/soic-compare.jpg', '台積電 3DFabric 官網：TSMC-SoIC', '17.2', '17.3', SRC.tsmc_soic.url);
+    photo('img/cowos-s.png', '台積電 3DFabric 官網：CoWoS-S', '17.3', '18.1', SRC.tsmc_cowos.url);
+
+    // 步驟 18：最終測試與出貨
+    C(A, 'nbox', 'rect', { x: 290, y: 50, width: 90, height: 70, rx: 6 }, '18.1', '18.2'); T(A, 335, 90, '測試機', '18.1', '18.2', 'lbl', 'middle');
+    C(A, 'nbox', 'rect', { x: 60, y: 180, width: 200, height: 60, rx: 6 }, '18.1', '18.2'); T(A, 160, 262, '測試座', '18.1', '18.2', 'lbl-s', 'middle');
+    C(A, 'nbox', 'rect', { x: 100, y: 188, width: 120, height: 44, rx: 3 }, '18.1', '18.2');
+    el(A, 'pkg', 'rect', R(110, 195, 100, 30), '18.1', '18.2', 'drop', 200);
+    T(A, 160, 172, '封裝後的晶片', '18.1', '18.2', 'lbl-s', 'middle', 200);
+    C(A, 'ln', 'path', { d: 'M260,210 L335,210 L335,120' }, '18.1', '18.2', 'fade', 300);
+    C(A, 'nbox', 'rect', { x: 50, y: 60, width: 300, height: 180, rx: 6 }, '18.2');
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) el(A, 'pkg', 'rect', R(80 + c * 90, 96 + r * 72, 60, 40), '18.2', null, 'drop', (r * 3 + c) * 70);
+    T(A, 200, 266, '出貨（流程細節沒有公開）', '18.2', null, 'lbl-s', 'middle');
+    card('18.1', '18.2', ['先進封測六廠（2023 年啟用）', ' ', '台積電第一座整合封裝與', '測試的自動化工廠', '預估每年超過 1,000 萬小時', '的測試服務']);
+    card('18.2', null, ['2026 年 7 月法說會：', ' ', '有些客戶的產品需要更多', '測試機台，測試機台不足，', '需要投入更多資本支出']);
+
+    // 第三、四幕元素在終章開始時收起
+    document.querySelectorAll('svg .el').forEach(e => { if (!e.dataset.off) e.dataset.off = '19.1'; });
+
+    // ---------- 序幕 ----------
+    el(A, 'wafer', 'circle', { cx: 200, cy: 158, r: 124 }, '0.1', '0.2');
+    for (let m = -5; m < 5; m++) for (let k = -5; k < 5; k++) {
+      const x = 200 + k * 26 + 3, y = 158 + m * 26 + 3;
+      if ([[x, y], [x + 20, y], [x, y + 20], [x + 20, y + 20]].every(([px, py]) => Math.hypot(px - 200, py - 158) <= 120)) el(A, 'die', 'rect', R(x, y, 20, 20), '0.1', '0.2', 'fade', 200);
+    }
+    T(A, 200, 24, '12 吋（300mm）晶圓', '0.1', '0.2', 'lbl', 'middle');
+    el(A, 'die', 'rect', R(70, 30, 260, 240), '0.2', '0.3', 'fade');
+    [[86, 46, 110, 90, 'm-si'], [206, 46, 108, 56, 'm-sige'], [206, 112, 108, 24, 'm-sd'], [86, 146, 70, 108, 'm-highk'], [166, 146, 148, 50, 'm-si'], [166, 206, 148, 48, 'm-sige']]
+      .forEach(([x, y, w, h, c], i) => styled(C(A, 'nbox', 'rect', { x, y, width: w, height: h, rx: 3 }, '0.2', '0.3', 'fade', 150 + i * 60), { fill: `var(--${c})`, stroke: 'none' }));
+    C(A, 'hl', 'rect', { x: 120, y: 70, width: 34, height: 34, rx: 3 }, '0.2', '0.3', 'fade', 600);
+    T(A, 200, 292, '一顆晶片裡的電路區塊（示意）', '0.2', '0.3', 'lbl-s', 'middle');
+    el(A, 'si-sub', 'rect', R(0, 240, 400, 60), '0.3', '1.1', 'rise');
+    el(A, 'sd', 'rect', R(40, 160, 100, 80), '0.3', '1.1', 'fade', 100); el(A, 'sd', 'rect', R(260, 160, 100, 80), '0.3', '1.1', 'fade', 100);
+    el(A, 'metal', 'rect', R(150, 110, 100, 130), '0.3', '1.1', 'fade', 200);
+    el(A, 'gspacer', 'rect', R(140, 110, 10, 130), '0.3', '1.1', 'fade', 250); el(A, 'gspacer', 'rect', R(250, 110, 10, 130), '0.3', '1.1', 'fade', 250);
+    [176, 198, 220].forEach((y, i) => el(A, 'si-sheet', 'rect', R(140, y, 120, 10), '0.3', '1.1', 'fade', 300 + i * 80));
+    T(A, 90, 150, '源極', '0.3', '1.1', 'lbl-s', 'middle'); T(A, 200, 100, '閘極', '0.3', '1.1', 'lbl-s', 'middle'); T(A, 310, 150, '汲極', '0.3', '1.1', 'lbl-s', 'middle');
+    T(A, 200, 32, '奈米片電晶體（示意，非比例）', '0.3', '1.1', 'lbl', 'middle');
+    card('0.1', '0.2', ['台積電 12 吋超大晶圓廠', '（GIGAFAB）共六座：', 'Fab 12、14、15、18、20、22', ' ', '截至 2025 年，合計產能超過', '1,300 萬片 12 吋約當晶圓，', '製程涵蓋 0.13 微米到 2 奈米']);
+    card('0.2', '0.3', ['一顆晶片', ' ', '晶片尺寸依產品而定；', '晶片裡的電路區塊，', '由數量龐大的電晶體組成']);
+    card('0.3', '1.1', ['「2nm」是世代名稱', ' ', '節點名稱早已不對應晶片上', '任何特定的尺寸', '（IEEE Spectrum，2013）', ' ', '台積電沒有公開 N2 奈米片的', '片數、片寬與片厚（圖中三片為示意）']);
+
+    // ---------- 終章 ----------
+    const YX = y => 16 + (y - 2018) * 31;
+    C(A, 'ln', 'path', { d: 'M10,150 L390,150' }, '19.1', '19.3');
+    C(A, 'ln', 'path', { d: 'M16,70 L140,70' }, '19.1', '19.3'); T(A, 78, 62, 'FinFET（N7～N3）', '19.1', '19.3', 'lbl-s', 'middle');
+    C(A, 'ln', 'path', { d: `M${YX(2025)},70 L384,70` }, '19.1', '19.3'); T(A, 310, 62, '奈米片（N2 起）', '19.1', '19.3', 'lbl-s', 'middle');
+    [['N7', 2018, 1], ['N5', 2020, -1], ['N3', 2022, 1], ['N2', 2025, -1]].forEach(([n, y, up], i) => {
+      el(A, 'node', 'circle', { cx: YX(y), cy: 150, r: 7 }, '19.1', '19.3', 'fade', i * 120);
+      T(A, YX(y), up > 0 ? 128 : 182, n, '19.1', '19.3', 'lbl', 'middle', i * 120);
+      T(A, YX(y), up > 0 ? 110 : 200, String(y), '19.1', '19.3', 'lbl-s', 'middle', i * 120);
+    });
+    [['N2P', 264, 1, '2026（原預告）'], ['A16', 296, -1, '2026／27'], ['A14', 326, 1, '2028'], ['A13／A12', 357, -1, '2029']].forEach(([n, x, up, yr], i) => {
+      el(A, 'nodef', 'circle', { cx: x, cy: 150, r: 7 }, '19.2', '19.3', 'fade', i * 120);
+      T(A, x, up > 0 ? 128 : 182, n, '19.2', '19.3', 'lbl', 'middle', i * 120);
+      T(A, x, up > 0 ? 110 : 200, yr, '19.2', '19.3', 'lbl-s', 'middle', i * 120);
+    });
+    T(A, 200, 286, '虛線圈：預告的時程，可能修改', '19.2', '19.3', 'lbl-s', 'middle');
+    const LX = y => 120 + (y - 2025) * 62;
+    [['台積電', 80], ['Samsung', 160], ['Intel', 240]].forEach(([n, y]) => { T(A, 14, y + 5, n, '19.3', null, 'lbl'); C(A, 'ln', 'path', { d: `M100,${y} L390,${y}` }, '19.3'); });
+    [2025, 2026, 2027, 2028, 2029].forEach(y => T(A, LX(y), 288, String(y), '19.3', null, 'lbl-s', 'middle'));
+    [['N2 量產', 2025, 80, 'node', 'middle'], ['A14 量產（預告）', 2028, 80, 'nodef', 'middle'],
+     ['SF2 量產', 2025, 160, 'node', 'middle'], ['SF1.4（媒體：2029）', 2029, 160, 'nodef', 'end'],
+     ['18A 量產', 2025, 240, 'node', 'middle'], ['14A 量產（媒體轉述）', 2028, 240, 'nodef', 'below']].forEach(([t, y, ly, part, anchor], i) => {
+      el(A, part, 'circle', { cx: LX(y), cy: ly, r: 7 }, '19.3', null, 'fade', i * 80);
+      if (anchor === 'below') T(A, LX(y), ly + 24, t, '19.3', null, 'lbl-s', 'middle', i * 80);
+      else T(A, anchor === 'end' ? Math.min(LX(y) + 14, 392) : LX(y), ly - 14, t, '19.3', null, 'lbl-s', anchor, i * 80);
+    });
+    card('19.1', '19.2', ['N2 相對 N3E', '（法說 2024-07 起的口徑）', ' ', '同功耗：速度 +10～15%', '同速度：功耗 −25～30%', '晶片密度：+15% 以上', ' ', '2022–2024 年間出現過三種口徑']);
+    card('19.2', '19.3', ['2022-07　N2 平台的選配', '2024-01　N2 加背面供電，2026', '2024-04　獨立成 A16', '2025-07　A14 加背面供電，2029', '2026-04　命名為 A12（2029）', ' ', 'A16 是第一代，A12 是第二代', '加速器可能會用，手機不用']);
+    card('19.3', null, ['N2 占台積電晶圓營收', '　2026 年第 2 季：3%', '　2026 年第 3 季：8%', ' ', '2027 年 N2 家族年產能', '　預計增加一倍以上（法說）']);
+
+  }
+
+  // ==================== 引擎：一般不需要修改 ====================
+  const NS = 'http://www.w3.org/2000/svg';
+  const key = (n, b) => n * 10 + b;
+  const parseKey = s => { const [n, b] = s.split('.').map(Number); return key(n, b); };
+  function el(svg, part, tag, attrs, on, off, fx, d) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    e.classList.add('el');
+    if (part) e.dataset.part = part;
+    e.dataset.on = on; if (off) e.dataset.off = off;
+    e.dataset.fx = fx || 'fade';
+    if (d) e.style.setProperty('--d', d + 'ms');
+    svg.appendChild(e);
+    return e;
+  }
+  const R = (x, y, w, h) => ({ x, y, width: w, height: h });
+  function T(svg, x, y, lines, on, off, cls = 'lbl', anchor = 'start', d) {
+    const t = el(svg, null, 'text', { x, y, 'text-anchor': anchor }, on, off, 'fade', d);
+    t.classList.add(cls);
+    [].concat(lines).forEach((line, i) => {
+      const sp = document.createElementNS(NS, 'tspan');
+      sp.setAttribute('x', x);
+      if (i) sp.setAttribute('dy', cls === 'lbl-s' ? 16 : 19);
+      sp.textContent = line;
+      t.appendChild(sp);
+    });
+    return t;
+  }
+  function C(svg, cls, tag, attrs, on, off, fx, d) { const e = el(svg, null, tag, attrs, on, off, fx, d); e.classList.add(...cls.split(' ')); return e; }
+
+  // 缺值：畫面顯示空字串，並在 console 留錯誤，讓檢查工具抓得到
+  const miss = (what, v = '') => { console.error(`walkthrough：${what} 缺值`); return v; };
+  const need = (v, what) => (v === undefined || v === null || v === '' ? miss(what) : v);
+
+  const A = document.getElementById('svgA');
+  const B = document.getElementById('svgB');
+  const card = (on, off, lines) => { C(B, 'nbox', 'rect', { x: 20, y: 30, width: 360, height: 240, rx: 8 }, on, off); T(B, 44, 74, lines, on, off); };
+  // 依字寬斷行：全形字算 1，半形字算 0.55
+  function wrapLines(text, max) {
+    const out = []; let line = '', w = 0;
+    for (const ch of text) {
+      const cw = ch.charCodeAt(0) < 0x2e80 ? 0.55 : 1;
+      if (w + cw > max && line) { out.push(line); line = ''; w = 0; }
+      line += ch; w += cw;
+    }
+    if (line) out.push(line);
+    return out;
+  }
+  // 圖片：載入失敗時拿掉圖片與圖下說明，改顯示一張卡片，寫圖說並附來源連結
+  const photo = (src, caption, on, off, url) => {
+    const img = el(B, null, 'image', { href: src, x: 6, y: 8, width: 388, height: 252, preserveAspectRatio: 'xMidYMid meet' }, on, off);
+    const cap = T(B, 200, 288, caption, on, off, 'lbl-s', 'middle');
+    const fb = [
+      C(B, 'nbox', 'rect', { x: 20, y: 30, width: 360, height: 240, rx: 8 }, on, off),
+      T(B, 44, 74, ['圖片無法載入', ' ', ...wrapLines(caption, 22)], on, off),
+    ];
+    if (url) {
+      const a = el(B, null, 'a', { href: url, target: '_blank', rel: 'noopener' }, on, off);
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('x', 44); t.setAttribute('y', 250); t.classList.add('lbl', 'lnk');
+      t.textContent = '開啟圖片來源';
+      a.appendChild(t);
+      fb.push(a);
+    } else {
+      miss(`圖片 ${src} 的來源網址`);
+    }
+    fb.forEach(e => { e.style.display = 'none'; });
+    img.addEventListener('error', () => {
+      [img, cap].forEach(e => { e.remove(); const i = ALL.indexOf(e); if (i >= 0) ALL.splice(i, 1); });
+      fb.forEach(e => { e.style.display = ''; });
+    }, { once: true });
+  };
+
+  buildScene(A, B, { el, R, T, C, card, photo });
+  const ALL = [...document.querySelectorAll('svg .el')];
+  ALL.forEach(e => { e._on = parseKey(e.dataset.on); e._off = e.dataset.off ? parseKey(e.dataset.off) : Infinity; });
+  // 必填的顯示欄位在載入時正規化一次：缺值一律變成空字串並記錯誤，標題、導覽、軌道、交會標籤共用同一個結果
+  ACTS.forEach(a => { a.name = need(a.name, `第 ${a.n} 幕的 name`); a.title = need(a.title, `第 ${a.n} 幕的 title`); });
+  STEPS.forEach(s => {
+    s.title = need(s.title, `步驟 ${s.n} 的 title`);
+    if (!s.beats || !s.beats.length) s.beats = miss(`步驟 ${s.n} 的 beats`, [{}]);
+  });
+  // 「步驟 n／總數」的總數只算沒有 label 的步驟（序幕、終章這類帶 label 的不算）
+  const NUMBERED = STEPS.filter(s => !s.label).length;
+  const stepName = s => s.label || `步驟 ${s.n}`;
+
+  // ---------- 狀態 ----------
+  const LINE = { product: '產品線', supply: '供應鏈', both: '兩條線' };
+  let cur = { n: STEPS[0].n, b: 1 };
+  let selPart = null;
+  let imm = false;
+  const $ = id => document.getElementById(id);
+  const partOf = id => PARTS[id] || miss(`材料 ${id}`, { name: '', en: '', text: '' });
+
+  function renderMeta() {
+    $('kicker').textContent = need(META.kicker, 'META.kicker');
+    $('headline').textContent = need(META.title, 'META.title');
+    $('lede').textContent = need(META.lede, 'META.lede');
+    $('notice').textContent = need(META.notice, 'META.notice');
+    const f = $('footer');
+    f.textContent = need(META.footer, 'META.footer') + '來源標示：';
+    Object.entries(TAG).forEach(([k, v], i) => {
+      if (i) f.append('／');
+      const sp = document.createElement('span'); sp.style.color = `var(--tag-${k})`; sp.textContent = v.name;
+      f.append(sp);
+    });
+    f.append('。');
+  }
+
+  function buildRail() {
+    const acts = $('acts');
+    acts.style.gridTemplateColumns = ACTS.map(a => `minmax(max-content, ${Math.max(1, STEPS.filter(s => s.act === a.n).length)}fr)`).join(' ');
+    ACTS.forEach(a => {
+      const box = document.createElement('div'); box.className = 'act'; box.dataset.act = a.n;
+      box.innerHTML = `<div class="act-name"><b>${a.name}</b>${a.title}<span class="act-line">${need(LINE[a.line], `第 ${a.n} 幕的 line`)}</span></div><div class="dots"></div>`;
+      const dots = box.querySelector('.dots');
+      STEPS.filter(s => s.act === a.n).forEach(s => {
+        const d = document.createElement('button'); d.type = 'button'; d.className = 'dot';
+        d.textContent = s.short || s.n; d.dataset.n = s.n; d.setAttribute('aria-label', `${stepName(s)}：${s.title}`);
+        d.addEventListener('click', () => go(s.n, 1));
+        dots.appendChild(d);
+      });
+      acts.appendChild(box);
+    });
+  }
+
+  function stepOf(n) { return STEPS.find(s => s.n === n); }
+
+  function renderScene() {
+    const k = key(cur.n, cur.b);
+    ALL.forEach(e => e.classList.toggle('on', k >= e._on && k < e._off));
+    applySel();
+  }
+
+  function visibleParts() {
+    const set = new Set();
+    ALL.forEach(e => { if (e.classList.contains('on') && e.dataset.part) set.add(e.dataset.part); });
+    return PART_ORDER.filter(p => set.has(p));
+  }
+
+  function applySel() {
+    ALL.forEach(e => e.classList.toggle('sel', !!selPart && e.dataset.part === selPart && e.classList.contains('on')));
+  }
+
+  function renderPart() {
+    const box = $('part');
+    if (!selPart || !visibleParts().includes(selPart)) {
+      selPart = null;
+      box.innerHTML = visibleParts().length ? '<p class="muted">點圖中任何一塊材料，或下方的圖例，看它是什麼、做什麼用。</p>' : '<p class="muted">這一步的圖是說明用的示意，沒有可點選的材料。</p>';
+    } else {
+      const p = partOf(selPart);
+      box.innerHTML = `<div class="part-name"><span class="sw" style="background:var(--${swatch(selPart)})"></span>${p.name}</div>
+        <div class="part-en">${p.en}</div><p class="part-text">${p.text}</p>`;
+    }
+    const ip = $('immPart');
+    ip.hidden = !(imm && selPart);
+    if (imm && selPart) {
+      const p = partOf(selPart);
+      ip.innerHTML = `<div class="row"><span class="sw" style="background:var(--${swatch(selPart)})"></span>${p.name}
+        <button class="x" type="button" aria-label="關閉材料說明">關閉</button></div><p>${p.text}</p>`;
+      ip.querySelector('.x').addEventListener('click', () => { selPart = null; applySel(); renderPart(); });
+    }
+    const lg = $('legend'); lg.innerHTML = '';
+    const vis = visibleParts();
+    if (!vis.length) { lg.innerHTML = '<span class="muted">這一步的圖沒有可點選的材料。</span>'; }
+    vis.forEach(id => {
+      const c = document.createElement('button'); c.type = 'button'; c.className = 'chip';
+      c.setAttribute('aria-pressed', String(id === selPart));
+      c.innerHTML = `<span class="sw" style="background:var(--${swatch(id)})"></span>${partOf(id).name}`;
+      c.addEventListener('click', () => { selPart = selPart === id ? null : id; applySel(); renderPart(); });
+      lg.appendChild(c);
+    });
+    applySel();
+  }
+  function swatch(id) { return need(SWATCH[id], `材料 ${id} 的色票`); }
+
+  function renderText() {
+    const s = stepOf(cur.n);
+    const act = ACTS.find(a => a.n === s.act) || miss(`步驟 ${s.n} 所屬的幕`, { name: '', title: '' });
+    $('eyebrow').textContent = `${act.name}・${act.title}　|　${s.label || `步驟 ${s.n}／${NUMBERED}`}`;
+    $('title').textContent = s.title;
+    $('where').textContent = `${act.name} ${act.title} › ${stepName(s)} ${s.title}`;
+    $('badges').innerHTML = '<span class="badge generic">示意，非比例</span>'
+      + (s.badges || []).map(t => `<span class="badge ${t}">含${need(TAG[t] && TAG[t].name, `來源類型 ${t}`)}資料</span>`).join('');
+    const cross = $('cross'); cross.innerHTML = '';
+    (s.cross || []).forEach(n => {
+      const t = stepOf(n);
+      if (!t) { miss(`步驟 ${s.n} 的 cross 指向的步驟 ${n}`); return; }
+      const ta = ACTS.find(a => a.n === t.act);
+      const c = document.createElement('button'); c.type = 'button'; c.className = 'chip';
+      c.textContent = `交會（${ta ? LINE[ta.line] : ''}）：${stepName(t)} ${t.title}`;
+      c.addEventListener('click', () => go(t.n, 1));
+      cross.appendChild(c);
+    });
+    cross.hidden = !cross.children.length;
+    const beat = s.beats[cur.b - 1] || {};
+    $('nowWrap').hidden = !beat.now;
+    $('now').textContent = need(beat.now, `步驟 ${s.n} 第 ${cur.b} 拍的 now`);
+    $('plain').textContent = need(s.plain, `步驟 ${s.n} 的 plain`);
+    $('capA').textContent = beat.a || '';
+    $('capB').textContent = beat.b || '';
+    const pa = beat.pa || s.pa || miss(`步驟 ${s.n} 的 pa`, ['', '']), pb = beat.pb || s.pb || miss(`步驟 ${s.n} 的 pb`, ['', '']);
+    $('paCut').textContent = pa[0]; $('paText').textContent = pa[1];
+    $('pbCut').textContent = pb[0]; $('pbText').textContent = pb[1];
+    $('svgA').setAttribute('aria-label', pa[1]); $('svgB').setAttribute('aria-label', pb[1]);
+    $('detailWrap').hidden = !s.detail;
+    $('detail').innerHTML = (s.detail || []).map(p => `<p>${p}</p>`).join('');
+    const src = $('sources'); src.innerHTML = '';
+    (s.sources || miss(`步驟 ${s.n} 的 sources`, [])).forEach(id => {
+      const o = SRC[id];
+      if (!o) { miss(`來源 ${id}`); return; }
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="t" style="color:var(--tag-${o.t})">${need(TAG[o.t] && TAG[o.t].name, `來源類型 ${o.t}`)}</span><a href="${o.url}" target="_blank" rel="noopener">${o.label}</a>`;
+      src.appendChild(li);
+    });
+    $('suppliers').innerHTML = s.sup
+      ? s.sup.map(g => `<div class="supg"><b>${SUP[g].name}</b><span>${SUP[g].list.map(([nm, lv]) =>
+          `<span class="sup ${lv}">${lv === 'S' ? '●' : '○'} ${nm}</span>`).join('')}</span></div>`).join('')
+        + `<p class="muted">● 有公開資料顯示供貨給${META.subject}或與${META.subject}合作（供應商獎、官方名單、雙方新聞稿或媒體報導）　○ 該類主要廠商。名單依類別列出，沒有逐家證明用在這一步${META.supCaveat ? '，' + META.supCaveat : ''}。</p>`
+      : need(s.supNote, `步驟 ${s.n} 的 sup 或 supNote`);
+
+    document.querySelectorAll('.dot').forEach(d => {
+      const n = Number(d.dataset.n);
+      d.classList.toggle('cur', n === cur.n); d.classList.toggle('done', n < cur.n);
+      d.setAttribute('aria-current', n === cur.n ? 'step' : 'false');
+    });
+    document.querySelectorAll('.act').forEach(a => a.classList.toggle('cur', Number(a.dataset.act) === s.act));
+    const pips = $('pips'); pips.innerHTML = '';
+    s.beats.forEach((_, i) => { const p = document.createElement('span'); p.className = 'pip' + (i < cur.b ? ' on' : ''); pips.appendChild(p); });
+    $('beatlabel').textContent = `${cur.b}／${s.beats.length}`;
+    $('immNow').textContent = beat.now || '';
+    const idx = STEPS.indexOf(s);
+    $('prev').disabled = idx === 0 && cur.b === 1;
+    $('next').disabled = idx === STEPS.length - 1 && cur.b === s.beats.length;
+  }
+
+  // 內部的 b 是拍號，從 1 起，與場景的「步號.拍號」一致
+  function go(n, b) {
+    cur = { n, b };
+    renderScene(); renderText(); renderPart();
+    try { history.replaceState(null, '', '#s' + n); } catch (e) { /* 部分環境不允許改網址 */ }
+  }
+  // 依 STEPS 陣列順序前後移動
+  function next() {
+    const s = stepOf(cur.n), i = STEPS.indexOf(s);
+    if (cur.b < s.beats.length) go(cur.n, cur.b + 1);
+    else if (i < STEPS.length - 1) go(STEPS[i + 1].n, 1);
+  }
+  function prev() {
+    const i = STEPS.indexOf(stepOf(cur.n));
+    if (cur.b > 1) go(cur.n, cur.b - 1);
+    else if (i > 0) { const p = STEPS[i - 1]; go(p.n, p.beats.length); }
+  }
+
+  [A, B].forEach(svg => svg.addEventListener('click', ev => {
+    const t = ev.target.closest('.el.on[data-part]');
+    if (!t) return;
+    selPart = selPart === t.dataset.part ? null : t.dataset.part;
+    applySel(); renderPart();
+  }));
+  $('next').addEventListener('click', next);
+  $('prev').addEventListener('click', prev);
+  document.addEventListener('keydown', ev => {
+    if (ev.target.closest && ev.target.closest('input, textarea, select')) return;
+    if (ev.key === 'ArrowRight') { ev.preventDefault(); next(); }
+    if (ev.key === 'ArrowLeft') { ev.preventDefault(); prev(); }
+    if (ev.key === 'Escape' && imm) { ev.preventDefault(); setImm(false); }
+  });
+
+  // ---------- 沉浸模式 ----------
+  const stage = $('stage');
+  const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function setImm(on) {
+    imm = on;
+    stage.classList.toggle('immersive', on);
+    document.documentElement.classList.toggle('imm-lock', on);
+    document.querySelectorAll('.wrap > :not(#stage)').forEach(e => { e.inert = on; });
+    const btn = $('immBtn');
+    btn.textContent = on ? '結束全螢幕' : '全螢幕觀看';
+    btn.setAttribute('aria-pressed', String(on));
+    if (on) {
+      stage.setAttribute('role', 'dialog'); stage.setAttribute('aria-modal', 'true');
+      const frames = reduceMotion() ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: 'scale(0.98)' }, { opacity: 1, transform: 'none' }];
+      stage.animate(frames, { duration: reduceMotion() ? 200 : 260, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
+      $('next').focus();
+    } else {
+      stage.removeAttribute('role'); stage.removeAttribute('aria-modal');
+      btn.focus();
+    }
+    renderPart();
+  }
+  $('immBtn').addEventListener('click', () => setImm(!imm));
+
+  // 全螢幕時左右滑動切換；只認觸控，且水平位移要明顯大於垂直位移
+  let touchStart = null;
+  $('panels').addEventListener('pointerdown', ev => { if (imm && ev.pointerType === 'touch') touchStart = { x: ev.clientX, y: ev.clientY }; });
+  $('panels').addEventListener('pointerup', ev => {
+    if (!touchStart) return;
+    const dx = ev.clientX - touchStart.x, dy = ev.clientY - touchStart.y;
+    touchStart = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { dx < 0 ? next() : prev(); }
+  });
+  $('panels').addEventListener('pointercancel', () => { touchStart = null; });
+
+  function fromHash() {
+    const m = /^#s(\d+)$/.exec(location.hash);
+    const n = m ? Number(m[1]) : NaN;
+    return stepOf(n) ? n : STEPS[0].n;
+  }
+  window.addEventListener('hashchange', () => { const n = fromHash(); if (n !== cur.n) go(n, 1); });
+
+  // ---------- 場景傾印：給連接檢查工具讀 ----------
+  // 回傳目前顯示中、帶 data-net 的元件；座標是 getBBox() 的 viewBox 單位。只支援 <rect>。
+  function dumpScene() {
+    const out = [];
+    [['A', A], ['B', B]].forEach(([name, svg]) => svg.querySelectorAll('.el.on[data-net]').forEach(e => {
+      if (e.tagName.toLowerCase() !== 'rect') { console.error(`walkthrough：data-net 只支援 <rect>，略過 ${e.id || e.tagName}`); return; }
+      const r = e.getBBox();
+      out.push({ id: e.id, svg: name, part: e.dataset.part || '', net: e.dataset.net, kind: e.dataset.kind || 'node', x: r.x, y: r.y, w: r.width, h: r.height });
+    }));
+    return out;
+  }
+
+  renderMeta();
+  buildRail();
+  go(fromHash(), 1);
+
+  // 對外介面：go(n, b) 的 b 是 beats 陣列索引，從 0 起
+  window.walkthrough = {
+    meta: META, steps: STEPS, tags: TAG,
+    go(n, b = 0) {
+      const s = stepOf(n);
+      if (!s || !(b >= 0 && b < s.beats.length)) { console.error(`walkthrough.go：沒有步驟 ${n} 的第 ${b} 拍`); return; }
+      go(n, b + 1);
+    },
+    setImmersive(on) { setImm(!!on); },
+    dumpScene,
+  };
+})();
+</script>
