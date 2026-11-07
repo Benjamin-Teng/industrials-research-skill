@@ -519,7 +519,15 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
   buildScene(A, B, { el, R, T, C, card, photo });
   const ALL = [...document.querySelectorAll('svg .el')];
   ALL.forEach(e => { e._on = parseKey(e.dataset.on); e._off = e.dataset.off ? parseKey(e.dataset.off) : Infinity; });
-  STEPS.forEach(s => { if (!s.beats || !s.beats.length) s.beats = miss(`步驟 ${s.n} 的 beats`, [{}]); });
+  // 必填的顯示欄位在載入時正規化一次：缺值一律變成空字串並記錯誤，標題、導覽、軌道、交會標籤共用同一個結果
+  ACTS.forEach(a => { a.name = need(a.name, `第 ${a.n} 幕的 name`); a.title = need(a.title, `第 ${a.n} 幕的 title`); });
+  STEPS.forEach(s => {
+    s.title = need(s.title, `步驟 ${s.n} 的 title`);
+    if (!s.beats || !s.beats.length) s.beats = miss(`步驟 ${s.n} 的 beats`, [{}]);
+  });
+  // 「步驟 n／總數」的總數只算沒有 label 的步驟（序幕、終章這類帶 label 的不算）
+  const NUMBERED = STEPS.filter(s => !s.label).length;
+  const stepName = s => s.label || `步驟 ${s.n}`;
 
   // ---------- 狀態 ----------
   const LINE = { product: '產品線', supply: '供應鏈', both: '兩條線' };
@@ -553,7 +561,7 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
       const dots = box.querySelector('.dots');
       STEPS.filter(s => s.act === a.n).forEach(s => {
         const d = document.createElement('button'); d.type = 'button'; d.className = 'dot';
-        d.textContent = s.short || s.n; d.dataset.n = s.n; d.setAttribute('aria-label', `${s.label || '步驟 ' + s.n}：${s.title}`);
+        d.textContent = s.short || s.n; d.dataset.n = s.n; d.setAttribute('aria-label', `${stepName(s)}：${s.title}`);
         d.addEventListener('click', () => go(s.n, 1));
         dots.appendChild(d);
       });
@@ -614,9 +622,9 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
   function renderText() {
     const s = stepOf(cur.n);
     const act = ACTS.find(a => a.n === s.act) || miss(`步驟 ${s.n} 所屬的幕`, { name: '', title: '' });
-    $('eyebrow').textContent = `${act.name}・${act.title}　|　${s.label || `步驟 ${s.n}／${STEPS.length}`}`;
-    $('title').textContent = need(s.title, `步驟 ${s.n} 的 title`);
-    $('where').textContent = `${act.name} ${act.title} › ${s.label || '步驟 ' + s.n} ${s.title}`;
+    $('eyebrow').textContent = `${act.name}・${act.title}　|　${s.label || `步驟 ${s.n}／${NUMBERED}`}`;
+    $('title').textContent = s.title;
+    $('where').textContent = `${act.name} ${act.title} › ${stepName(s)} ${s.title}`;
     $('badges').innerHTML = '<span class="badge generic">示意，非比例</span>'
       + (s.badges || []).map(t => `<span class="badge ${t}">含${need(TAG[t] && TAG[t].name, `來源類型 ${t}`)}資料</span>`).join('');
     const cross = $('cross'); cross.innerHTML = '';
@@ -625,7 +633,7 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
       if (!t) { miss(`步驟 ${s.n} 的 cross 指向的步驟 ${n}`); return; }
       const ta = ACTS.find(a => a.n === t.act);
       const c = document.createElement('button'); c.type = 'button'; c.className = 'chip';
-      c.textContent = `交會（${ta ? LINE[ta.line] : ''}）：${t.label || '步驟 ' + t.n} ${t.title}`;
+      c.textContent = `交會（${ta ? LINE[ta.line] : ''}）：${stepName(t)} ${t.title}`;
       c.addEventListener('click', () => go(t.n, 1));
       cross.appendChild(c);
     });

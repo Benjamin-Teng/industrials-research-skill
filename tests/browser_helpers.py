@@ -69,17 +69,29 @@ def launch(engine: str = "chromium") -> Iterator[Any]:
         browser.close()
 
 
-def open_page(browser: Any, page_path: Path, tmp_path: Path, viewport: tuple[int, int] = (375, 560)) -> Any:
-    """把互動頁複製到 tmp_path、包上外殼後開啟；頁面載入時若有 JS 例外就直接失敗。"""
+def open_page(
+    browser: Any,
+    page_path: Path,
+    tmp_path: Path,
+    viewport: tuple[int, int] = (375, 560),
+    console_errors: list[str] | None = None,
+) -> Any:
+    """把互動頁複製到 tmp_path、包上外殼後開啟；頁面載入時若有 JS 例外就直接失敗。
+
+    傳入 console_errors 時，從載入開始收集 console.error 的文字。
+    """
     src = page_path.read_text(encoding="utf-8")
     if (page_path.parent / "img").is_dir():
         shutil.copytree(page_path.parent / "img", tmp_path / "img", dirs_exist_ok=True)
+    tmp_path.mkdir(parents=True, exist_ok=True)
     target = tmp_path / page_path.name
     target.write_text(wrap_fragment(src), encoding="utf-8")
 
     page = browser.new_page(viewport={"width": viewport[0], "height": viewport[1]}, device_scale_factor=1)
     errors: list[str] = []
     page.on("pageerror", lambda exc: errors.append(str(exc)))
+    if console_errors is not None:
+        page.on("console", lambda m: console_errors.append(m.text) if m.type == "error" else None)
     page.goto(target.as_uri())
     page.wait_for_function("() => window.walkthrough !== undefined")
     assert not errors, f"頁面載入時發生 JS 例外：{errors}"

@@ -123,3 +123,53 @@ def test_narrow_viewport(engine, tmp_path):  # 375×560；只防一般退化，�
             pg.evaluate("([n,b]) => walkthrough.go(n,b)", [n, b])
             box = pg.locator("#panels").bounding_box()
             assert box is not None and box["height"] <= 560, (engine, n, b, box)
+
+
+def _variant(tmp_path: Path, replacements: list[tuple[str, str]]) -> Path:
+    """在 tmp_path 產生骨架的修改版，每組替換都必須剛好命中一次。"""
+    html = SKELETON.read_text(encoding="utf-8")
+    for old, new in replacements:
+        assert html.count(old) == 1, old
+        html = html.replace(old, new)
+    src = tmp_path / "src"
+    src.mkdir()
+    path = src / SKELETON.name
+    path.write_text(html, encoding="utf-8")
+    return path
+
+
+SHOWN_TEXT_AND_LABELS = """() => [document.querySelector('.wrap').textContent,
+  ...[...document.querySelectorAll('[aria-label]')].map(e => e.getAttribute('aria-label'))].join(' | ')"""
+
+
+@demo_only
+def test_missing_title_shows_empty_and_logs_error(tmp_path):
+    variant = _variant(
+        tmp_path,
+        [
+            ("{ n: 2, act: 1, title: '用導線把元件接起來', ", "{ n: 2, act: 1, "),  # 刪掉 title
+            ("title: '這一步的設備由誰供應'", "title: null"),  # 交會標籤的目標步
+        ],
+    )
+    errors: list[str] = []
+    with launch("chromium") as browser:
+        pg = open_page(browser, variant, tmp_path / "out", console_errors=errors)
+        for n, b in all_beats(pg):
+            pg.evaluate("([n,b]) => walkthrough.go(n,b)", [n, b])
+            if n in (2, 3):
+                assert pg.text_content("#title") == "", (n, b)
+            shown = pg.evaluate(SHOWN_TEXT_AND_LABELS)
+            assert "undefined" not in shown and "null" not in shown, (n, b, shown)
+        assert any("步驟 2 的 title 缺值" in e for e in errors), errors
+        assert any("步驟 3 的 title 缺值" in e for e in errors), errors
+
+
+@demo_only
+def test_step_total_counts_only_unlabelled_steps(tmp_path):
+    variant = _variant(tmp_path, [("{ n: 1, act: 1, title:", "{ n: 1, act: 1, label: '序幕', title:")])
+    with launch("chromium") as browser:
+        pg = open_page(browser, variant, tmp_path / "out")
+        pg.evaluate("walkthrough.go(2, 0)")
+        assert pg.text_content("#eyebrow").endswith("步驟 2／2")
+        pg.evaluate("walkthrough.go(1, 0)")
+        assert pg.text_content("#eyebrow").endswith("序幕")
