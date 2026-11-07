@@ -27,8 +27,6 @@
 - **`scripts/schematic_topology.py`**：示意圖連接關係檢查，逐拍傾印 `data-net`、`data-kind` 標註的矩形，
   檢查懸空端點、短路、過近與孤立通孔，輸出連接表。exit code：0 沒有問題且至少一拍有標註元件、
   1 任一拍有問題、2 受檢的拍都沒有標註元件（不算通過）、3 用法或頁面錯誤（含 Playwright 例外）。
-  懸空端點的接觸點取接觸元件與導線在長軸上重疊區間的端點（方法檔 6.1），並補大型 node 蓋住導線一段的回歸測試；
-  判定結果與改前相同。
 - **`research-report-output` 新增 E 型「產品技術研究」**：`type: 產品技術研究`、`methodology_version: product-technology-v1`，
   front matter 由互動頁的 `META` 產生；沒有價格與市場數據，以查證日與來源分級取代查價日。
   E 型暫不支援 Briefing（md 一律由互動頁重產，產檔器沒有摘要模式）；External 模式是先改互動頁再重產。

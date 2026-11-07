@@ -77,6 +77,18 @@ def test_node_extending_past_wire_end_is_not_a_stub():  # node 長軸範圍超�
     assert check([wire("w1", "n1", 0, 4, 60, 4), via("v1", "n1", 0, 0), node("n", "n1", 40, 0, 40, 12)]) == []
 
 
+def test_short_wire_with_contacts_past_its_end_is_dangling():  # 短導線：兩個接觸都在導線末端之外，起端伸出 2.1
+    def short(id: str, kind: str, x: float, y: float, w: float, h: float) -> dict[str, Any]:
+        return {"id": id, "svg": "A", "part": "p", "net": "n1", "kind": kind, "x": x, "y": y, "w": w, "h": h}
+
+    horizontal = [short("w1", "wire", 0, 0, 1.8, 0.1), short("a", "node", 2.1, 0, 1, 0.1), short("b", "node", 2.2, 0, 1, 0.1)]
+    vertical = [short("w1", "wire", 0, 0, 0.1, 1.8), short("a", "node", 0, 2.1, 0.1, 1), short("b", "node", 0, 2.2, 0.1, 1)]
+    for boxes in (horizontal, vertical):
+        issues = check(boxes, tol=0.5, stub=2)
+        assert kinds(issues) == ["懸空端點"], issues
+        assert "起端伸出最外側接觸點 2.1" in issues[0]["detail"]
+
+
 def test_single_contact_is_dangling():
     assert kinds(check([via("v1", "n1", 0, 0), wire("w1", "n1", 4, 0, 36, 4)])) == ["懸空端點"]
 
