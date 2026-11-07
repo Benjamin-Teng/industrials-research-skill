@@ -90,8 +90,26 @@ def test_banned_source_list_defined_only_in_method():
     assert "社群貼文" in section(METHOD.read_text(encoding="utf-8"), "### 3.3 不能當來源的清單")
 
 
+REVIEW_KEYWORDS = [
+    ("接點", "不交叉"),
+    ("疊在", "實際畫出的物件"),
+    ("上下順序", "前後步驟連續"),
+    ("左右兩圖", "位置一致"),
+    ("圖說", "標籤"),
+    ("錯誤狀態", "合法"),
+    ("375px",),
+]
+
+
 def test_review_checklist_has_seven_items():
-    assert len(numbered_items(section(METHOD.read_text(encoding="utf-8"), "## 六、示意圖審查"))) >= 7
+    body = section(METHOD.read_text(encoding="utf-8"), "## 六、示意圖審查")
+    items = numbered_items(body)
+    assert len(items) >= 7
+    for number, keywords in enumerate(REVIEW_KEYWORDS):
+        for word in keywords:
+            assert word in items[number], (number + 1, word)
+    for phrase in ("獨立 agent", "逐條算座標", "連接表"):
+        assert phrase in body, phrase
 
 
 def test_methodology_version_string():
@@ -108,8 +126,12 @@ def test_skill_description():
 
 
 def test_skill_has_codex_handoff_section():
-    body = (PTW / "SKILL.md").read_text(encoding="utf-8")
-    assert "證據檔" in section(body, "## Codex 端")
+    codex = section((PTW / "SKILL.md").read_text(encoding="utf-8"), "## Codex 端")
+    assert "Codex 只做蒐集與整合" in codex
+    for deliverable in ("每幕證據檔", "廠商名單", "每幕審查紀錄"):
+        assert deliverable in codex, deliverable
+    assert "齊備" in codex
+    assert re.search(r"互動頁、md、PDF[^。]*交給 Claude Code", codex)
 
 
 def test_openai_yaml_states_collect_and_integrate():
