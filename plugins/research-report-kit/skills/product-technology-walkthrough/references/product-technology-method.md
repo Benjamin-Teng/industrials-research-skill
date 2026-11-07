@@ -126,7 +126,88 @@
 
 ### 5.1 互動頁資料格式
 
-待後續補上（頁面骨架定稿後回填：步驟、拍次、材料、來源、廠商的資料欄位）。
+骨架是 `assets/walkthrough-skeleton.html`，內含兩幕三步的虛構示範內容。新頁面從骨架複製，
+只改 `<script>` 開頭「資料」區塊的常數與 `buildScene()`；「引擎」區塊一般不改。
+DOM id 沿用 N2，產生衍生成品的腳本依這些 id 擷取文字。`<script>` 放在 `.wrap` 之外。
+
+#### 資料常數
+
+| 常數 | 格式 | 用途 |
+| --- | --- | --- |
+| `META` | 物件，欄位見下表 | 頁首、頁尾與衍生成品的 front matter |
+| `SRC` | `{ key: { t, label, url } }` | 來源清單；`t` 是 `TAG` 的 key |
+| `TAG` | `{ key: { name, level } }` | 來源類型；`level` 是 3.1 的分級 |
+| `SUP` | `{ 類別: { name, list: [[廠商, 'S' 或 'M']] } }` | 廠商名單；`S` 顯示 ●，`M` 顯示 ○（見 4.3） |
+| `PARTS`、`PART_ORDER` | `{ id: { name, en, text } }`、id 陣列 | 圖中可點選的材料，與圖例的排列順序 |
+| `SWATCH` | `{ 材料 id: CSS 變數名 }` | 圖例與材料說明的色塊（變數名不含 `--`） |
+| `ACTS` | `[{ n, name, title, line }]` | 幕；`line` 是 `product`（產品線）、`supply`（供應鏈）或 `both` |
+| `STEPS` | 陣列，欄位見下表 | 步驟與拍 |
+| `STEP_SUP` | `{ 步號: [SUP 類別] }` | 每一步列出的廠商類別 |
+| `buildScene(svgA, svgB, h)` | 函式 | 畫場景；`h` 提供 `el`、`R`、`T`、`C`、`card`、`photo` |
+
+#### `TAG` 的 key
+
+| key | 頁面顯示 | 分級 |
+| --- | --- | --- |
+| `official` | 公司正式文件 | 1 |
+| `paper` | 公司技術文件 | 2 |
+| `vendor` | 供應商或合作夥伴聲明 | 3 |
+| `generic` | 間接來源 | 4 |
+| `media` | 媒體轉述 | 5 |
+
+#### `META` 欄位
+
+| 欄位 | 用途 |
+| --- | --- |
+| `title`、`subtitle` | 報告標題與副標；`title` 也是頁首大標 |
+| `subject` | 研究對象的公司名，用在廠商標示的說明句 |
+| `market`、`ticker` | 市場與代號 |
+| `type` | 固定為 `產品技術研究` |
+| `methodology_version` | 固定為 `product-technology-v1` |
+| `framework`、`date`、`version` | 研究框架、查證日、報告版本 |
+| `footer_right`、`disclaimer` | 衍生成品的頁尾右側文字與免責聲明 |
+| `readingGuide` | 字串陣列，衍生成品的「閱讀說明」：第一項是導言，其餘是條列 |
+| `kpi` | `[{ label, value, note }]`，衍生成品的重點數字卡 |
+| `actLead` | `{ 幕號: 導語 }`，衍生成品每一幕開頭的一句話 |
+| `kicker`、`lede`、`notice` | 頁首的小標、導言與注意事項 |
+| `footer` | 頁尾文字；來源類型的圖例由頁面自動接在後面 |
+
+#### `STEPS` 欄位
+
+| 欄位 | 必填 | 說明 |
+| --- | --- | --- |
+| `n` | 是 | 步號（整數），也是網址 `#sN` |
+| `act` | 是 | 所屬的幕號 |
+| `title` | 是 | 步驟標題 |
+| `label` | 否 | 取代「步驟 N／總數」的名稱，例如序幕、終章 |
+| `short` | 否 | 幕次軌道按鈕上的字，預設為步號 |
+| `badges` | 否 | `TAG` key 陣列，顯示「含某類資料」徽章 |
+| `cross` | 否 | 兩條線交會的步號陣列，顯示成「交會」標籤，點了跳到那一步 |
+| `pa`、`pb` | 是 | 左圖、右圖標題 `[編號, 文字]`；寫在拍上時以拍為準 |
+| `plain` | 是 | 這一步的白話說明 |
+| `detail` | 否 | 細節段落的字串陣列 |
+| `beats` | 是 | 拍的陣列：`{ now, a, b, pa, pb }`，`now` 必填，`a`、`b` 是左右圖說 |
+| `sources` | 是 | `SRC` key 陣列 |
+| `supNote` | 沒有列廠商時必填 | 不列廠商的說明 |
+
+#### 場景
+
+- 元件用 `el(svg, part, tag, attrs, on, off, fx, delay)` 畫；`T` 寫文字、`C` 畫不可點選的框線、`R(x, y, w, h)` 產生矩形屬性。
+- `on`、`off` 寫成「步號.拍號」字串，拍號從 1 起；元件在 `on` 之後、`off` 之前顯示，`off` 留空表示一直顯示。一步最多 9 拍。
+- `card(on, off, lines)` 在右圖畫一張文字卡。`photo(src, caption, on, off, url)` 在右圖放圖片，
+  圖片載入失敗時改顯示一張卡片，寫出 `caption` 並附 `url` 的來源連結。
+- 要交給連接檢查的元件只用 `<rect>`，並標 `id`、`data-net`（網路名稱）與 `data-kind`
+  （`wire`、`via` 或 `node`，沒標時當作 `node`）。
+
+**缺值**：必填欄位缺值時，畫面顯示空字串，console 留下「walkthrough：… 缺值」錯誤。頁面上不放佔位文字。
+
+#### 對外介面 `window.walkthrough`
+
+- `meta`、`steps`、`tags`：即 `META`、`STEPS`、`TAG`。
+- `go(n, b)`：跳到步驟 `n` 的第 `b` 拍。`b` 是 `beats` 陣列的索引，從 0 起，比場景字串的拍號少 1。
+- `setImmersive(on)`：開關全螢幕沉浸模式。
+- `dumpScene()`：回傳目前顯示中、帶 `data-net` 的元件 `[{ id, svg, part, net, kind, x, y, w, h }]`。
+  `svg` 是 `A` 或 `B`，座標是 `getBBox()` 的 viewBox 單位；`data-net` 標在 `<rect>` 以外的元素上時略過，並在 console 留錯誤。
 
 ### 5.2 衍生成品
 
