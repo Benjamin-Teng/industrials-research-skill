@@ -199,6 +199,8 @@ svg .band { fill: var(--accent); fill-opacity: .18; }
 [data-part="cap"] { fill: var(--m-sd); }
 [data-part="defect"] { fill: var(--accent); }
 [data-part="pellicle"] { fill: var(--m-ox); }
+[data-part="resist"] { fill: var(--m-nit); }
+[data-part="rdlpad"] { fill: var(--m-sige); }
 [data-part="ild2"] { fill: var(--m-ox); }
 [data-part="contact"] { fill: var(--m-mask); }
 [data-part="beol"] { fill: var(--m-metal); }
@@ -452,7 +454,7 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
     'gspacer': { name: '閘極側壁', en: 'Gate spacer', text: '貼在閘極兩側的絕緣層，把閘極和源汲極隔開。' },
     'inner': { name: '內側間隔層', en: 'Inner spacer', text: '奈米片電晶體特有的結構：夾在矽片之間、介於閘極和源汲極中間的小塊絕緣體。它能降低閘極與源汲極之間的寄生電容，也在挖除矽鍺時保護源汲極。' },
     'sd': { name: '源極／汲極', en: 'Source / Drain', text: '載子（電子或電洞）的出發點與終點，緊貼著每一片矽的兩端。矽鍺被挖空後，懸空的奈米片也是靠兩端的源汲極撐住。' },
-    'ild': { name: '層間介電質', en: 'Interlayer dielectric', text: '把源汲極蓋住的絕緣材料。磨平之後只露出假閘極頂部，讓接下來的步驟只對閘極位置動手。' },
+    'ild': { name: '層間介電質', en: 'Interlayer dielectric', text: '把源汲極蓋住的絕緣材料。第二幕把它磨平、只露出假閘極頂部，讓之後的步驟只對閘極位置動手；電晶體完成後，它仍留在源汲極周圍。' },
     'highk': { name: '高介電常數層與功函數金屬', en: 'High-k & work-function metal', text: '包在每片矽外面的多層極薄薄膜，圖中合併畫成一層。高介電常數材料讓閘極隔著絕緣層也能有效控制通道；功函數金屬的厚度與材料會影響臨界電壓（電晶體開始導通的電壓）。台積電 N2 另外用偶極（dipole）技術調出 6 種臨界電壓（媒體轉述）。' },
     'metal': { name: '金屬閘極', en: 'Metal gate', text: '真正的閘極，加上電壓就能開關通道裡的電流。在 N2 裡它填滿矽片之間的空隙，從四面包住每一片。' },
     'kit': { name: '設計規則手冊與 PDK', en: 'DRM & PDK', text: '台積電交給設計端的兩份核心資料：設計規則手冊（DRM）規定版圖可以怎麼畫，製程設計套件（PDK）是給設計軟體用的製程資料。Cadence 在 2023 年 4 月宣布設計流程通過 N2 設計規則手冊認證，並與台積電交付 N2 的 PDK（廠商聲明）。' },
@@ -476,6 +478,7 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
     'cap': { name: '覆蓋層', en: 'Capping layer', text: '蓋在多層膜上的薄膜，吸收層就做在它上面。' },
     'absorber': { name: '吸收層', en: 'Absorber', text: '鉭系材料，會吸收 EUV 光。有吸收層的地方不反射，沒有的地方反射，圖形就這樣定義出來。' },
     'defect': { name: '光罩缺陷', en: 'Mask defect', text: '光罩上的缺陷可能跟著圖形一起印到晶圓上，所以要檢測、修補，再確認能不能印出來。' },
+    'resist': { name: '光阻', en: 'Resist', text: '塗在吸收層上的感光材料。電子束把圖形寫在光阻上，顯影之後，沒有光阻保護的吸收層再被蝕刻掉（示意）。' },
     'pellicle': { name: '保護膜', en: 'Pellicle', text: '撐在框架上的透明薄膜，讓灰塵落在離圖形夠遠的地方，不會被印出來。' },
     'ild2': { name: '層間絕緣層', en: 'Dielectric layer', text: '把接點、金屬導線一層層隔開的絕緣材料，導線就埋在裡面。' },
     'node': { name: '已量產的節點', en: 'Process node (in production)', text: '已經量產的製程世代，位置是量產年份（約略）。' },
@@ -484,6 +487,7 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
     'beol': { name: '後段金屬導線', en: 'BEOL interconnect', text: '一層層的金屬導線與層間通孔，把電晶體連成電路，越下層越細越密。金屬層數與間距台積電沒有公開。' },
     'mim': { name: 'MiM 電容', en: 'SHP-MiM capacitor', text: '金屬－絕緣體－金屬構成的電容，用來穩定供電。N2 的超高效能 MiM 約 200 fF/mm²（論文 Fig.11 圖內文字）。' },
     'rdl': { name: '銅重布線層', en: 'Cu RDL', text: '晶片上方的低電阻銅導線，負責銜接先進封裝（台積電官網與論文 Fig.11）。' },
+    'rdlpad': { name: '接墊', en: 'Bond pad', text: 'RDL 末端的金屬接墊，從保護層的開口露出來，之後在這裡做凸塊、接到封裝。圖中只畫一個，位置為示意。' },
     'passiv': { name: '鈍化保護層', en: 'Passivation', text: '晶片最上方的保護層。論文摘要提到 N2 採用平坦的保護層（flat passivation）。' },
     'wafer': { name: '晶圓', en: 'Wafer', text: '做完所有製程的晶圓，上面排滿一顆顆晶片。' },
     'die': { name: '晶片', en: 'Die', text: '晶圓上的一顆顆晶片，之後會被切開、封裝。' },
@@ -496,9 +500,9 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
     'pkgsub': { name: '封裝基板', en: 'Package substrate', text: '封裝最下方的基板，再接到電路板上。' },
     'pkg': { name: '封裝好的晶片', en: 'Packaged chip', text: '完成封裝、等待最終測試的晶片。' },
   };
-  const PART_ORDER = ['si-sub', 'sige', 'si-sheet', 'hardmask', 'sti', 'dummy', 'gspacer', 'inner', 'sd', 'ild', 'highk', 'metal', 'kit', 'eda', 'cell-short', 'cell-tall', 'stdcell', 'wire', 'drc', 'gds', 'masksvc', 'design', 'shuttle', 'target', 'opc', 'sraf', 'printed', 'curvy', 'mask-sub', 'ml', 'cap', 'absorber', 'defect', 'pellicle', 'ild2', 'contact', 'beol', 'mim', 'rdl', 'passiv', 'wafer', 'die', 'wat', 'fail', 'pad', 'die2', 'interposer', 'hbm', 'pkgsub', 'pkg', 'node', 'nodef'];
+  const PART_ORDER = ['si-sub', 'sige', 'si-sheet', 'hardmask', 'sti', 'dummy', 'gspacer', 'inner', 'sd', 'ild', 'highk', 'metal', 'kit', 'eda', 'cell-short', 'cell-tall', 'stdcell', 'wire', 'drc', 'gds', 'masksvc', 'design', 'shuttle', 'target', 'opc', 'sraf', 'printed', 'curvy', 'mask-sub', 'ml', 'cap', 'absorber', 'resist', 'defect', 'pellicle', 'ild2', 'contact', 'beol', 'mim', 'rdl', 'rdlpad', 'passiv', 'wafer', 'die', 'wat', 'fail', 'pad', 'die2', 'interposer', 'hbm', 'pkgsub', 'pkg', 'node', 'nodef'];
   // 材料的色票：CSS 變數名（不含 --），用在圖例與材料說明的色塊
-  const SWATCH = { 'si-sub': 'm-sub', 'si-sheet': 'm-si', 'sige': 'm-sige', 'hardmask': 'm-mask', 'dummy': 'm-poly', 'gspacer': 'm-nit', 'inner': 'm-nit', 'sd': 'm-sd', 'ild': 'm-ox', 'sti': 'm-sti', 'highk': 'm-highk', 'metal': 'm-metal', 'kit': 'accent-soft', 'eda': 'm-sd', 'cell-short': 'm-si', 'cell-tall': 'm-sige', 'stdcell': 'm-si', 'wire': 'm-metal', 'drc': 'accent', 'gds': 'm-highk', 'masksvc': 'accent-soft', 'design': 'm-si', 'shuttle': 'm-sige', 'target': 'm-mask', 'opc': 'm-mask', 'sraf': 'm-mask', 'printed': 'm-sd', 'curvy': 'm-mask', 'mask-sub': 'm-sub', 'ml': 'm-highk', 'cap': 'm-sd', 'absorber': 'm-mask', 'defect': 'accent', 'pellicle': 'm-poly', 'ild2': 'm-ox', 'contact': 'm-mask', 'beol': 'm-metal', 'mim': 'm-highk', 'rdl': 'm-poly', 'passiv': 'm-nit', 'wafer': 'm-si', 'die': 'm-sub', 'wat': 'accent', 'fail': 'accent', 'pad': 'm-sige', 'die2': 'm-sige', 'interposer': 'm-sti', 'hbm': 'm-si', 'pkgsub': 'm-sd', 'pkg': 'm-metal', 'node': 'm-sd', 'nodef': 'm-sd' };
+  const SWATCH = { 'si-sub': 'm-sub', 'si-sheet': 'm-si', 'sige': 'm-sige', 'hardmask': 'm-mask', 'dummy': 'm-poly', 'gspacer': 'm-nit', 'inner': 'm-nit', 'sd': 'm-sd', 'ild': 'm-ox', 'sti': 'm-sti', 'highk': 'm-highk', 'metal': 'm-metal', 'kit': 'accent-soft', 'eda': 'm-sd', 'cell-short': 'm-si', 'cell-tall': 'm-sige', 'stdcell': 'm-si', 'wire': 'm-metal', 'drc': 'accent', 'gds': 'm-highk', 'masksvc': 'accent-soft', 'design': 'm-si', 'shuttle': 'm-sige', 'target': 'm-mask', 'opc': 'm-mask', 'sraf': 'm-mask', 'printed': 'm-sd', 'curvy': 'm-mask', 'mask-sub': 'm-sub', 'ml': 'm-highk', 'cap': 'm-sd', 'absorber': 'm-mask', 'resist': 'm-nit', 'defect': 'accent', 'pellicle': 'm-poly', 'ild2': 'm-ox', 'contact': 'm-mask', 'beol': 'm-metal', 'mim': 'm-highk', 'rdl': 'm-poly', 'rdlpad': 'm-sige', 'passiv': 'm-nit', 'wafer': 'm-si', 'die': 'm-sub', 'wat': 'accent', 'fail': 'accent', 'pad': 'm-sige', 'die2': 'm-sige', 'interposer': 'm-sti', 'hbm': 'm-si', 'pkgsub': 'm-sd', 'pkg': 'm-metal', 'node': 'm-sd', 'nodef': 'm-sd' };
 
   // line：這一幕走哪條線（product 產品線／supply 供應鏈／both 兩條線）；N2 的製程步驟本身就是供應鏈，兩條線重合
   const ACTS = [
@@ -566,10 +570,11 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
       plain: 'EUV 光罩不是透光的玻璃片，而是一面會反射的鏡子：基板上疊了幾十層鉬與矽交替的薄膜，上面再做一層會吸收 EUV 光的圖形。圖形寫好後要檢測、修補，再視需要貼上保護膜（pellicle）。',
       detail: ['光罩寫入機用電子束（或雷射）把設計圖形寫到光罩上。台積電有自己的光罩廠，官網稱擁有全球最大的光罩製造能力。', '台積電作者 2023 年的論文指出，EUV 光罩上每個可能的缺陷，原本都要實際印到晶圓上評估，將近 3 天。同一篇論文介紹了一套直接用 EUV 光源檢視光罩的系統，可處理 N5、N3 及更先進節點的缺陷，每小時檢查超過 80 個位置（論文沒有點名 N2）。', '保護膜（pellicle）是撐在框架上的透明薄膜，讓灰塵落在離圖形夠遠的地方，不會被印出來。媒體轉述台積電 2024 年中的報告：自製的 EUV 保護膜壽命延長 4 倍、缺陷減少 80 倍（台積電原始報告未取得）。台積電 N2 的光罩是否全部貼保護膜，沒有公開資料。', '目前 EUV 光罩是 6 吋；台積電與 ASML 的目標是 2031 年前建立 12 吋光罩試產線。台積電官網列出的光罩例行檢查包括靜電損傷、刮傷、微粒、保護膜框架與老化。'],
       beats: [
-        { now: '空白光罩：基板、鉬／矽多層膜、覆蓋層，最上面是吸收層。', a: '層數與厚度非依比例。', b: '光罩俯視。' },
-        { now: '電子束把圖形寫上去，蝕刻後吸收層只留在需要的地方。', a: '沒有吸收層的地方會反射 EUV 光（示意，省略光阻等中間步驟）。', b: '圖形一條條寫上光罩。' },
-        { now: '檢測：抓出缺陷、修補，再用 EUV 光確認能不能印出來。', a: '橘圈是一個缺陷。', b: '檢測系統掃過整片光罩。' },
-        { now: '貼上保護膜（pellicle）。N2 是否每片光罩都貼，沒有公開資料。', a: '保護膜撐在框架上，和圖形隔一段距離。', b: '保護膜蓋住整片圖形區。' },
+        { now: '空白光罩：基板、鉬／矽多層膜、覆蓋層，最上面是吸收層。', a: '層數與厚度非依比例。', b: '光罩俯視：整面都是吸收層；虛線是左圖剖面的位置。' },
+        { now: '塗上光阻，電子束把圖形寫在光阻上。', a: '電子束停在光阻表面（示意，省略顯影等中間步驟）。', b: '虛線框是之後留下吸收層的地方，框外被電子束寫過。' },
+        { now: '蝕刻後，吸收層只留在需要的地方。', a: '沒有吸收層的地方會反射 EUV 光。', b: '吸收層留下四條，位置與左圖的四段相同。' },
+        { now: '檢測：抓出缺陷、修補，再用 EUV 光確認能不能印出來。', a: '橘圈是一個缺陷。', b: '檢測系統掃過整片光罩；缺陷在虛線上，與左圖是同一個。' },
+        { now: '貼上保護膜（pellicle）。N2 是否每片光罩都貼，沒有公開資料。', a: '保護膜撐在框架上，和圖形隔一段距離。', b: '保護膜蓋住整片圖形區，框架立在圖形區外。' },
       ],
       sources: ['wiki_euv', 'wiki_photomask', 'tsmc_mask', 'spie_amrs', 'toms_pellicle', 'pr3338'] },
     { n: 6, act: 2, title: '空白晶圓進廠', badges: ['generic'],
@@ -647,7 +652,7 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
       beats: [
         { now: '第一層金屬（M1）：N2 用 EUV 一次曝光、一次蝕刻完成（媒體轉述）。', a: '最下層、最密的是 M1。', b: '論文剖面：最下方是奈米片電晶體，往上是中段與後段金屬。' },
         { now: '一層層往上疊：導線越往上越粗，層與層之間用通孔連接。', a: '越往上的金屬層越粗（層數為示意）。', b: '論文剖面：金屬層由下往上變粗。' },
-        { now: '最上方：超高效能 MiM 電容與銅重布線層，銜接先進封裝。', a: 'MiM 電容（約 200 fF/mm²）、銅 RDL 與保護層。', b: '論文剖面：銅 RDL、MiM 電容與保護層。' },
+        { now: '最上方：超高效能 MiM 電容與銅重布線層，銜接先進封裝。', a: 'MiM 電容（約 200 fF/mm²）、銅 RDL 與保護層；右端的保護層開口露出接墊（示意）。', b: '論文剖面：銅 RDL、MiM 電容與保護層。' },
       ],
       sources: ['toms', 'iedm_fig11', 'l2nm', 'ar2025', 'research97'] },
     { n: 15, act: 4, title: '晶圓測試與針測', badges: ['official', 'media', 'generic'],
@@ -676,7 +681,7 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
       beats: [
         { now: '切割：把晶圓上的晶片切成一顆顆。', a: '晶圓切割成單顆晶片（示意）。', b: '封裝與測試由誰做的公開說法。' },
         { now: 'SoIC：把晶片堆疊在另一顆晶片上。', a: 'SoIC：上下兩顆晶片堆疊（示意）。', b: '官方圖：用一般 SoC 與用 SoIC 的 CoWoS、InFO_PoP 對照。', pb: ['②', '官方圖：TSMC-SoIC 對照'] },
-        { now: 'CoWoS：運算晶片與高頻寬記憶體放在中介層上，再接到封裝基板。', a: 'CoWoS 的結構（示意）。', b: '官方圖：CoWoS-S 結構。', pb: ['②', '官方圖：CoWoS-S 結構'] },
+        { now: 'CoWoS：運算晶片與高頻寬記憶體放在中介層上，再接到封裝基板。', a: 'CoWoS 的結構（示意，省略各層之間的凸塊）。', b: '官方圖：CoWoS-S 結構。', pb: ['②', '官方圖：CoWoS-S 結構'] },
       ],
       sources: ['tsmc_3dfabric', 'tsmc_soic', 'tsmc_cowos', 'sec20f', 'q1_26', 'q3_26', 'amkor_bump'] },
     { n: 18, act: 4, title: '最終測試與出貨', badges: ['official', 'generic'],
@@ -881,22 +886,32 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
     for (let i = 0; i < 10; i++) styled(el(A, 'ml', 'rect', R(20, 160 + i * 4, 230, 4), '5.1', '6.1', 'grow', i * 40), { fill: `var(--${i % 2 ? 'm-highk' : 'm-si'})` });
     T(A, 262, 180, ['鉬／矽多層膜', '（反射 EUV 光）'], '5.1', '6.1', 'lbl-s');
     el(A, 'cap', 'rect', R(20, 154, 230, 6), '5.1', '6.1', 'grow', 420); T(A, 262, 160, '覆蓋層', '5.1', '6.1', 'lbl-s');
-    el(A, 'absorber', 'rect', R(20, 128, 230, 26), '5.1', '5.2', 'grow', 480); T(A, 262, 142, '吸收層（鉭系）', '5.1', '6.1', 'lbl-s');
-    [72, 135, 198].forEach((x, i) => C(A, 'beam', 'path', { d: `M${x},40 L${x},128` }, '5.2', '5.3', 'fade', i * 150));
-    // 圖形區 x36–234；左右兩端各留空白，保護膜的框架立在空白處
-    [[36, 28], [80, 40], [150, 40], [206, 28]].forEach(([x, w]) => el(A, 'absorber', 'rect', R(x, 128, w, 26), '5.2', '6.1', 'fade', 500));
-    T(A, 20, 24, '電子束把圖形寫上光罩（省略光阻等中間步驟）', '5.2', '5.3', 'lbl-s');
-    el(A, 'defect', 'circle', { cx: 135, cy: 149, r: 5 }, '5.3', '5.4'); C(A, 'ring', 'circle', { cx: 135, cy: 149, r: 16 }, '5.3', '5.4');
-    T(A, 20, 24, '檢測 → 修補 → 用 EUV 光確認能否印出', '5.3', '5.4', 'lbl-s');
+    // 5.1 整片吸收層；5.2 塗光阻、電子束寫入（光束停在光阻頂 y122）；5.3 蝕刻後只留四段
+    el(A, 'absorber', 'rect', R(20, 128, 230, 26), '5.1', '5.3', 'grow', 480); T(A, 262, 142, '吸收層（鉭系）', '5.1', '6.1', 'lbl-s');
+    el(A, 'resist', 'rect', R(20, 122, 230, 6), '5.2', '5.3', 'grow'); T(A, 262, 124, '光阻', '5.2', '5.3', 'lbl-s');
+    [72, 135, 198].forEach((x, i) => C(A, 'beam', 'path', { d: `M${x},40 L${x},122` }, '5.2', '5.3', 'fade', i * 150));
+    // 圖形區 x36–234；左右兩端各留空白，保護膜的框架立在空白處。右圖俯視以 x+65 對應左圖
+    const ABS = [[36, 28], [80, 40], [150, 40], [206, 28]];
+    ABS.forEach(([x, w]) => el(A, 'absorber', 'rect', R(x, 128, w, 26), '5.3', '6.1', 'fade', 200));
+    T(A, 20, 24, '電子束把圖形寫在光阻上（省略顯影等步驟）', '5.2', '5.3', 'lbl-s');
+    T(A, 20, 24, '蝕刻：沒有光阻保護的吸收層被移除', '5.3', '5.4', 'lbl-s');
+    el(A, 'defect', 'circle', { cx: 135, cy: 149, r: 5 }, '5.4', '5.5'); C(A, 'ring', 'circle', { cx: 135, cy: 149, r: 16 }, '5.4', '5.5');
+    T(A, 20, 24, '檢測 → 修補 → 用 EUV 光確認能否印出', '5.4', '5.5', 'lbl-s');
     // 框架柱從頂膜一路立到光罩表面（覆蓋層頂 y154），位置在圖形區之外
-    styled(el(A, 'pellicle', 'rect', R(20, 62, 10, 92), '5.4', '6.1', 'drop'), { fill: 'var(--m-poly)' });
-    styled(el(A, 'pellicle', 'rect', R(240, 62, 10, 92), '5.4', '6.1', 'drop'), { fill: 'var(--m-poly)' });
-    styled(el(A, 'pellicle', 'rect', R(20, 58, 230, 4), '5.4', '6.1', 'drop'), { fill: 'var(--m-poly)' }); T(A, 262, 64, '保護膜', '5.4', '6.1', 'lbl-s');
-    styled(el(B, 'mask-sub', 'rect', R(80, 26, 240, 240), '5.1', '6.1', 'rise'), { fill: 'var(--m-sub)' }); T(B, 200, 290, '目前的 EUV 光罩是 6 吋', '5.1', '6.1', 'lbl-s', 'middle');
-    for (let i = 0; i < 10; i++) el(B, 'absorber', 'rect', R(104, 48 + i * 21, 192, 9), '5.2', '6.1', 'grow', i * 70);
-    C(B, 'band', 'rect', R(80, 120, 240, 34), '5.3', '5.4');
-    el(B, 'defect', 'circle', { cx: 200, cy: 147, r: 5 }, '5.3', '5.4'); C(B, 'ring', 'circle', { cx: 200, cy: 147, r: 16 }, '5.3', '5.4');
-    styled(el(B, 'pellicle', 'rect', R(88, 34, 224, 224), '5.4', '6.1', 'drop'), { fillOpacity: '0.35', stroke: 'var(--m-poly)', strokeWidth: '6px' });
+    styled(el(A, 'pellicle', 'rect', R(20, 62, 10, 92), '5.5', '6.1', 'drop'), { fill: 'var(--m-poly)' });
+    styled(el(A, 'pellicle', 'rect', R(240, 62, 10, 92), '5.5', '6.1', 'drop'), { fill: 'var(--m-poly)' });
+    styled(el(A, 'pellicle', 'rect', R(20, 58, 230, 4), '5.5', '6.1', 'drop'), { fill: 'var(--m-poly)' }); T(A, 262, 64, '保護膜', '5.5', '6.1', 'lbl-s');
+    // 右圖俯視：光罩 x85–315、y31–261（左圖 x20–250 平移 +65），圖形區四邊各留 16；虛線 y146 是左圖剖面的切線
+    styled(el(B, 'mask-sub', 'rect', R(85, 31, 230, 230), '5.1', '6.1', 'rise'), { fill: 'var(--m-sub)' }); T(B, 200, 290, '目前的 EUV 光罩是 6 吋', '5.1', '6.1', 'lbl-s', 'middle');
+    el(B, 'absorber', 'rect', R(85, 31, 230, 230), '5.1', '5.3', 'grow', 300);
+    el(B, 'resist', 'rect', R(85, 31, 230, 230), '5.2', '5.3', 'fade');
+    ABS.forEach(([x, w]) => C(B, 'ghost', 'rect', R(x + 65, 47, w, 198), '5.2', '5.3'));
+    ABS.forEach(([x, w], i) => el(B, 'absorber', 'rect', R(x + 65, 47, w, 198), '5.3', '6.1', 'grow', i * 70));
+    C(B, 'band', 'rect', R(85, 129, 230, 34), '5.4', '5.5');
+    el(B, 'defect', 'circle', { cx: 200, cy: 146, r: 5 }, '5.4', '5.5'); C(B, 'ring', 'circle', { cx: 200, cy: 146, r: 16 }, '5.4', '5.5');
+    // 保護膜：框線寬 10 落在 x85–95、305–315（對應左圖框架柱 x20–30、240–250），填色與左圖同為 --m-poly
+    styled(el(B, 'pellicle', 'rect', R(90, 36, 220, 220), '5.5', '6.1', 'drop'), { fill: 'var(--m-poly)', fillOpacity: '0.25', stroke: 'var(--m-poly)', strokeWidth: '10px' });
+    C(B, 'ghost', 'path', { d: 'M85,146 L315,146' }, '5.1', '6.1'); T(B, 200, 20, '虛線：左圖剖面的位置', '5.1', '6.1', 'lbl-s', 'middle');
 
     // ---------- 第三、四幕場景 ----------
 
@@ -940,8 +955,10 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
     // x=18 把 RDL 接上層金屬與下方堆疊；x=140 把 MiM 上極板接 RDL（上下極板各走一條路，不短路）
     [[100, 250, 12, '14.1', 'mim'], [100, 230, 14, '14.2', 'mim'], [100, 206, 16, '14.2', 'mim'], [100, 176, 20, '14.2', 'mim'], [100, 138, 24, '14.2', 'mim'], [100, 104, 14, '14.3', 'mim'], [18, 250, 12, '14.1', 'rdl'], [18, 78, 40, '14.3', 'rdl'], [140, 78, 8, '14.3', 'rdl']]
       .forEach(([x, y, h, on, net]) => el(A, 'beol', 'rect', { id: `s14-v-${x}-${y}`, 'data-net': net, 'data-kind': 'via', ...R(x, y, 4, h) }, on, '15.1', 'fade', 700));
-    el(A, 'rdl', 'rect', { id: 's14-rdl', 'data-net': 'rdl', 'data-kind': 'wire', ...R(16, 58, 280, 20) }, '14.3', '15.1', 'grow', 200); T(A, 306, 74, '銅 RDL', '14.3', '15.1', 'lbl-s', 'start', 200);
-    el(A, 'passiv', 'rect', R(10, 46, 290, 10), '14.3', '15.1', 'grow', 400); T(A, 306, 54, '保護層', '14.3', '15.1', 'lbl-s', 'start', 400);
+    el(A, 'rdl', 'rect', { id: 's14-rdl', 'data-net': 'rdl', 'data-kind': 'wire', ...R(16, 58, 274, 20) }, '14.3', '15.1', 'grow', 200); T(A, 306, 74, '銅 RDL', '14.3', '15.1', 'lbl-s', 'start', 200);
+    // 保護層在 x250–290 開口，接墊 x250–290、y46–58 坐在 RDL 頂面 y58 上
+    el(A, 'passiv', 'rect', R(10, 46, 240, 10), '14.3', '15.1', 'grow', 400); el(A, 'passiv', 'rect', R(290, 46, 10, 10), '14.3', '15.1', 'grow', 400); T(A, 306, 54, '保護層', '14.3', '15.1', 'lbl-s', 'start', 400);
+    el(A, 'rdlpad', 'rect', { id: 's14-pad', 'data-net': 'rdl', 'data-kind': 'node', ...R(250, 46, 40, 12) }, '14.3', '15.1', 'drop', 500); T(A, 306, 36, '接墊（開口）', '14.3', '15.1', 'lbl-s', 'start', 500);
     photo('img/fig11.png', "台積電 IEDM 2024 論文 Fig.11（經 Tom's Hardware 轉載）", '14.1', '15.1', SRC.iedm_fig11.url);
 
     // 步驟 15：晶圓測試
@@ -952,7 +969,7 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
       if ([[x, y], [x + 20, y], [x, y + 20], [x + 20, y + 20]].every(([px, py]) => Math.hypot(px - 200, py - 152) <= 118)) DIES.push([x, y]);
     }
     DIES.forEach(([x, y], i) => el(A, 'die', 'rect', R(x, y, 20, 20), '15.1', '16.1', 'fade', i * 6));
-    [[-2, -1], [1, 2], [3, -2], [-3, 2], [0, 0], [2, 1]].forEach(([k, m]) => el(A, 'wat', 'rect', R(200 + k * 26 - 2, 152 + m * 26 - 2, 6, 6), '15.1', '15.2', 'fade', 400));
+    [[-2, -1], [1, 2], [3, -2], [-3, 2], [0, 0], [2, 1]].forEach(([k, m]) => el(A, 'wat', 'rect', R(200 + k * 26 - 2, 152 + m * 26 - 2, 4, 4), '15.1', '15.2', 'fade', 400));
     const mid = DIES.reduce((a, d) => (Math.hypot(d[0] - 190, d[1] - 142) < Math.hypot(a[0] - 190, a[1] - 142) ? d : a));
     C(A, 'hl', 'rect', { x: mid[0] - 4, y: mid[1] - 4, width: 28, height: 28, rx: 3 }, '15.2', '15.3');
     DIES.forEach(([x, y], i) => { if ((i * 7 + 3) % 11 === 0) el(A, 'fail', 'rect', R(x, y, 20, 20), '15.3', '16.1', 'fade', i * 6); });
