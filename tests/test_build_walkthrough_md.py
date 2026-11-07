@@ -47,9 +47,10 @@ def copy_skeleton(tmp_path: Path, empty_plain_step: int | None = None) -> Path:
     """把骨架複製到 tmp_path；empty_plain_step 指定哪一步的 plain 改成空字串。"""
     text = SKELETON.read_text(encoding="utf-8")
     if empty_plain_step is not None:
-        pattern = rf"(\{{ n: {empty_plain_step},.*?\n\s+plain: )'[^']*'"
+        pattern = rf"(\{{ n: {empty_plain_step}, act:.*?\n\s+plain: )'[^']*'"
         text, count = re.subn(pattern, r"\1''", text, count=1, flags=re.DOTALL)
         assert count == 1, "找不到要清空的 plain"
+    tmp_path.mkdir(parents=True, exist_ok=True)
     target = tmp_path / "walkthrough.html"
     target.write_text(text, encoding="utf-8")
     return target
@@ -131,16 +132,58 @@ def test_empty_required_field_raises(tmp_path):
     assert not (tmp_path / "_pdfwork").exists()
 
 
-def test_cli_runs_without_browser_argument(tmp_path):
-    """CLI 自己啟動 Playwright（獨立 process，不受測試共用的 Playwright 影響）。"""
-    page = copy_skeleton(tmp_path)
-    r = subprocess.run(
-        [sys.executable, "-B", "-X", "utf8", str(SCRIPT), str(page), str(tmp_path), "cli.md"],
+def test_failed_rebuild_leaves_existing_output_untouched(tmp_path):
+    """重產跑到第 2 步才失敗：原有的 md 與圖片逐位元組不變，暫存區清乾淨。"""
+    out = tmp_path / "out"
+    (out / "pdf-img").mkdir(parents=True)
+    old = {out / "demo.md": b"OLD MD", out / "pdf-img" / "s01-1.png": b"OLD PNG", out / "pdf-img" / "s09-9.png": b"STALE"}
+    for path, data in old.items():
+        path.write_bytes(data)
+    broken = copy_skeleton(tmp_path / "src", empty_plain_step=2)
+    with launch("chromium") as browser, pytest.raises(ValueError, match="step 2.1: plain 為空"):
+        build(broken, out, "demo.md", browser=browser)
+    assert {p: p.read_bytes() for p in old} == old
+    assert sorted(p.name for p in out.rglob("*") if p.is_file()) == sorted(p.name for p in old)
+    assert not (out / "_build_tmp").exists() and not (broken.parent / "_pdfwork").exists()
+
+
+def test_successful_rebuild_replaces_old_output(tmp_path):
+    out = tmp_path / "out"
+    (out / "pdf-img").mkdir(parents=True)
+    (out / "demo.md").write_bytes(b"OLD MD")
+    (out / "pdf-img" / "s09-9.png").write_bytes(b"STALE")
+    with launch("chromium") as browser:
+        md = build(copy_skeleton(tmp_path / "src"), out, "demo.md", browser=browser)
+    assert md == (out / "demo.md").resolve() and "第一幕" in md.read_text(encoding="utf-8")
+    assert sorted(p.name for p in (out / "pdf-img").iterdir()) == ["s01-1.png", "s01-2.png", "s02-1.png", "s03-1.png"]
+    assert not (out / "_build_tmp").exists()
+
+
+def _run_cli(args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+    """先用共用機制確認 Chromium 可用（缺時 skip，REQUIRE_BROWSER=1 時 fail），再在獨立 process 跑 CLI。"""
+    with launch("chromium"):
+        pass
+    return subprocess.run(
+        [sys.executable, "-B", "-X", "utf8", str(SCRIPT), *args],
         capture_output=True,
         text=True,
         encoding="utf-8",
+        cwd=cwd,
         check=False,
     )
+
+
+def test_cli_runs_without_browser_argument(tmp_path):
+    """CLI 自己啟動 Playwright（獨立 process，不受測試共用的 Playwright 影響）。"""
+    page = copy_skeleton(tmp_path)
+    r = _run_cli([str(page), str(tmp_path), "cli.md"], tmp_path)
     assert r.returncode == 0, r.stderr
     assert "steps=3 beats=4" in r.stdout
     assert (tmp_path / "cli.md").is_file()
+
+
+def test_cli_accepts_relative_paths(tmp_path):
+    copy_skeleton(tmp_path)
+    r = _run_cli(["walkthrough.html", ".", "rel.md"], tmp_path)
+    assert r.returncode == 0, r.stderr
+    assert (tmp_path / "rel.md").is_file() and (tmp_path / "pdf-img" / "s01-1.png").is_file()

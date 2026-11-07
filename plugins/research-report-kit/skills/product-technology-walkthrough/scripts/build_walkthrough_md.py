@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import re
 import shutil
 import sys
@@ -257,12 +258,20 @@ def _compose(meta: dict[str, Any], tag_levels: dict[str, int], steps: list[dict[
 def build(page: Path, out_dir: Path, md_name: str, *, browser: Any = None) -> Path:
     """互動頁 → md 與逐拍截圖。回傳 md 路徑。
 
+    截圖與 md 先產生在 `out_dir/_build_tmp/`，全部驗證成功才替換正式的 `pdf-img/` 與 md；
+    中途失敗時，原有的 md 與圖片不變，暫存區清掉。
+
     `browser` 傳入已啟動的 Playwright browser 時沿用（同一個 process 只能有一個 sync Playwright）；
     省略時自己啟動 headless chromium。
     """
-    img_dir = out_dir / "pdf-img"
-    img_dir.mkdir(parents=True, exist_ok=True)
+    page = page.resolve()
+    out_dir = out_dir.resolve()
+    out_dir.mkdir(parents=True, exist_ok=True)
 
+    tmp = out_dir / "_build_tmp"
+    shutil.rmtree(tmp, ignore_errors=True)  # 清掉上次當機留下的
+    new_img = tmp / "pdf-img"
+    new_img.mkdir(parents=True)
     work = page.parent / "_pdfwork"
     work.mkdir(exist_ok=True)
     try:
@@ -276,17 +285,35 @@ def build(page: Path, out_dir: Path, md_name: str, *, browser: Any = None) -> Pa
             with sync_playwright() as pw:
                 chromium = pw.chromium.launch(headless=True)
                 try:
-                    meta, tag_levels, steps = _run(chromium, page_html, img_dir)
+                    meta, tag_levels, steps = _run(chromium, page_html, new_img)
                 finally:
                     chromium.close()
         else:
-            meta, tag_levels, steps = _run(browser, page_html, img_dir)
+            meta, tag_levels, steps = _run(browser, page_html, new_img)
+        new_md = tmp / md_name
+        new_md.write_text(_compose(meta, tag_levels, steps), encoding="utf-8")
+        return _publish(new_img, new_md, out_dir / "pdf-img", out_dir / md_name, tmp / "backup")
     finally:
         shutil.rmtree(work, ignore_errors=True)
+        shutil.rmtree(tmp, ignore_errors=True)
 
-    md_path = out_dir / md_name
-    md_path.write_text(_compose(meta, tag_levels, steps), encoding="utf-8")
-    return md_path
+
+def _publish(new_img: Path, new_md: Path, final_img: Path, final_md: Path, backup: Path) -> Path:
+    """用新圖資料夾與新 md 替換正式版；任一步失敗就把圖片資料夾還原。"""
+    backup.mkdir()
+    had_old = final_img.exists()
+    if had_old:
+        final_img.rename(backup / "pdf-img")
+    try:
+        new_img.rename(final_img)
+        os.replace(new_md, final_md)
+    except OSError:
+        if final_img.exists():
+            shutil.rmtree(final_img, ignore_errors=True)
+        if had_old:
+            (backup / "pdf-img").rename(final_img)
+        raise
+    return final_md
 
 
 def _run(browser: Any, page_html: Path, img_dir: Path) -> tuple[dict[str, Any], dict[str, int], list[dict[str, Any]]]:
