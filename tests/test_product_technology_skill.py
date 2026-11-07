@@ -187,7 +187,6 @@ def test_output_skill_description_and_modes_cover_type_e():
     text = OUTPUT_SKILL.read_text(encoding="utf-8")
     assert "產品技術" in frontmatter(OUTPUT_DIR / "SKILL.md")["description"]
     assert "**E 型保留**" in section(text, "### External（傳播）")
-    assert "**E 型保留**" in section(text, "### Briefing（摘要，≤3 頁）")
 
 
 def test_plugin_readme_no_four_type_wording():
@@ -225,3 +224,23 @@ def test_example_has_no_local_paths_or_email():
 def test_example_md_has_no_dangling_image_links():
     for p in EX.rglob("*.md"):
         assert "pdf-img/" not in p.read_text(encoding="utf-8"), p
+
+
+E_SPEC_HEADING = "### E 型｜產品技術研究（methodology_version: product-technology-v1）"
+
+
+def test_type_e_briefing_declared_unsupported_in_skill():
+    briefing = section(OUTPUT_SKILL.read_text(encoding="utf-8"), "### Briefing（摘要，≤3 頁）")
+    line = next(ln for ln in briefing.splitlines() if ln.startswith("**E 型"))
+    for word in ("暫不支援", "互動頁連結", "3–5 句", "D 型 Briefing"):
+        assert word in line, word
+    assert "逐拍截圖" not in briefing
+    assert "**E 型刪去**" not in briefing
+
+
+def test_type_e_briefing_declared_unsupported_in_spec():
+    body = section(OUTPUT_SPEC.read_text(encoding="utf-8"), E_SPEC_HEADING)
+    assert "暫不支援 Briefing" in body
+    for word in ("互動頁連結", "3–5 句", "D 型 Briefing"):
+        assert word in body, word
+    assert "刪去" not in body and "刪掉" not in body
