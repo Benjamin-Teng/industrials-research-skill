@@ -259,7 +259,9 @@ def build(page: Path, out_dir: Path, md_name: str, *, browser: Any = None) -> Pa
     """互動頁 → md 與逐拍截圖。回傳 md 路徑。
 
     截圖與 md 先產生在 `out_dir/_build_tmp/`，全部驗證成功才替換正式的 `pdf-img/` 與 md；
-    中途失敗時，原有的 md 與圖片不變，暫存區清掉。
+    中途失敗（含 KeyboardInterrupt）時，原有的 md 與圖片還原，暫存區清掉。只有「還原也失敗」時才保留
+    暫存區與舊圖備份，並在 stderr 印出備份路徑。不做下次啟動時的交易恢復：md 與 pdf-img 都是互動頁的
+    衍生物，壞了重產即可。
 
     `browser` 傳入已啟動的 Playwright browser 時沿用（同一個 process 只能有一個 sync Playwright）；
     省略時自己啟動 headless chromium。
@@ -295,11 +297,18 @@ def build(page: Path, out_dir: Path, md_name: str, *, browser: Any = None) -> Pa
         return _publish(new_img, new_md, out_dir / "pdf-img", out_dir / md_name, tmp / "backup")
     finally:
         shutil.rmtree(work, ignore_errors=True)
-        shutil.rmtree(tmp, ignore_errors=True)
+        if not (tmp / _RESTORE_FAILED).exists():  # 還原失敗時，備份是唯一的舊圖，不刪
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
+_RESTORE_FAILED = "RESTORE_FAILED.txt"
 
 
 def _publish(new_img: Path, new_md: Path, final_img: Path, final_md: Path, backup: Path) -> Path:
-    """用新圖資料夾與新 md 替換正式版；任一步失敗就把圖片資料夾還原。"""
+    """用新圖資料夾與新 md 替換正式版；任何例外（含 KeyboardInterrupt）都先把舊圖片資料夾還原再往上拋。
+
+    還原也失敗時，在暫存區寫下 `RESTORE_FAILED.txt` 並在 stderr 印出備份路徑，呼叫端據此保留暫存區。
+    """
     backup.mkdir()
     had_old = final_img.exists()
     if had_old:
@@ -307,11 +316,16 @@ def _publish(new_img: Path, new_md: Path, final_img: Path, final_md: Path, backu
     try:
         new_img.rename(final_img)
         os.replace(new_md, final_md)
-    except OSError:
-        if final_img.exists():
-            shutil.rmtree(final_img, ignore_errors=True)
-        if had_old:
-            (backup / "pdf-img").rename(final_img)
+    except BaseException:
+        try:
+            if final_img.exists():
+                shutil.rmtree(final_img)
+            if had_old:
+                (backup / "pdf-img").rename(final_img)
+        except BaseException as restore_exc:  # noqa: BLE001 - 還原途中被中斷也要保留備份
+            msg = f"還原舊圖失敗（{restore_exc!r}）。舊圖備份在 {backup / 'pdf-img'}，請手動搬回 {final_img}。"
+            (backup.parent / _RESTORE_FAILED).write_text(msg, encoding="utf-8")
+            print(msg, file=sys.stderr)
         raise
     return final_md
 

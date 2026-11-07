@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -157,6 +158,59 @@ def test_successful_rebuild_replaces_old_output(tmp_path):
     assert md == (out / "demo.md").resolve() and "第一幕" in md.read_text(encoding="utf-8")
     assert sorted(p.name for p in (out / "pdf-img").iterdir()) == ["s01-1.png", "s01-2.png", "s02-1.png", "s03-1.png"]
     assert not (out / "_build_tmp").exists()
+
+
+def _seed_old_output(out: Path) -> dict[Path, bytes]:
+    (out / "pdf-img").mkdir(parents=True)
+    old = {out / "demo.md": b"OLD MD", out / "pdf-img" / "s01-1.png": b"OLD PNG"}
+    for path, data in old.items():
+        path.write_bytes(data)
+    return old
+
+
+def _fail_md_replace(monkeypatch, exc: BaseException) -> None:
+    """讓「新 md 換入正式位置」這一步拋出 exc，其餘 os.replace 照常。"""
+    real = os.replace
+
+    def fake(src, dst, *a, **kw):
+        if Path(dst).name == "demo.md":
+            raise exc
+        return real(src, dst, *a, **kw)
+
+    monkeypatch.setattr(build_walkthrough_md.os, "replace", fake)
+
+
+def test_interrupt_during_publish_restores_old_output(tmp_path, monkeypatch):
+    """發布中途 KeyboardInterrupt：舊 md 與舊圖都還原，例外照樣往上拋，暫存區清掉。"""
+    out = tmp_path / "out"
+    old = _seed_old_output(out)
+    _fail_md_replace(monkeypatch, KeyboardInterrupt())
+    with launch("chromium") as browser, pytest.raises(KeyboardInterrupt):
+        build(copy_skeleton(tmp_path / "src"), out, "demo.md", browser=browser)
+    assert {p: p.read_bytes() for p in old} == old
+    assert sorted(p.name for p in out.rglob("*") if p.is_file()) == sorted(p.name for p in old)
+    assert not (out / "_build_tmp").exists()
+
+
+def test_restore_failure_keeps_backup_and_reports_path(tmp_path, monkeypatch, capsys):
+    """發布失敗、還原也失敗：保留暫存區與備份，stderr 印出備份路徑，原例外照樣拋出。"""
+    out = tmp_path / "out"
+    _seed_old_output(out)
+    _fail_md_replace(monkeypatch, OSError("replace 失敗"))
+    real_rename = Path.rename
+
+    def fake_rename(self, target):
+        if self.name == "pdf-img" and self.parent.name == "backup":  # 還原那一步
+            raise OSError("還原失敗")
+        return real_rename(self, target)
+
+    monkeypatch.setattr(Path, "rename", fake_rename)
+    with launch("chromium") as browser, pytest.raises(OSError, match="replace 失敗"):
+        build(copy_skeleton(tmp_path / "src"), out, "demo.md", browser=browser)
+    backup = out / "_build_tmp" / "backup"
+    assert (backup / "pdf-img" / "s01-1.png").read_bytes() == b"OLD PNG"
+    assert (out / "demo.md").read_bytes() == b"OLD MD"
+    assert str(backup) in capsys.readouterr().err
 
 
 def _run_cli(args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
