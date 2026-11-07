@@ -130,7 +130,7 @@ def test_skill_has_codex_handoff_section():
     assert "Codex 只做蒐集與整合" in codex
     for deliverable in ("每幕證據檔", "廠商名單", "每幕審查紀錄"):
         assert deliverable in codex, deliverable
-    assert "齊備" in codex
+    assert re.search(r"齊備(就|即)停", codex)
     assert re.search(r"互動頁、md、PDF[^。]*交給 Claude Code", codex)
 
 
