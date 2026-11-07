@@ -213,6 +213,30 @@ def test_restore_failure_keeps_backup_and_reports_path(tmp_path, monkeypatch, ca
     assert str(backup) in capsys.readouterr().err
 
 
+def test_backup_kept_even_when_marker_file_cannot_be_written(tmp_path, monkeypatch):
+    """發布失敗、還原失敗、標記檔也寫不進去，三者同時發生：備份仍然保留，原例外照拋。"""
+    out = tmp_path / "out"
+    _seed_old_output(out)
+    _fail_md_replace(monkeypatch, OSError("replace 失敗"))
+    real_rename, real_write = Path.rename, Path.write_text
+
+    def fake_rename(self, target):
+        if self.name == "pdf-img" and self.parent.name == "backup":
+            raise OSError("還原失敗")
+        return real_rename(self, target)
+
+    def fake_write(self, *a, **kw):
+        if self.name == "RESTORE_FAILED.txt":
+            raise OSError("磁碟已滿")
+        return real_write(self, *a, **kw)
+
+    monkeypatch.setattr(Path, "rename", fake_rename)
+    monkeypatch.setattr(Path, "write_text", fake_write)
+    with launch("chromium") as browser, pytest.raises(OSError, match="replace 失敗"):
+        build(copy_skeleton(tmp_path / "src"), out, "demo.md", browser=browser)
+    assert (out / "_build_tmp" / "backup" / "pdf-img" / "s01-1.png").read_bytes() == b"OLD PNG"
+
+
 def _run_cli(args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
     """先用共用機制確認 Chromium 可用（缺時 skip，REQUIRE_BROWSER=1 時 fail），再在獨立 process 跑 CLI。"""
     with launch("chromium"):

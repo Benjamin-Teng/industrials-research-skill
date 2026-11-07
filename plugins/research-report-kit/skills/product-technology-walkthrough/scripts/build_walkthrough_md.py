@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
 import json
 import os
@@ -276,6 +277,7 @@ def build(page: Path, out_dir: Path, md_name: str, *, browser: Any = None) -> Pa
     new_img.mkdir(parents=True)
     work = page.parent / "_pdfwork"
     work.mkdir(exist_ok=True)
+    publish = _PublishState()
     try:
         if (page.parent / "img").is_dir():
             shutil.copytree(page.parent / "img", work / "img", dirs_exist_ok=True)
@@ -294,21 +296,28 @@ def build(page: Path, out_dir: Path, md_name: str, *, browser: Any = None) -> Pa
             meta, tag_levels, steps = _run(browser, page_html, new_img)
         new_md = tmp / md_name
         new_md.write_text(_compose(meta, tag_levels, steps), encoding="utf-8")
-        return _publish(new_img, new_md, out_dir / "pdf-img", out_dir / md_name, tmp / "backup")
+        return _publish(new_img, new_md, out_dir / "pdf-img", out_dir / md_name, tmp / "backup", publish)
     finally:
         shutil.rmtree(work, ignore_errors=True)
-        if not (tmp / _RESTORE_FAILED).exists():  # 還原失敗時，備份是唯一的舊圖，不刪
+        if not publish.keep_tmp:  # 還原失敗時，備份是唯一的舊圖，不刪
             shutil.rmtree(tmp, ignore_errors=True)
 
 
-_RESTORE_FAILED = "RESTORE_FAILED.txt"
+class _PublishState:
+    """記憶體旗標：開始發布時設 True，發布成功或還原成功才設回 False；finally 只看它。"""
+
+    keep_tmp = False
 
 
-def _publish(new_img: Path, new_md: Path, final_img: Path, final_md: Path, backup: Path) -> Path:
+def _publish(
+    new_img: Path, new_md: Path, final_img: Path, final_md: Path, backup: Path, state: _PublishState
+) -> Path:
     """用新圖資料夾與新 md 替換正式版；任何例外（含 KeyboardInterrupt）都先把舊圖片資料夾還原再往上拋。
 
-    還原也失敗時，在暫存區寫下 `RESTORE_FAILED.txt` 並在 stderr 印出備份路徑，呼叫端據此保留暫存區。
+    還原也失敗時 `state.keep_tmp` 維持 True，呼叫端保留暫存區；標記檔與 stderr 提示盡力而為，
+    寫不出來也不影響保留的決定與原例外。
     """
+    state.keep_tmp = True
     backup.mkdir()
     had_old = final_img.exists()
     if had_old:
@@ -322,12 +331,21 @@ def _publish(new_img: Path, new_md: Path, final_img: Path, final_md: Path, backu
                 shutil.rmtree(final_img)
             if had_old:
                 (backup / "pdf-img").rename(final_img)
+            state.keep_tmp = False
         except BaseException as restore_exc:  # noqa: BLE001 - 還原途中被中斷也要保留備份
-            msg = f"還原舊圖失敗（{restore_exc!r}）。舊圖備份在 {backup / 'pdf-img'}，請手動搬回 {final_img}。"
-            (backup.parent / _RESTORE_FAILED).write_text(msg, encoding="utf-8")
-            print(msg, file=sys.stderr)
+            _report_restore_failure(restore_exc, backup, final_img)
         raise
+    state.keep_tmp = False
     return final_md
+
+
+def _report_restore_failure(exc: BaseException, backup: Path, final_img: Path) -> None:
+    """盡力在暫存區留標記檔並在 stderr 提示備份位置；任何一步失敗都吞掉。"""
+    msg = f"還原舊圖失敗（{exc!r}）。舊圖備份在 {backup / 'pdf-img'}，請手動搬回 {final_img}。"
+    with contextlib.suppress(Exception):  # 提示失敗不得影響保留備份
+        (backup.parent / "RESTORE_FAILED.txt").write_text(msg, encoding="utf-8")
+    with contextlib.suppress(Exception):
+        print(msg, file=sys.stderr)
 
 
 def _run(browser: Any, page_html: Path, img_dir: Path) -> tuple[dict[str, Any], dict[str, int], list[dict[str, Any]]]:
