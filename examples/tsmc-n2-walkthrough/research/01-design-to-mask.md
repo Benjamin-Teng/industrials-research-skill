@@ -188,7 +188,8 @@
 
 ## 9. 替代維基百科的來源（2026-11-07 補）
 
-依方法檔 3.3，維基百科只當線索，引用時改引原始文件或其他第 1～4 級來源。下列來源都是非 TSMC 的一般做法說明，分級為 3.1 第 4 級（間接來源）。
+依方法檔 3.3，維基百科只當線索，引用時改引原始文件或其他第 1～4 級來源。下列來源都是非 TSMC 的一般做法說明，分級為 3.1 第 4 級（間接來源）；
+專利只引先前技術段（方法檔 3.2），唯一一句實施例另外註明，不當一般做法。
 查證日一律 2026-11-07；引文以下載的頁面原始碼逐字比對（Google Patents 只比對說明書本文）。
 
 ### 9.1 設計驗證與 tape-out（互動頁步驟 2、3）
@@ -219,7 +220,7 @@
 |---|---|---|---|
 | EUV 靠反射，不靠穿透 | "However, extreme ultraviolet light, which is generally in the 5 to 100 nanometer wavelength range, is strongly absorbed in virtually all materials. For that reason, extreme ultraviolet systems work by reflection rather than by transmission of light." | https://patents.google.com/patent/US11630385B2/en（Applied Materials 專利，2023-04-18 核准；先前技術段） | 第 4 級（設備商專利，當一般做法） |
 | 鉬／矽多層膜 | "The lens elements and mask blanks of extreme ultraviolet lithography systems are coated with reflective multilayer coatings of materials such as molybdenum and silicon." | 同上 | 第 4 級 |
-| 多層膜的對數（實施例） | "In a non-limiting embodiment, the multilayer stack 306 includes a range of 20-60 of the reflective pairs 316 for a total of up to 120 reflective layers." | 同上 | 第 4 級（實施例，不是一般規格） |
+| Applied Materials 申請過這種做法的專利：實施例的多層膜是 20 到 60 對（40 到 120 層） | "In a non-limiting embodiment, the multilayer stack 306 includes a range of 20-60 of the reflective pairs 316 for a total of up to 120 reflective layers." | 同上（Detailed Description 的 FIG. 4 實施例，不是先前技術段） | 依方法檔 3.2 只能寫成「該公司申請過這種做法的專利」，不當一般做法；互動頁沒有引用這一句 |
 | 沒有吸收層的地方反射 | "FIG. 1 shows a conventional EUV reflective mask 10 , which is formed from an EUV mask blank, which includes a reflective multilayer stack 12 on a substrate 14 , which reflects EUV radiation at unmasked portions by Bragg interference." | https://patents.google.com/patent/US11366379B2/en（Applied Materials 專利，2022-06-21 核准；先前技術段） | 第 4 級 |
 | 覆蓋層在蝕刻時保護多層膜 | "A capping layer 22 is formed over the reflective multilayer stack 12 and protects the reflective multilayer stack 12 during the etching process." | 同上 | 第 4 級 |
 | 吸收層：以 TaN 為主的材料是一例 | "For example, TaN-based or other absorber layers on top of the multilayer stack 12 require a thickness of at least 40 nm, typically in a range of from 51 nm to 77 nm, which is very thick." | 同上 | 第 4 級 |
@@ -227,7 +228,7 @@
 | 保護膜裝在框架上 | "The pellicle may be supported by a pellicle frame, forming a pellicle assembly." | 同上 | 第 4 級 |
 
 - 範圍：以上都在講一般做法，沒有一筆講 TSMC 或 N2。
-- 找不到第 1～4 級來源而從頁面刪掉的說法：「晶圓廠在 tape-out 前會檢查並修改光罩資料」「轉角圓化很難完全補償」「保護膜讓灰塵落在離圖形夠遠的地方、不會被印出來」「光罩寫入機也可用雷射」「多層膜 40 到 50 層」。
+- 找不到第 1～4 級來源而從頁面刪掉的說法：「晶圓廠在 tape-out 前會檢查並修改光罩資料」「轉角圓化很難完全補償」「保護膜讓灰塵落在離圖形夠遠的地方、不會被印出來」「光罩寫入機也可用雷射」「多層膜 40 到 50 層」；r5 起「幾十層」也改成「多層」。
 
 ---
 
