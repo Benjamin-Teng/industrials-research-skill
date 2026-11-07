@@ -230,7 +230,7 @@ DOM id 沿用 N2，產生衍生成品的腳本依這些 id 擷取文字。`<scri
 `research-report-output` 的 `scripts/`）：
 
 ```bash
-# 1. 互動頁 → md ＋ 逐拍截圖（pdf-img/sNN-B.png）
+# 1. 互動頁 → md ＋ 逐拍截圖（pdf-img/<md 檔名去副檔名>/sNN-B.png）
 python <skill>/scripts/build_walkthrough_md.py <互動頁.html> <成品資料夾> <md 檔名>
 # 2. 數字密度檢查，要 0 命中
 python <report-output>/fa_check.py <成品資料夾>/<md 檔名>
@@ -240,7 +240,11 @@ python <report-output>/md2pdf.py <成品資料夾>/<md 檔名>
 
 - 第 1 步只讀互動頁上實際顯示的文字：front matter、閱讀說明、KPI、幕導語取自 `META`（見 5.1），
   廠商與來源徽章取自 `STEPS`、`SUP`、`SRC`、`TAG`。必填欄位或 `META` 欄位缺值時腳本直接停止，不產出 md。
-- 截圖檔名的 `NN` 是兩位數步號，`B` 從 1 起算的拍號，與 md 的圖片連結一致。
+  來源也一樣：`sources` 的 key 不在 `SRC`、來源缺 `label` 或 `url`、`url` 不是 http(s) 時，腳本停止並寫明步號與來源 key。
+- 廠商區底部的說明段落（●／○ 的意思、「沒有逐家證明用在這一步」與 `META.supCaveat`）照頁面原文放進 md。
+- 截圖放在 `pdf-img/<md 檔名去副檔名>/`，一個版本的 md 一個子目錄，所以新舊版 md 可以並存在同一個成品資料夾。
+  重產只替換那一版自己的子目錄。檔名的 `NN` 是兩位數步號，`B` 從 1 起算的拍號，與 md 的圖片連結一致。
+  md 檔名會變成圖片路徑，所以只用不含空白與括號的檔名。
 - 第 2 步有命中時，回頭改互動頁的文字（把段落拆短），不改 md；改完從第 1 步重跑。
 - 腳本依賴 Playwright（chromium）與同一個 plugin 內的 `research-report-output`；`md2pdf.py` 另需 pandoc。
 
@@ -254,7 +258,7 @@ python <report-output>/md2pdf.py <成品資料夾>/<md 檔名>
 - md
 - PDF
 - `img/`
-- `pdf-img/`
+- `pdf-img/`：逐拍截圖，每個版本的 md 一個子目錄（見 5.2）
 - `research/`：證據檔與審查紀錄
 - `README.md`
 

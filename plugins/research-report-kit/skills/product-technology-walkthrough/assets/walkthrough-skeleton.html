@@ -536,7 +536,10 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
   let selPart = null;
   let imm = false;
   const $ = id => document.getElementById(id);
-  const partOf = id => PARTS[id] || miss(`材料 ${id}`, { name: '', en: '', text: '' });
+  const partOf = id => {
+    const p = PARTS[id] || miss(`材料 ${id}`, {});
+    return { name: need(p.name, `材料 ${id} 的 name`), en: need(p.en, `材料 ${id} 的 en`), text: need(p.text, `材料 ${id} 的 text`) };
+  };
 
   function renderMeta() {
     $('kicker').textContent = need(META.kicker, 'META.kicker');
@@ -655,13 +658,20 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
     (s.sources || miss(`步驟 ${s.n} 的 sources`, [])).forEach(id => {
       const o = SRC[id];
       if (!o) { miss(`來源 ${id}`); return; }
-      const li = document.createElement('li');
-      li.innerHTML = `<span class="t" style="color:var(--tag-${o.t})">${need(TAG[o.t] && TAG[o.t].name, `來源類型 ${o.t}`)}</span><a href="${o.url}" target="_blank" rel="noopener">${o.label}</a>`;
+      // data-src 讓產生衍生成品的腳本對得回來源 key；url 缺值時不放 href，避免被解析成本機路徑
+      const li = document.createElement('li'); li.dataset.src = id;
+      const url = need(o.url, `來源 ${id} 的 url`);
+      li.innerHTML = `<span class="t" style="color:var(--tag-${o.t})">${need(TAG[o.t] && TAG[o.t].name, `來源類型 ${o.t}`)}</span><a${url ? ` href="${url}"` : ''} target="_blank" rel="noopener">${need(o.label, `來源 ${id} 的 label`)}</a>`;
       src.appendChild(li);
     });
+    const supGroup = g => {
+      const sg = SUP[g] || miss(`廠商類別 ${g}`, {});
+      const list = (sg.list || miss(`廠商類別 ${g} 的 list`, [])).map(([nm, lv], i) =>
+        `<span class="sup ${lv}">${lv === 'S' ? '●' : '○'} ${need(nm, `廠商類別 ${g} 第 ${i + 1} 家的名稱`)}</span>`).join('');
+      return `<div class="supg"><b>${need(sg.name, `廠商類別 ${g} 的 name`)}</b><span>${list}</span></div>`;
+    };
     $('suppliers').innerHTML = s.sup
-      ? s.sup.map(g => `<div class="supg"><b>${SUP[g].name}</b><span>${SUP[g].list.map(([nm, lv]) =>
-          `<span class="sup ${lv}">${lv === 'S' ? '●' : '○'} ${nm}</span>`).join('')}</span></div>`).join('')
+      ? s.sup.map(supGroup).join('')
         + `<p class="muted">● 有公開資料顯示供貨給${META.subject}或與${META.subject}合作（供應商獎、官方名單、雙方新聞稿或媒體報導）　○ 該類主要廠商。名單依類別列出，沒有逐家證明用在這一步${META.supCaveat ? '，' + META.supCaveat : ''}。</p>`
       : need(s.supNote, `步驟 ${s.n} 的 sup 或 supNote`);
 

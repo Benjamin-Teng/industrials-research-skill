@@ -191,3 +191,40 @@ def test_supplier_note_appends_caveat(tmp_path):  # META.supCaveat：研究對�
         pg = open_page(browser, variant, tmp_path / "out")
         pg.evaluate("walkthrough.go(3, 0)")
         assert pg.text_content(SUP_NOTE).endswith("沒有逐家證明用在這一步，也沒有任何一家明確指出供應示範產品。")
+
+
+@demo_only
+def test_missing_source_supplier_and_part_fields_show_empty_and_log_error(tmp_path):
+    """SRC 的 label／url、廠商類別名稱、廠商名稱、PARTS 的 name／en／text 缺值：畫面不出現 undefined，console 留錯誤。"""
+    variant = _variant(
+        tmp_path,
+        [
+            ("label: '示範：公司年報（虛構）', url: 'https://example.com/annual-report'", "url: 'https://example.com/annual-report'"),
+            ("label: '示範：同類技術的教科書說明（虛構）', url: 'https://example.com/textbook'", "label: '示範：同類技術的教科書說明（虛構）'"),
+            ("{ name: '示範類別：製程設備', list: [['示範廠商甲', 'S'],", "{ list: [[null, 'S'],"),
+            ("'demo-base': { name: '基板', en: 'Substrate', text: '示範材料：所有元件都建在它上面。' }", "'demo-base': {}"),
+        ],
+    )
+    errors: list[str] = []
+    with launch("chromium") as browser:
+        pg = open_page(browser, variant, tmp_path / "out", console_errors=errors)
+        for n, b in all_beats(pg):
+            pg.evaluate("([n,b]) => walkthrough.go(n,b)", [n, b])
+            shown = pg.evaluate(SHOWN_TEXT_AND_LABELS)
+            assert "undefined" not in shown and "null" not in shown, (n, b, shown)
+            hrefs = pg.evaluate("[...document.querySelectorAll('#sources a')].map(a => a.getAttribute('href'))")
+            assert all(h is None or h.startswith("https://") for h in hrefs), (n, b, hrefs)
+        pg.evaluate("walkthrough.go(1, 0)")
+        pg.locator('#svgA [data-part="demo-base"].on').first.dispatch_event("click")
+        part = pg.text_content("#part")
+        assert "undefined" not in part, part
+    for what in (
+        "來源 demo_ar 的 label",
+        "來源 demo_generic 的 url",
+        "廠商類別 demo 的 name",
+        "廠商類別 demo 第 1 家的名稱",
+        "材料 demo-base 的 name",
+        "材料 demo-base 的 en",
+        "材料 demo-base 的 text",
+    ):
+        assert any(f"{what} 缺值" in e for e in errors), (what, errors)

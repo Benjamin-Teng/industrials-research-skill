@@ -19,6 +19,8 @@
   `window.walkthrough` 的格式見方法檔 5.1。
 - **`scripts/build_walkthrough_md.py`**：互動頁逐拍轉 md 與截圖。重產採暫存區，失敗時不會動到原成品；
   發布中斷或還原失敗時保留舊圖備份；必填欄位或 `META` 欄位缺值時直接停止，不產出 md；CLI 支援相對路徑。
+  截圖目錄依報告檔名分開（`pdf-img/<md 檔名去副檔名>/`），新舊版 md 可並存；來源缺 label 或 url、
+  key 不在 `SRC`、url 不是 http(s) 時擋下；廠商區的說明段落（含 `META.supCaveat`）照頁面原文放進 md。
 - **`scripts/schematic_topology.py`**：示意圖連接關係檢查，逐拍傾印 `data-net`、`data-kind` 標註的矩形，
   檢查懸空端點、短路、過近與孤立通孔，輸出連接表。exit code：0 沒有問題且至少一拍有標註元件、
   1 任一拍有問題、2 受檢的拍都沒有標註元件（不算通過）、3 用法或頁面錯誤（含 Playwright 例外）。

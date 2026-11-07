@@ -4,7 +4,8 @@
 
 - 互動頁是沒有 `<!doctype html>` 外殼的片段；本腳本包上外殼後放進 `<互動頁所在資料夾>/_pdfwork`
   開啟，完成（或失敗）後刪除 `_pdfwork`。
-- 截圖存到 `<輸出資料夾>/pdf-img/sNN-B.png`（NN 是兩位數步號，B 從 1 起算的拍號），md 以相對路徑引用。
+- 截圖存到 `<輸出資料夾>/pdf-img/<md 檔名去副檔名>/sNN-B.png`（NN 是兩位數步號，B 從 1 起算的拍號），
+  md 以相對路徑引用。每個版本的 md 各有一個子目錄，重產只替換自己的那一個。
 - front matter、閱讀說明、KPI、幕導語全部取自頁面的 `window.walkthrough.meta`；文字只擷取頁面上
   實際顯示的內容，不另外改寫。
 - 擷取一律用 `textContent`：收合的 `<details>` 或隱藏元素用 innerText 讀會回空字串而且不報錯。
@@ -87,12 +88,20 @@ _EXTRACT = """() => {
     badges: [...document.querySelectorAll('#badges .badge')].map(b => txt(b)),
     detail: [...document.querySelectorAll('#detail p')].map(p => txt(p)),
     sources: [...document.querySelectorAll('#sources li')].map(li => ({
+      key: li.dataset.src || '',
       tag: txt(li.querySelector('.t')),
       label: li.querySelector('a') ? txt(li.querySelector('a')) : txt(li),
       url: li.querySelector('a')?.href || '' })),
     sup,
-    supNote: sup.length ? '' : t('suppliers') };
+    // 列了廠商時是廠商區底部的說明段落（含 META.supCaveat），沒列時是 supNote，一律原文
+    supNote: sup.length ? [...document.querySelectorAll('#suppliers > p')].map(p => txt(p)).join(' ') : t('suppliers') };
 }"""
+
+# 舊版骨架的模板直接插入缺值，畫面上會是這兩個字樣
+_BLANK = {"", "undefined", "null"}
+
+# md 檔名同時是圖片子目錄名與 md 內的圖片路徑：不得含目錄、空白、括號與角括號
+_MD_NAME = re.compile(r"[^\s()\[\]<>/\\]+\.md")
 
 
 def wrap_fragment(html: str) -> str:
@@ -172,7 +181,7 @@ def _capture(page: Any, steps: list[dict[str, Any]], tag_levels: dict[str, int],
             for field in ("title", "plain", "now"):
                 _require(d[field], n, b + 1, field)
             if record is None:
-                _check_step_level(d, n, tag_levels)
+                _check_step_level(d, n, tag_levels, step["sources"])
                 record = {
                     "n": n,
                     "act": step["act"],
@@ -187,30 +196,55 @@ def _capture(page: Any, steps: list[dict[str, Any]], tag_levels: dict[str, int],
     return out
 
 
-def _check_step_level(d: dict[str, Any], n: int, tag_levels: dict[str, int]) -> None:
-    """步驟層級的欄位：細節段落、來源、徽章不得有空白項；沒列廠商時要有說明。"""
+def _check_step_level(d: dict[str, Any], n: int, tag_levels: dict[str, int], keys: list[str]) -> None:
+    """步驟層級的欄位：細節段落、來源、徽章、廠商不得有空白項；廠商區一定要有說明。"""
     if "　|" not in d["eyebrow"]:
         raise ValueError(f"step {n}.1: eyebrow 格式不符（缺「　|」分隔）：{d['eyebrow']!r}")
     if any(not p for p in d["detail"]):
         raise ValueError(f"step {n}.1: detail 有空白段落")
-    if any(not s["label"] for s in d["sources"]):
-        raise ValueError(f"step {n}.1: sources 有空白的來源名稱")
     if any(not s for s in d["badges"]):
         raise ValueError(f"step {n}.1: badges 有空白項")
-    if not d["sup"]:
-        _require(d["supNote"], n, 1, "supNote")
-    for s in d["sources"]:
+    _require(d["supNote"], n, 1, "supNote")
+    for g in d["sup"]:
+        if g["name"] in _BLANK:
+            raise ValueError(f"step {n}.1: 廠商類別名稱為空")
+        if any(x.lstrip("●○").strip() in _BLANK for x in g["list"]):
+            raise ValueError(f"step {n}.1: 廠商類別 {g['name']} 有空白的廠商名稱")
+    _check_sources(d["sources"], n, tag_levels, keys)
+
+
+def _check_sources(sources: list[dict[str, str]], n: int, tag_levels: dict[str, int], keys: list[str]) -> None:
+    """每個來源 key 都要在 SRC 內，且有 label 與 http(s) 的 url。
+
+    頁面對 SRC 沒有的 key 不畫列表項，所以畫出來的項目與 `STEPS[].sources` 逐一比對。骨架的列表項帶
+    `data-src`；舊版骨架沒有，數量相同時依順序對應。
+    """
+    if all(s["key"] for s in sources):
+        rendered = [s["key"] for s in sources]
+        unknown = [str(k) for k in keys if k not in rendered]
+        if unknown:
+            raise ValueError(f"step {n}.1: 來源 {'、'.join(unknown)} 不在 SRC")
+    elif len(sources) == len(keys):
+        rendered = [str(k) for k in keys]
+    else:
+        raise ValueError(f"step {n}.1: sources {keys} 有鍵不在 SRC（頁面只畫出 {len(sources)} 項）")
+    for key, s in zip(rendered, sources, strict=True):
+        if s["label"] in _BLANK:
+            raise ValueError(f"step {n}.1: 來源 {key} 缺 label")
         if s["tag"] not in tag_levels:
-            raise ValueError(f"step {n}.1: 來源類型 {s['tag']!r} 不在 walkthrough.tags 內")
+            raise ValueError(f"step {n}.1: 來源 {key} 的類型 {s['tag']!r} 不在 walkthrough.tags 內")
+        if not s["url"]:
+            raise ValueError(f"step {n}.1: 來源 {key} 缺 url")
+        if not re.match(r"https?://", s["url"]):
+            raise ValueError(f"step {n}.1: 來源 {key} 的 url 不是 http(s)：{s['url']!r}")
 
 
-def _compose(meta: dict[str, Any], tag_levels: dict[str, int], steps: list[dict[str, Any]]) -> str:
+def _compose(meta: dict[str, Any], tag_levels: dict[str, int], steps: list[dict[str, Any]], img_rel: str) -> str:
     guide = meta.get("readingGuide") or []
     if not guide:
         raise ValueError("META.readingGuide 缺值")
     act_lead = meta.get("actLead") or {}
-    subject = meta.get("subject")
-    if not subject:
+    if not meta.get("subject"):
         raise ValueError("META.subject 缺值")
 
     L: list[str] = [front_matter(meta), "## 閱讀說明", "", guide[0], ""]
@@ -230,7 +264,7 @@ def _compose(meta: dict[str, Any], tag_levels: dict[str, int], steps: list[dict[
         for i, bt in enumerate(st["beats"], 1):
             L += [f"**第 {i} 拍**", "", bt["now"], ""]
             # 截圖已含兩張圖的標題與圖說；替代文字留空，避免 pandoc 再產生一次圖說
-            L += [f"![](pdf-img/{bt['img']})", ""]
+            L += [f"![]({img_rel}/{bt['img']})", ""]
         if st["detail"]:
             L += ["#### 細節", ""]
             for p in st["detail"]:
@@ -241,7 +275,8 @@ def _compose(meta: dict[str, Any], tag_levels: dict[str, int], steps: list[dict[
         L += ["#### 相關廠商", ""]
         if st["sup"]:
             # 表格：每家廠商一行（<br>），台股代號不會和同段其他數字疊加
-            L += [f"> 依類別列出；● 有公開資料顯示供貨給{subject}或與{subject}合作，○ 為該類主要廠商。", ""]
+            # 說明段落照頁面原文（含 META.supCaveat）；放在表格前，先讀到 ●／○ 的意思
+            L += [f"> {st['supNote']}", ""]
             L += ["| 類別 | 廠商 |", "| --- | --- |"]
             L += [f"| {g['name']} | {'<br>'.join(g['list'])} |" for g in st["sup"]] + [""]
         else:
@@ -259,7 +294,10 @@ def _compose(meta: dict[str, Any], tag_levels: dict[str, int], steps: list[dict[
 def build(page: Path, out_dir: Path, md_name: str, *, browser: Any = None) -> Path:
     """互動頁 → md 與逐拍截圖。回傳 md 路徑。
 
-    截圖與 md 先產生在 `out_dir/_build_tmp/`，全部驗證成功才替換正式的 `pdf-img/` 與 md；
+    截圖放在 `out_dir/pdf-img/<md 檔名去副檔名>/`，每個版本的 md 各用一個子目錄（output-spec 要求新舊版並存）；
+    重產只替換這份 md 自己的子目錄，其他版本的子目錄與 `pdf-img/` 底下其他檔案不動。
+
+    截圖與 md 先產生在 `out_dir/_build_tmp/`，全部驗證成功才替換正式的圖片子目錄與 md；
     中途失敗（含 KeyboardInterrupt）時，原有的 md 與圖片還原，暫存區清掉。只有「還原也失敗」時才保留
     暫存區與舊圖備份，並在 stderr 印出備份路徑。不做下次啟動時的交易恢復：md 與 pdf-img 都是互動頁的
     衍生物，壞了重產即可。
@@ -267,6 +305,9 @@ def build(page: Path, out_dir: Path, md_name: str, *, browser: Any = None) -> Pa
     `browser` 傳入已啟動的 Playwright browser 時沿用（同一個 process 只能有一個 sync Playwright）；
     省略時自己啟動 headless chromium。
     """
+    if not _MD_NAME.fullmatch(md_name):
+        raise ValueError(f"md 檔名必須是不含目錄、空白與括號的 .md 檔名：{md_name!r}")
+    stem = md_name.removesuffix(".md")
     page = page.resolve()
     out_dir = out_dir.resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -295,8 +336,9 @@ def build(page: Path, out_dir: Path, md_name: str, *, browser: Any = None) -> Pa
         else:
             meta, tag_levels, steps = _run(browser, page_html, new_img)
         new_md = tmp / md_name
-        new_md.write_text(_compose(meta, tag_levels, steps), encoding="utf-8")
-        return _publish(new_img, new_md, out_dir / "pdf-img", out_dir / md_name, tmp / "backup", publish)
+        new_md.write_text(_compose(meta, tag_levels, steps, f"pdf-img/{stem}"), encoding="utf-8")
+        final_img = out_dir / "pdf-img" / stem
+        return _publish(new_img, new_md, final_img, out_dir / md_name, tmp / "backup", publish)
     finally:
         shutil.rmtree(work, ignore_errors=True)
         if not publish.keep_tmp:  # 還原失敗時，備份是唯一的舊圖，不刪
@@ -312,13 +354,14 @@ class _PublishState:
 def _publish(
     new_img: Path, new_md: Path, final_img: Path, final_md: Path, backup: Path, state: _PublishState
 ) -> Path:
-    """用新圖資料夾與新 md 替換正式版；任何例外（含 KeyboardInterrupt）都先把舊圖片資料夾還原再往上拋。
+    """用新圖資料夾與新 md 替換正式版（`final_img` 是這份 md 自己的子目錄）；任何例外（含 KeyboardInterrupt）都先把舊圖片資料夾還原再往上拋。
 
     還原也失敗時 `state.keep_tmp` 維持 True，呼叫端保留暫存區；標記檔與 stderr 提示盡力而為，
     寫不出來也不影響保留的決定與原例外。
     """
     state.keep_tmp = True
     backup.mkdir()
+    final_img.parent.mkdir(exist_ok=True)
     had_old = final_img.exists()
     if had_old:
         final_img.rename(backup / "pdf-img")
@@ -363,7 +406,9 @@ def _run(browser: Any, page_html: Path, img_dir: Path) -> tuple[dict[str, Any], 
         pg.wait_for_function("() => window.walkthrough !== undefined")
         meta = pg.evaluate("walkthrough.meta")
         tags = pg.evaluate("walkthrough.tags")
-        outline = pg.evaluate("walkthrough.steps.map(s => ({ n: s.n, act: s.act, beats: s.beats.length }))")
+        outline = pg.evaluate(
+            "walkthrough.steps.map(s => ({ n: s.n, act: s.act, beats: s.beats.length, sources: s.sources || [] }))"
+        )
         tag_levels = {v["name"]: v["level"] for v in tags.values()}
         steps = _capture(pg, outline, tag_levels, img_dir)
         if errors:
