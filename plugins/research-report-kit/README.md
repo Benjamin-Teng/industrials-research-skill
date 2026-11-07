@@ -14,11 +14,12 @@
 |---|---|---|
 | **`research-report-output`** | 格式與交付：檔名、front matter、章節骨架、F1–F5 排版鐵則、PDF 產檔、輸出模式 | 「寫一份研究報告」「做個股深度研究」「幫我出 PDF 版報告」 |
 | **`business-industry-analysis`** | 企業與產業分析：營收來源與單位經濟、逐營收來源 SWOT、產業鏈與利潤池、同業替代與護城河；不評價股價 | 「個股深度研究」「幫我研究」「商業模式」「營收拆解」「單位經濟」「護城河」「產業鏈上下游」「利潤池」「這家公司靠什麼賺錢」 |
+| **`product-technology-walkthrough`** | 產品技術拆解：跟著產品最小單位走一遍，說明產品線與供應鏈怎麼跑、來源分級、示意圖審查；互動頁在 Claude Code 生成，Codex 只做蒐集與整合；不評價股價；md 與 PDF 交付依賴 `research-report-output` | 「產品技術拆解」「技術報告」「製程步驟」「產品怎麼做出來」「設備與材料廠商」「技術細節」 |
 | **`equity-valuation-discipline`** | 內容紀律：價格隱含預期與預期差、模型路由、三種價值／報酬分離、R/R 與示範機率、決策門檻、發布前檢查 | 「DCF」「SOTP」「目標價」「reverse DCF」「預期差」「R/R」「這檔值不值得買」 |
 | **`product-cycle-rotation`** | 產業掃描：product cycle 五問、T-18～T+6 時間軸、channel check SOP、催化劑框架 | 「誰受惠」「design win」「BOM 拆解」「供應鏈輪動」 |
 | **`price-routing`** | 取價路由：偵測可用行情工具 → 依市場選路 → 沒有 MCP 時退回 yfinance | 任何需要股價的場景 |
 
-五個 skill 可以分開用。只想要排版與產檔的人，把後四個刪掉也能運作。
+六個 skill 可以分開用。只想要排版與產檔的人，把後五個刪掉也能運作。
 
 ---
 
@@ -134,6 +135,10 @@ research-report-kit/
     │   ├── SKILL.md
     │   ├── agents/openai.yaml
     │   └── references/business-industry-method.md  # Layer 1 方法論單一來源
+    ├── product-technology-walkthrough/
+    │   ├── SKILL.md
+    │   ├── agents/openai.yaml
+    │   └── references/product-technology-method.md  # 產品技術拆解方法論單一來源
     ├── equity-valuation-discipline/
     │   ├── SKILL.md
     │   ├── references/
