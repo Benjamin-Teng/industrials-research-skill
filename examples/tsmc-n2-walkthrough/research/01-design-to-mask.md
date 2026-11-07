@@ -140,6 +140,16 @@
 
 **查無**：TSMC 光罩廠使用的電子束寫入機型號／多束寫入（MBMW）採用現況、N2 光罩寫入時間、EUV mask blank 供應商。已搜關鍵字：TSMC multi-beam mask writer N2、TSMC mask shop e-beam writer、TSMC EUV mask blank。僅查到：IMS 稱其 MBMW-301 針對 2nm 以下節點（廠商說法，未點名 TSMC 使用；TSMC 早年曾加入 IMS 多束寫入機開發，為舊資料）。
 
+**電子束寫入與光阻（2026-11-07 補，供互動頁步驟 5.2 的「光阻」說明）**
+
+| 論斷 | 逐字引文 | 來源 URL | 類型 |
+|---|---|---|---|
+| 電子束在光阻上畫圖形、顯影、再以蝕刻轉到底下材料（一般做法，非 TSMC 專屬） | "Electron-beam lithography (often abbreviated as e-beam lithography or EBL) is the practice of scanning a focused beam of electrons to draw custom shapes on a surface covered with an electron-sensitive film called a resist (exposing). The electron beam changes the solubility of the resist, enabling selective removal of either the exposed or non-exposed regions of the resist by immersing it in a solvent (developing). The purpose, as with photolithography, is to create very small structures in the resist that can subsequently be transferred to the substrate material, often by etching." | https://en.wikipedia.org/wiki/Electron-beam_lithography | 【第三方】百科；方法檔 3.1 第 4 級（間接來源） |
+| 電子束微影用在光罩製作（一般做法） | "This form of maskless lithography has high resolution but low throughput, limiting its usage to photomask fabrication, low-volume production of semiconductor devices, and research and development." | 同上 | 【第三方】百科；第 4 級 |
+
+- 查證日：2026-11-07（以頁面原始碼逐字比對）。
+- 範圍：只說明一般做法，沒有講 TSMC 或 EUV 光罩用哪一種光阻、正型或負型。
+
 ---
 
 ## 7. 光罩檢測、修補與 pellicle

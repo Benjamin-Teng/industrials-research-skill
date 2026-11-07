@@ -205,6 +205,7 @@
   - URL：https://amkor.com/services/wafer-bumping/
 - 引文（Amkor WLCSP 頁）：「WLCSP includes wafer bumping (with or without pad layer redistribution or RDL), wafer level final test (probe), device singulation and packing in tape & reel to support a full turnkey solution.」
   - URL：https://amkor.com/packaging/wafer-level-packaging/wlcsp/
+  - 2026-11-07 重新開啟，引文仍在原頁；方法檔 3.1 第 4 級（間接來源）。互動頁步驟 14 的「接墊」說明引用這一句。
 - 來源類型：通用第三方（OSAT 官網，無發布日期）
 - 備註：日月光（ASE）Bumping 頁（https://ase.aseglobal.com/?p=55）對本流程直接抓取回 403，**未能逐字核對**，僅有搜尋摘要提到其凸塊自 1999 年提供，故不列引文。
 - 備註：TrendForce 轉述 ETNews 稱，CoW 外包設備投資聚焦於「dicing equipment for cutting wafers and interposers and bonding equipment」（見第 8 節，屬媒體傳聞）。

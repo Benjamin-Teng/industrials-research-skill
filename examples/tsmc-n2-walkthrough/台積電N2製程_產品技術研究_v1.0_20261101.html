@@ -373,6 +373,8 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
     wiki_euv: { t: 'generic', label: '維基百科：Extreme ultraviolet lithography', url: 'https://en.wikipedia.org/wiki/Extreme_ultraviolet_lithography' },
     wiki_photomask: { t: 'generic', label: '維基百科：Photomask', url: 'https://en.wikipedia.org/wiki/Photomask' },
     toms_pellicle: { t: 'media', label: "Tom's Hardware：台積電如何提升 EUV 設備效率（2025-09-17）", url: 'https://www.tomshardware.com/tech-industry/semiconductors/how-tsmc-managed-to-increase-efficiency-of-asmls-euv-tools-system-level-optimizations-and-in-house-pellicles-chipmaker-boosted-euv-driven-wafer-production-by-30x-over-six-years-while-reducing-power-consumption-by-24-percent' },
+    wiki_ebl: { t: 'generic', label: '維基百科：Electron-beam lithography', url: 'https://en.wikipedia.org/wiki/Electron-beam_lithography' },
+    amkor_wlcsp: { t: 'generic', label: 'Amkor：Wafer Level CSP（WLCSP）', url: 'https://amkor.com/packaging/wafer-level-packaging/wlcsp/' },
     pr3338: { t: 'official', label: '台積電與 ASML 聯合新聞稿：12 吋 EUV 光罩計畫', url: 'https://pr.tsmc.com/english/news/3338' },
     iedm_fig11: { t: 'paper', label: "台積電 IEDM 2024 論文 Fig.11（經 Tom's Hardware 轉載）", url: 'https://www.tomshardware.com/tech-industry/tsmc-shares-deep-dive-details-about-its-cutting-edge-2nm-process-node-at-iedm-2024-35-percent-less-power-or-15-percent-more-performance' },
     ar2025: { t: 'official', label: '台積電 2025 年報第 5 章', url: 'https://investor.tsmc.com/static/annualReports/2025/english/pdf/2025_tsmc_ar_e_ch5.pdf' },
@@ -478,7 +480,7 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
     'cap': { name: '覆蓋層', en: 'Capping layer', text: '蓋在多層膜上的薄膜，吸收層就做在它上面。' },
     'absorber': { name: '吸收層', en: 'Absorber', text: '鉭系材料，會吸收 EUV 光。有吸收層的地方不反射，沒有的地方反射，圖形就這樣定義出來。' },
     'defect': { name: '光罩缺陷', en: 'Mask defect', text: '光罩上的缺陷可能跟著圖形一起印到晶圓上，所以要檢測、修補，再確認能不能印出來。' },
-    'resist': { name: '光阻', en: 'Resist', text: '塗在吸收層上的感光材料。電子束把圖形寫在光阻上，顯影之後，沒有光阻保護的吸收層再被蝕刻掉（示意）。' },
+    'resist': { name: '光阻', en: 'Resist', text: '對電子束敏感的薄膜，圖中塗在吸收層上。電子束在光阻上畫出圖形，顯影時移除照過或沒照過的其中一種區域，再用蝕刻把圖形轉到底下的材料（業界通用）。圖中畫的是移除照過的區域。' },
     'pellicle': { name: '保護膜', en: 'Pellicle', text: '撐在框架上的透明薄膜，讓灰塵落在離圖形夠遠的地方，不會被印出來。' },
     'ild2': { name: '層間絕緣層', en: 'Dielectric layer', text: '把接點、金屬導線一層層隔開的絕緣材料，導線就埋在裡面。' },
     'node': { name: '已量產的節點', en: 'Process node (in production)', text: '已經量產的製程世代，位置是量產年份（約略）。' },
@@ -487,7 +489,7 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
     'beol': { name: '後段金屬導線', en: 'BEOL interconnect', text: '一層層的金屬導線與層間通孔，把電晶體連成電路，越下層越細越密。金屬層數與間距台積電沒有公開。' },
     'mim': { name: 'MiM 電容', en: 'SHP-MiM capacitor', text: '金屬－絕緣體－金屬構成的電容，用來穩定供電。N2 的超高效能 MiM 約 200 fF/mm²（論文 Fig.11 圖內文字）。' },
     'rdl': { name: '銅重布線層', en: 'Cu RDL', text: '晶片上方的低電阻銅導線，負責銜接先進封裝（台積電官網與論文 Fig.11）。' },
-    'rdlpad': { name: '接墊', en: 'Bond pad', text: 'RDL 末端的金屬接墊，從保護層的開口露出來，之後在這裡做凸塊、接到封裝。圖中只畫一個，位置為示意（業界通用）。' },
+    'rdlpad': { name: '接墊', en: 'Bond pad', text: 'RDL 末端的金屬接墊。晶圓級封裝會做晶圓凸塊，可以搭配接墊的重布線（RDL）（業界通用）。圖中只畫一個；保護層開口的位置與大小為示意。' },
     'passiv': { name: '鈍化保護層', en: 'Passivation', text: '晶片最上方的保護層。論文摘要提到 N2 採用平坦的保護層（flat passivation）。' },
     'wafer': { name: '晶圓', en: 'Wafer', text: '做完所有製程的晶圓，上面排滿一顆顆晶片。' },
     'die': { name: '晶片', en: 'Die', text: '晶圓上的一顆顆晶片，之後會被切開、封裝。' },
@@ -576,7 +578,7 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
         { now: '檢測：抓出缺陷、修補，再用 EUV 光確認能不能印出來。', a: '橘圈是一個缺陷。', b: '檢測系統掃過整片光罩；缺陷在橘色虛線上，與左圖是同一個。' },
         { now: '貼上保護膜（pellicle）。N2 是否每片光罩都貼，沒有公開資料。', a: '保護膜撐在框架上，和圖形隔一段距離。', b: '保護膜蓋住整片圖形區，框架立在圖形區外。' },
       ],
-      sources: ['wiki_euv', 'wiki_photomask', 'tsmc_mask', 'spie_amrs', 'toms_pellicle', 'pr3338'] },
+      sources: ['wiki_euv', 'wiki_photomask', 'wiki_ebl', 'tsmc_mask', 'spie_amrs', 'toms_pellicle', 'pr3338'] },
     { n: 6, act: 2, title: '空白晶圓進廠', badges: ['generic'],
       pa: ['A–A′', '順著電流方向切開'], pb: ['B–B′', '在閘極的位置橫著切開'],
       plain: '一切從一片拋光到近乎完美的單晶矽晶圓開始。圖中下方的深藍色區塊就是矽基板，之後的電晶體都長在它的表面上。',
@@ -654,7 +656,7 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
         { now: '一層層往上疊：導線越往上越粗，層與層之間用通孔連接。', a: '越往上的金屬層越粗（層數為示意）。', b: '論文剖面：金屬層由下往上變粗。' },
         { now: '最上方：超高效能 MiM 電容與銅重布線層，銜接先進封裝。', a: 'MiM 電容（約 200 fF/mm²）、銅 RDL 與保護層；右端的保護層開口露出接墊（示意）。', b: '論文剖面：銅 RDL、MiM 電容與保護層。' },
       ],
-      sources: ['toms', 'iedm_fig11', 'l2nm', 'ar2025', 'research97'] },
+      sources: ['toms', 'iedm_fig11', 'l2nm', 'ar2025', 'research97', 'amkor_wlcsp'] },
     { n: 15, act: 4, title: '晶圓測試與針測', badges: ['official', 'media', 'generic'],
       pa: ['①', '晶圓俯視（示意）'], pb: ['②', '測試結構與探針（示意）'],
       plain: '晶圓做完後要先測。WAT 量測晶圓上專門的測試結構，確認製程參數正常；接著針測（wafer sort）用探針一顆顆測晶片，把壞的標記起來，不送去封裝。',
@@ -913,12 +915,13 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
     // 蝕刻後從上往下看，縫裡露出的是覆蓋層（與左圖最上層同為覆蓋層），畫在直條之下
     el(B, 'cap', 'rect', R(85, 31, 230, 230), '5.3', '6.1');
     ABS.forEach(([x, w], i) => el(B, 'absorber', 'rect', R(x + 65, 47, w, 198), '5.3', '6.1', 'grow', i * 70));
+    // 切線畫在掃描帶、缺陷與保護膜之前，缺陷才不會被切線蓋住
+    styled(C(B, 'ln', 'path', { d: 'M85,146 L315,146' }, '5.1', '6.1'), { stroke: 'var(--panel)', strokeWidth: '4px' });
+    styled(C(B, 'ghost', 'path', { d: 'M85,146 L315,146' }, '5.1', '6.1'), { stroke: 'var(--accent)', strokeWidth: '2px' }); T(B, 200, 20, '橘色虛線：左圖剖面的位置', '5.1', '6.1', 'lbl-s', 'middle');
     C(B, 'band', 'rect', R(85, 129, 230, 34), '5.4', '5.5');
     el(B, 'defect', 'circle', { cx: 200, cy: 146, r: 5 }, '5.4', '5.5'); C(B, 'ring', 'circle', { cx: 200, cy: 146, r: 16 }, '5.4', '5.5');
     // 保護膜：框線寬 10 落在 x85–95、305–315（對應左圖框架柱 x20–30、240–250），填色與左圖同為 --m-poly
     styled(el(B, 'pellicle', 'rect', R(90, 36, 220, 220), '5.5', '6.1', 'drop'), { fill: 'var(--m-poly)', fillOpacity: '0.25', stroke: 'var(--m-poly)', strokeWidth: '10px' });
-    styled(C(B, 'ln', 'path', { d: 'M85,146 L315,146' }, '5.1', '6.1'), { stroke: 'var(--panel)', strokeWidth: '4px' });
-    styled(C(B, 'ghost', 'path', { d: 'M85,146 L315,146' }, '5.1', '6.1'), { stroke: 'var(--accent)', strokeWidth: '2px' }); T(B, 200, 20, '橘色虛線：左圖剖面的位置', '5.1', '6.1', 'lbl-s', 'middle');
 
     // ---------- 第三、四幕場景 ----------
 
