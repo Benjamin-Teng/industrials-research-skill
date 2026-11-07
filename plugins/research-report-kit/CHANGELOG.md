@@ -1,5 +1,68 @@
 # Changelog
 
+## v1.7.0 — 2026-11-07
+
+新增**產品技術拆解**：第六個 skill `product-technology-walkthrough`，替投資人拆解一家公司主力產品的技術細節，
+跟著產品的最小單位（一片晶圓、一個網路請求）從頭走到尾，說明產品線怎麼跑、供應鏈怎麼撐。**不評價股價**，
+不分析商業模式與財務（屬 Layer 1）。
+
+起因是 Layer 1 方法檔把技術的機理、材料與製程標為「技術報告（另案）」，一直沒有承接的 skill。這一版由台積電 N2
+與 Cloudflare（NET）兩個產品技術研究實作出來，主要成品是手機上閱讀的互動頁，md 與 PDF 由互動頁衍生。
+
+### 新增
+
+- **`product-technology-walkthrough` skill 與方法檔 `product-technology-v1`**：`SKILL.md` 管觸發、分工、流程摘要、
+  資料取得、Codex 交接點與交付前檢查；`agents/openai.yaml` 為 Codex 介面。
+  `references/product-technology-method.md` 是第三份方法論單一來源，涵蓋範圍、主線與兩條線、來源效力、
+  整合、生成、示意圖審查、限制與治理。
+- **互動頁骨架 `assets/walkthrough-skeleton.html`**：資料常數、`TAG`、`META`、`STEPS`、場景與對外介面
+  `window.walkthrough` 的格式見方法檔 5.1。
+- **`scripts/build_walkthrough_md.py`**：互動頁逐拍轉 md 與截圖。重產採暫存區，失敗時不會動到原成品；
+  發布中斷或還原失敗時保留舊圖備份；必填欄位或 `META` 欄位缺值時直接停止，不產出 md；CLI 支援相對路徑。
+- **`scripts/schematic_topology.py`**：示意圖連接關係檢查，逐拍傾印 `data-net`、`data-kind` 標註的矩形，
+  檢查懸空端點、短路、過近與孤立通孔，輸出連接表。exit code：0 沒有問題且至少一拍有標註元件、
+  1 任一拍有問題、2 受檢的拍都沒有標註元件（不算通過）、3 用法或頁面錯誤（含 Playwright 例外）。
+- **`research-report-output` 新增 E 型「產品技術研究」**：`type: 產品技術研究`、`methodology_version: product-technology-v1`，
+  front matter 由互動頁的 `META` 產生；沒有價格與市場數據，以查證日與來源分級取代查價日。
+  E 型暫不支援 Briefing（md 一律由互動頁重產，產檔器沒有摘要模式）；External 模式是先改互動頁再重產。
+  `SKILL.md`、`output-spec.md`（檔名規則、front matter、E 型骨架說明、格式層檢查清單）同步。
+- **首例 `examples/tsmc-n2-walkthrough/`**（repo 根目錄，不進 plugin 打包範圍，不含第三方圖片）：N2 互動頁、md、
+  各幕證據檔、廠商名單、逐幕審查紀錄（r1 至 r6）與 `CONFORMANCE.md`（對照方法檔 5.1 的改動紀錄）。
+- **新測試**：`tests/test_product_technology_skill.py`、`tests/test_walkthrough_skeleton.py`、
+  `tests/test_build_walkthrough_md.py`、`tests/test_schematic_topology.py`，以及共用的 `tests/browser_helpers.py`
+  （缺瀏覽器時預設 skip，設 `REQUIRE_BROWSER=1` 改為 fail）；`tests/test_plugin_compatibility.py` 的 skill 清單加入第六個。
+- 根 README、plugin README：skill 數量、觸發詞、Codex 安裝指令與目錄結構樹同步；`AGENTS.md` 改為三份方法論單一來源，
+  規則增修加上第三條分流。
+
+### 變更
+
+- **Layer 1 方法檔**（`business-industry-method.md`）：1.3 表格「技術報告（另案）」一列改指向
+  `product-technology-walkthrough`，「以技術主題為主體的研究」一列改指向 B 型；1.4 節補一句技術報告由新 skill 承擔。
+- **`research-report-output`**：報告類型由四型改為五型；內容標準分工加入 E 型。
+
+### 方法論規則與來源（使用者決定，2026-11-07）
+
+- 維基百科列入方法檔 3.3 的清單：只當線索，引用時引條目所引的原始文件。
+- 專利的先前技術段可以當第 4 級間接來源；實施例與請求項只寫成「該公司申請過這種做法的專利」（方法檔 3.2）。
+  審查結果裁決後，使用者未提異議。
+
+### 不變
+
+- 估值方法論與 Layer 1 方法論的規則不變，只更動指向技術報告的兩處文字（見「變更」）。
+- Codex `defaultPrompt` 維持三筆。
+
+### 治理附件（產品技術拆解）
+
+依方法檔第八章與 `AGENTS.md`「方法論規則的增修」，三項齊備。
+
+1. **證據**：兩個公開首例，不是盲測的樣本外資料，案例名稱直接列出。
+   - 台積電 N2：對照方法檔的全面審查 r1 至 r6，審查紀錄與逐項對照收在 `examples/tsmc-n2-walkthrough/research/` 與 `CONFORMANCE.md`。
+   - Cloudflare（NET）：依方法檔從零實作，六份證據檔、三段頁面審查，並由使用者在 iPhone 實機確認版面。
+2. **回溯影響**：`business-industry-method.md` 1.4 節與 1.3 表格兩列改為指向新 skill；其他既有 skill 不受影響。
+3. **半年檢驗條件（2027-05 前）**：
+   - 再用於一家不同產業的公司，確認方法檔不只適用半導體製程與網路服務。
+   - 發布後使用者仍抓到示意圖連接錯誤，就檢討方法檔第六章。
+
 ## v1.6.1 — 2026-11-01
 
 修正版：PDF 產檔器的相對路徑圖片恢復正常，報告可以嵌入圖片。

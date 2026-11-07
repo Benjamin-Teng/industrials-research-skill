@@ -1,7 +1,7 @@
 {
   "name": "research-report-kit",
-  "version": "1.6.1",
-  "description": "機構風格投資研究報告工具組：md + PDF 雙檔輸出規範、F1–F5 可讀性排版鐵則、不評價股價的企業與產業分析（營收來源與單位經濟、逐營收來源 SWOT、產業鏈與利潤池、護城河）、以價格隱含預期與可驗證預期差為核心的估值紀律（內在價值／持有期末價格／持有期報酬分離、R/R 與示範機率、條件式決策門檻）、產品週期輪動與 channel check SOP、跨市場取價路由。台股／美股共用同一套骨架。",
+  "version": "1.7.0",
+  "description": "機構風格投資研究報告工具組：md + PDF 雙檔輸出規範、F1–F5 可讀性排版鐵則、不評價股價的企業與產業分析（營收來源與單位經濟、逐營收來源 SWOT、產業鏈與利潤池、護城河）、以價格隱含預期與可驗證預期差為核心的估值紀律（內在價值／持有期末價格／持有期報酬分離、R/R 與示範機率、條件式決策門檻）、產品週期輪動與 channel check SOP、產品技術拆解（跟著產品最小單位走一遍的互動頁、來源分級、示意圖連接審查）、跨市場取價路由。台股／美股共用同一套骨架。",
   "author": {
     "name": "Benjamin",
     "email": "benjamin31588@gmail.com",
@@ -22,13 +22,15 @@
     "expectations-investing",
     "reverse-dcf",
     "business-analysis",
-    "industry-structure"
+    "industry-structure",
+    "product-technology",
+    "technology-walkthrough"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Research Report Kit",
     "shortDescription": "機構風投資研究報告：企業與產業分析、預期差導向估值與 R/R、md + PDF 輸出",
-    "longDescription": "把投資研究的輸出格式與內容紀律變成可重複的流程：統一的 md + PDF 雙檔輸出規範與 F1–F5 排版鐵則；估值改以「價格隱含預期 → 可驗證預期差 → 情境估值與持有期報酬 → 催化劑與風險 → 決策覆盤」統整，強制分開當前內在價值、持有期末價格與持有期總報酬，並以條件門檻取代固定安全邊際評等；另有不評價股價的企業與產業分析：依定價與認列機制重建營收來源、逐來源 SWOT、產業鏈利潤池與護城河；另含 product cycle 五問與 channel check SOP，以及跨市場取價路由。台股／美股共用同一套骨架。",
+    "longDescription": "把投資研究的輸出格式與內容紀律變成可重複的流程：統一的 md + PDF 雙檔輸出規範與 F1–F5 排版鐵則；估值改以「價格隱含預期 → 可驗證預期差 → 情境估值與持有期報酬 → 催化劑與風險 → 決策覆盤」統整，強制分開當前內在價值、持有期末價格與持有期總報酬，並以條件門檻取代固定安全邊際評等；另有不評價股價的企業與產業分析：依定價與認列機制重建營收來源、逐來源 SWOT、產業鏈利潤池與護城河；另含 product cycle 五問與 channel check SOP、產品技術拆解（跟著產品最小單位走一遍的互動頁，說明產品線與供應鏈怎麼跑，來源分級並審查示意圖連接），以及跨市場取價路由。台股／美股共用同一套骨架。",
     "developerName": "Benjamin",
     "category": "Productivity",
     "capabilities": [
