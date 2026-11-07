@@ -305,9 +305,10 @@ def build(page: Path, out_dir: Path, md_name: str, *, browser: Any = None) -> Pa
     `browser` 傳入已啟動的 Playwright browser 時沿用（同一個 process 只能有一個 sync Playwright）；
     省略時自己啟動 headless chromium。
     """
-    if not _MD_NAME.fullmatch(md_name):
-        raise ValueError(f"md 檔名必須是不含目錄、空白與括號的 .md 檔名：{md_name!r}")
     stem = md_name.removesuffix(".md")
+    # stem 是圖片子目錄名：`.`、`..` 會讓子目錄折回 pdf-img 本身或跳出去，發布時會刪掉其他版本的圖
+    if not _MD_NAME.fullmatch(md_name) or stem in {"", ".", ".."}:
+        raise ValueError(f"md 檔名必須是不含目錄、空白與括號的 .md 檔名，且去掉 .md 後不得是 . 或 ..：{md_name!r}")
     page = page.resolve()
     out_dir = out_dir.resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -359,6 +360,10 @@ def _publish(
     還原也失敗時 `state.keep_tmp` 維持 True，呼叫端保留暫存區；標記檔與 stderr 提示盡力而為，
     寫不出來也不影響保留的決定與原例外。
     """
+    root = (final_md.parent / "pdf-img").resolve()
+    target = final_img.resolve()
+    if target.parent != root or target == root:
+        raise ValueError(f"圖片目標必須是 pdf-img 的直接子目錄（{root}），實際是 {target}")
     state.keep_tmp = True
     backup.mkdir()
     final_img.parent.mkdir(exist_ok=True)

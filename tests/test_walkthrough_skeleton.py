@@ -175,6 +175,47 @@ def test_step_total_counts_only_unlabelled_steps(tmp_path):
         assert pg.text_content("#eyebrow").endswith("序幕")
 
 
+@demo_only
+def test_scale_badge_defaults_to_schematic(page):
+    for n in (1, 2, 3):
+        page.evaluate("n => walkthrough.go(n, 0)", n)
+        badges = page.text_content("#badges")
+        assert "示意，非比例" in badges and "依數字比例" not in badges, (n, badges)
+
+
+@demo_only
+def test_scale_true_switches_badge_for_that_step_only(tmp_path):  # STEPS[].scale：這一步的圖依數字比例繪製
+    variant = _variant(tmp_path, [("{ n: 2, act: 1, title: '用導線把元件接起來', ", "{ n: 2, act: 1, scale: true, title: '用導線把元件接起來', ")])
+    with launch("chromium") as browser:
+        pg = open_page(browser, variant, tmp_path / "out")
+        pg.evaluate("walkthrough.go(2, 0)")
+        badges = pg.text_content("#badges")
+        assert "依數字比例" in badges and "示意，非比例" not in badges, badges
+        pg.evaluate("walkthrough.go(1, 0)")
+        assert "示意，非比例" in pg.text_content("#badges")
+
+
+@demo_only
+def test_beat_scale_overrides_step(tmp_path):  # beats[i].scale：寫在拍上時以拍為準
+    variant = _variant(
+        tmp_path,
+        [
+            ("{ now: '在基板上鋪一層薄膜。示範數字：成本 −5%（虛構）。', ", "{ scale: true, now: '在基板上鋪一層薄膜。示範數字：成本 −5%（虛構）。', "),
+            ("{ n: 2, act: 1, title: '用導線把元件接起來', ", "{ n: 2, act: 1, scale: true, title: '用導線把元件接起來', "),
+            ("{ now: '兩個通孔各接在導線的一端，三者屬於同一個網路 n1。', ", "{ scale: false, now: '兩個通孔各接在導線的一端，三者屬於同一個網路 n1。', "),
+        ],
+    )
+    with launch("chromium") as browser:
+        pg = open_page(browser, variant, tmp_path / "out")
+        shown = {}
+        for n, b in ((1, 0), (1, 1), (2, 0)):
+            pg.evaluate("([n, b]) => walkthrough.go(n, b)", [n, b])
+            shown[(n, b)] = pg.text_content("#badges")
+        assert "依數字比例" in shown[(1, 0)] and "示意，非比例" not in shown[(1, 0)], shown
+        assert "示意，非比例" in shown[(1, 1)] and "依數字比例" not in shown[(1, 1)], shown
+        assert "示意，非比例" in shown[(2, 0)] and "依數字比例" not in shown[(2, 0)], shown
+
+
 SUP_NOTE = "#suppliers > p.muted"
 
 

@@ -66,6 +66,17 @@ def test_stub_within_limit_ok():  # 多伸出 2 剛好不超過預設 stub
     assert check([wire("w1", "n1", 0, 4, 42, 4), via("v1", "n1", 0, 0), via("v2", "n1", 36, 0)]) == []
 
 
+def test_stub_past_large_node_is_dangling():  # 寬 40 的 node 蓋住導線右段，導線又從 node 右緣伸出 20
+    boxes = [wire("w1", "n1", 0, 4, 100, 4), via("v1", "n1", 0, 0), node("n", "n1", 40, 0, 40, 12)]
+    issues = check(boxes)
+    assert kinds(issues) == ["懸空端點"]
+    assert "末端伸出最外側接觸點 20" in issues[0]["detail"]
+
+
+def test_node_extending_past_wire_end_is_not_a_stub():  # node 長軸範圍超出導線末端：末端在 node 內，不算懸空
+    assert check([wire("w1", "n1", 0, 4, 60, 4), via("v1", "n1", 0, 0), node("n", "n1", 40, 0, 40, 12)]) == []
+
+
 def test_single_contact_is_dangling():
     assert kinds(check([via("v1", "n1", 0, 0), wire("w1", "n1", 4, 0, 36, 4)])) == ["懸空端點"]
 

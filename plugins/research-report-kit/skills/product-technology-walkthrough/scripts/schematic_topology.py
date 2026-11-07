@@ -66,8 +66,9 @@ def _dangling(wire: Box, contacts: list[Box], stub: float) -> str | None:
     horizontal = wire["w"] >= wire["h"]
     start, length = (wire["x"], wire["w"]) if horizontal else (wire["y"], wire["h"])
     end = start + length
-    lows = [c["x"] if horizontal else c["y"] for c in contacts]
-    highs = [c["x"] + c["w"] if horizontal else c["y"] + c["h"] for c in contacts]
+    # 接觸點取「接觸元件與導線在長軸上的交集」的兩端，夾在導線範圍內；在端面外相接的元件縮成導線端點
+    lows = [min(max(c["x"] if horizontal else c["y"], start), end) for c in contacts]
+    highs = [max(min(c["x"] + c["w"] if horizontal else c["y"] + c["h"], end), start) for c in contacts]
     head, tail = min(lows) - start, end - max(highs)
     if head > stub:
         return f"起端伸出最外側接觸點 {head:g}，超過 stub={stub:g}"

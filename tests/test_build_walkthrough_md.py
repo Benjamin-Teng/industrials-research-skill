@@ -198,12 +198,52 @@ def test_new_version_leaves_old_version_images_untouched(tmp_path):
     assert (new_dir / "s01-1.png").read_bytes() != old_imgs["s01-1.png"]  # 確認兩版的圖確實不同
 
 
-@pytest.mark.parametrize("name", ["sub/demo.md", "demo.txt", "有 空白.md", "demo(1).md"])
+@pytest.mark.parametrize("name", ["sub/demo.md", "demo.txt", "有 空白.md", "demo(1).md", "..md", "...md", ".md"])
 def test_md_name_must_be_plain_file_name(tmp_path, name):
-    """md 檔名會變成圖片子目錄名與 md 內的圖片路徑，不得含目錄、空白或括號。"""
+    """md 檔名會變成圖片子目錄名與 md 內的圖片路徑，不得含目錄、空白或括號；去掉 .md 後不得是 `.`、`..` 或空字串。"""
     with pytest.raises(ValueError, match="md 檔名"):
         build(tmp_path / "unused.html", tmp_path, name)
     assert not (tmp_path / "_build_tmp").exists()
+
+
+@pytest.mark.parametrize("name", ["..md", "...md"])
+def test_dot_stem_leaves_other_versions_untouched(tmp_path, name):
+    """`..md` 的 stem 是 `.`，圖片子目錄會折回 pdf-img 本身：要在擷取前擋下，既有版本的圖片與 md 逐位元組不變。"""
+    out = tmp_path / "out"
+    (out / "pdf-img" / "demo_v1.0").mkdir(parents=True)
+    old = {
+        out / "demo_v1.0.md": b"OLD MD",
+        out / "pdf-img" / "demo_v1.0" / "s01-1.png": b"OLD PNG",
+        out / "pdf-img" / "note.txt": b"OTHER",
+    }
+    for path, data in old.items():
+        path.write_bytes(data)
+    with pytest.raises(ValueError, match="md 檔名"):
+        build(copy_skeleton(tmp_path / "src"), out, name)
+    assert {p: p.read_bytes() for p in old} == old
+    assert sorted(p.name for p in out.rglob("*") if p.is_file()) == sorted(p.name for p in old)
+
+
+@pytest.mark.parametrize("target", ["root", "dotdot", "nested", "sibling"])
+def test_publish_refuses_target_that_is_not_a_direct_child_of_pdf_img(tmp_path, target):
+    """發布前的第二道防線：圖片目標不是 pdf-img 的直接子目錄（或等於 pdf-img 本身）就拒絕，什麼都不搬。"""
+    out = tmp_path / "out"
+    (out / "pdf-img" / "demo_v1.0").mkdir(parents=True)
+    (out / "pdf-img" / "demo_v1.0" / "s01-1.png").write_bytes(b"OLD PNG")
+    tmp = out / "_build_tmp"
+    (tmp / "pdf-img").mkdir(parents=True)
+    (tmp / "x.md").write_text("NEW", encoding="utf-8")
+    final_img = {
+        "root": out / "pdf-img",
+        "dotdot": out / "pdf-img" / "a" / "..",
+        "nested": out / "pdf-img" / "a" / "b",
+        "sibling": out / "other",
+    }[target]
+    state = build_walkthrough_md._PublishState()
+    with pytest.raises(ValueError, match="pdf-img 的直接子目錄"):
+        build_walkthrough_md._publish(tmp / "pdf-img", tmp / "x.md", final_img, out / "x.md", tmp / "backup", state)
+    assert (out / "pdf-img" / "demo_v1.0" / "s01-1.png").read_bytes() == b"OLD PNG"
+    assert not (out / "x.md").exists() and not (tmp / "backup").exists()
 
 
 # 來源缺值：骨架第 1 步的 sources 是 ['demo_ar', 'demo_generic']

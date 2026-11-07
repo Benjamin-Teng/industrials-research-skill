@@ -16,14 +16,19 @@
   `references/product-technology-method.md` 是第三份方法論單一來源，涵蓋範圍、主線與兩條線、來源效力、
   整合、生成、示意圖審查、限制與治理。
 - **互動頁骨架 `assets/walkthrough-skeleton.html`**：資料常數、`TAG`、`META`、`STEPS`、場景與對外介面
-  `window.walkthrough` 的格式見方法檔 5.1。
+  `window.walkthrough` 的格式見方法檔 5.1。`STEPS[].scale`、`beats[i].scale` 選填（預設 `false`，寫在拍上時以拍為準），
+  設 `true` 時頁首徽章由「示意，非比例」改成「依數字比例」，給依數字比例繪製的長條圖用。
 - **`scripts/build_walkthrough_md.py`**：互動頁逐拍轉 md 與截圖。重產採暫存區，失敗時不會動到原成品；
   發布中斷或還原失敗時保留舊圖備份；必填欄位或 `META` 欄位缺值時直接停止，不產出 md；CLI 支援相對路徑。
   截圖目錄依報告檔名分開（`pdf-img/<md 檔名去副檔名>/`），新舊版 md 可並存；來源缺 label 或 url、
   key 不在 `SRC`、url 不是 http(s) 時擋下；廠商區的說明段落（含 `META.supCaveat`）照頁面原文放進 md。
+  md 檔名去掉 `.md` 後是 `.`、`..` 或空字串時擋下（`..md` 會讓圖片子目錄折回 `pdf-img` 本身、刪掉其他版本的圖），
+  發布前再確認圖片目標是 `pdf-img` 的直接子目錄。
 - **`scripts/schematic_topology.py`**：示意圖連接關係檢查，逐拍傾印 `data-net`、`data-kind` 標註的矩形，
   檢查懸空端點、短路、過近與孤立通孔，輸出連接表。exit code：0 沒有問題且至少一拍有標註元件、
   1 任一拍有問題、2 受檢的拍都沒有標註元件（不算通過）、3 用法或頁面錯誤（含 Playwright 例外）。
+  懸空端點的接觸點取接觸元件與導線在長軸上重疊區間的端點（方法檔 6.1），並補大型 node 蓋住導線一段的回歸測試；
+  判定結果與改前相同。
 - **`research-report-output` 新增 E 型「產品技術研究」**：`type: 產品技術研究`、`methodology_version: product-technology-v1`，
   front matter 由互動頁的 `META` 產生；沒有價格與市場數據，以查證日與來源分級取代查價日。
   E 型暫不支援 Briefing（md 一律由互動頁重產，產檔器沒有摘要模式）；External 模式是先改互動頁再重產。
@@ -46,6 +51,7 @@
 
 - 維基百科列入方法檔 3.3 的清單：只當線索，引用時引條目所引的原始文件。
 - 專利的先前技術段可以當第 4 級間接來源；實施例與請求項只寫成「該公司申請過這種做法的專利」（方法檔 3.2）。
+  Summary、Detailed Description 等其他描述發明本身的段落比照實施例處理。
   審查結果裁決後，使用者未提異議。
 
 ### 不變

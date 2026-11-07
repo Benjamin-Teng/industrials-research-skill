@@ -93,6 +93,13 @@ def test_banned_source_list_defined_only_in_method():
     assert "維基百科" in banned
 
 
+def test_patent_sections_rule():
+    """3.2：先前技術段可當第 4 級；實施例、請求項與其他描述發明本身的段落只能寫成申請過專利。"""
+    rules = section(METHOD.read_text(encoding="utf-8"), "### 3.2 引用規則")
+    assert "先前技術段" in rules and "第 4 級" in rules
+    assert re.search(r"Summary[^。]*Detailed Description[^。]*比照實施例", rules)
+
+
 REVIEW_KEYWORDS = [
     ("接點", "不交叉"),
     ("疊在", "實際畫出的物件"),

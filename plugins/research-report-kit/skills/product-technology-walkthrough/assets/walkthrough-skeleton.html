@@ -629,7 +629,10 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
     $('eyebrow').textContent = `${act.name}・${act.title}　|　${s.label || `步驟 ${s.n}／${NUMBERED}`}`;
     $('title').textContent = s.title;
     $('where').textContent = `${act.name} ${act.title} › ${stepName(s)} ${s.title}`;
-    $('badges').innerHTML = '<span class="badge generic">示意，非比例</span>'
+    const beat = s.beats[cur.b - 1] || {};
+    // scale：選填，圖依數字比例繪製時設 true；寫在拍上時以拍為準
+    const scale = (beat.scale ?? s.scale) === true;
+    $('badges').innerHTML = `<span class="badge generic">${scale ? '依數字比例' : '示意，非比例'}</span>`
       + (s.badges || []).map(t => `<span class="badge ${t}">含${need(TAG[t] && TAG[t].name, `來源類型 ${t}`)}資料</span>`).join('');
     const cross = $('cross'); cross.innerHTML = '';
     (s.cross || []).forEach(n => {
@@ -642,7 +645,6 @@ svg .lnk { fill: var(--accent); text-decoration: underline; }
       cross.appendChild(c);
     });
     cross.hidden = !cross.children.length;
-    const beat = s.beats[cur.b - 1] || {};
     $('nowWrap').hidden = !beat.now;
     $('now').textContent = need(beat.now, `步驟 ${s.n} 第 ${cur.b} 拍的 now`);
     $('plain').textContent = need(s.plain, `步驟 ${s.n} 的 plain`);
