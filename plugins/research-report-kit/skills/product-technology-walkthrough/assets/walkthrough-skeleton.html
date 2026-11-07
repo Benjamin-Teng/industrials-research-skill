@@ -1,0 +1,798 @@
+<title>產品技術之旅</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+/* 版面：上方幕次軌道 → 雙剖面舞台 → 操作列 → 左文右圖例的說明區。材料色是內容，UI 色退在後面。 */
+:root {
+  --bg: #eef2f1; --panel: #ffffff; --fg: #13201c; --muted: #56665f; --line: #d3dcd8;
+  --accent: #b4430f; --accent-soft: #f7e3d8; --stage: #f8faf9;
+  --m-si: #8fb0d3; --m-sige: #e2ae45; --m-sub: #6f8fb3; --m-ox: #bfe2e9; --m-nit: #b6d3a8;
+  --m-poly: #b46a5c; --m-sd: #3f9a85; --m-highk: #8455c4; --m-metal: #56606e; --m-mask: #3d4650; --m-sti: #9fb5b9;
+  --tag-official: #0f6b55; --tag-paper: #3c5ba8; --tag-media: #8a5a12; --tag-generic: #6a6f75; --tag-vendor: #7a4fa0;
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0d1315; --panel: #141c1f; --fg: #e4ebe8; --muted: #93a39d; --line: #26343a;
+  --accent: #f08a4b; --accent-soft: #3a2418; --stage: #10181b;
+  --m-si: #7fa6cf; --m-sige: #d9a33a; --m-sub: #4f6f93; --m-ox: #5f8f99; --m-nit: #7fa271;
+  --m-poly: #b0685a; --m-sd: #3fae94; --m-highk: #a57ae6; --m-metal: #a9b3bf; --m-mask: #8b96a3; --m-sti: #8d9ea0;
+  --tag-official: #4fc9a6; --tag-paper: #8aa6f0; --tag-media: #e2b05a; --tag-generic: #a3a9af; --tag-vendor: #c9a2f0;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0d1315; --panel: #141c1f; --fg: #e4ebe8; --muted: #93a39d; --line: #26343a;
+  --accent: #f08a4b; --accent-soft: #3a2418; --stage: #10181b;
+  --m-si: #7fa6cf; --m-sige: #d9a33a; --m-sub: #4f6f93; --m-ox: #5f8f99; --m-nit: #7fa271;
+  --m-poly: #b0685a; --m-sd: #3fae94; --m-highk: #a57ae6; --m-metal: #a9b3bf; --m-mask: #8b96a3; --m-sti: #8d9ea0;
+  --tag-official: #4fc9a6; --tag-paper: #8aa6f0; --tag-media: #e2b05a; --tag-generic: #a3a9af; --tag-vendor: #c9a2f0;
+  color-scheme: dark; }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.7;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1160px; margin: 0 auto; padding-block: 28px 56px; display: grid; gap: 20px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+header.top { display: grid; gap: 6px; }
+.kicker { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: clamp(26px, 4.2vw, 40px); font-weight: 900; line-height: 1.2; letter-spacing: .01em; }
+h1 .node { font-family: var(--font-mono); font-weight: 500; color: var(--accent); }
+.lede { color: var(--muted); max-width: 62ch; margin: 0; }
+.notice { font-size: 13px; color: var(--muted); border-left: 3px solid var(--m-sige); padding: 4px 0 4px 10px; max-width: 80ch; margin: 0; }
+
+/* 幕次軌道 */
+nav.rail { overflow-x: auto; padding-bottom: 4px; }
+/* 欄寬依各幕步數由程式設定（每欄至少放得下幕名）；比畫面寬時在 nav 內橫向捲動 */
+.acts { display: grid; gap: 10px; }
+.act { display: grid; gap: 6px; }
+.act-name { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.act-name b { color: var(--fg); font-weight: 700; margin-right: 4px; }
+.act.cur .act-name b { color: var(--accent); }
+.dots { display: flex; gap: 4px; }
+.dot { flex: 1; min-width: 22px; height: 30px; border: 1px solid var(--line); background: var(--panel); border-radius: 4px;
+  font: 500 11px var(--font-mono); color: var(--muted); cursor: pointer; padding: 0;
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease; }
+.dot.done { background: var(--accent-soft); color: var(--fg); }
+.dot.cur { background: var(--accent); border-color: var(--accent); color: #fff; }
+.dot:focus-visible, button:focus-visible, summary:focus-visible, .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* 舞台 */
+.stage { background: var(--stage); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 10px; position: relative; }
+.stage-head { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; justify-content: space-between; }
+.stage-head .where { font-size: 13px; color: var(--muted); }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.badge { font-size: 12px; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.badge.generic { color: var(--tag-generic); } .badge.official { color: var(--tag-official); } .badge.media { color: var(--tag-media); } .badge.paper { color: var(--tag-paper); } .badge.vendor { color: var(--tag-vendor); }
+.head-r { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
+.panels { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; position: relative; }
+.panel { display: grid; gap: 4px; min-width: 0; }
+.panel-title { display: flex; gap: 8px; align-items: baseline; font-size: 13px; }
+.panel-title .cut { font-family: var(--font-mono); font-weight: 500; color: var(--accent); }
+/* SVG 放在固定比例的框裡、以絕對定位填滿：不依賴百分比高度，iOS Safari 才不會算錯尺寸 */
+.svgbox { position: relative; aspect-ratio: 4 / 3; min-height: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.svgbox svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.panel-cap { font-size: 13px; color: var(--muted); min-height: 2.6em; margin: 0; }
+
+/* 操作列：三欄固定，按鈕位置不受拍數指示影響 */
+.controls { display: grid; grid-template-columns: minmax(0, 1fr) 112px minmax(0, 1fr); align-items: center; gap: 12px; }
+.nav { width: min(100%, 200px); }
+#prev { justify-self: start; } #next { justify-self: end; }
+.btn.ghost { font-size: 13px; padding: 6px 12px; }
+.btn { font: 700 15px var(--font-body); padding: 10px 18px; border-radius: 8px; cursor: pointer; border: 1px solid var(--line); background: var(--panel); color: var(--fg);
+  transition: transform 120ms var(--ease-out), background-color 160ms ease; }
+.btn:active { transform: scale(0.97); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn:disabled { opacity: .4; cursor: default; }
+.btn:disabled:active { transform: none; }
+.beatinfo { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+.pips { display: flex; gap: 5px; justify-content: center; }
+.pip { width: 18px; height: 6px; border-radius: 3px; background: var(--line); transition: background-color 200ms ease; }
+.pip.on { background: var(--accent); }
+.hint { font-size: 12px; color: var(--muted); margin: 0; text-align: center; }
+
+/* 沉浸模式：舞台蓋滿整個畫面，操作列固定在底部 */
+.imm-now { display: none; }
+html.imm-lock, html.imm-lock body { overflow: hidden; }
+.stage.immersive { position: fixed; inset: 0; z-index: 100; border: 0; border-radius: 0;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 10px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 8px; overscroll-behavior: contain; }
+.stage.immersive .badges, .stage.immersive .hint { display: none; }
+.stage.immersive .imm-now { display: block; margin: 0; font-weight: 500; line-height: 1.5; min-height: 3em; }
+.stage.immersive .panels { flex: 1; min-height: 0; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; touch-action: pan-y; }
+.stage.immersive .panel { grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; }
+.stage.immersive .svgbox { aspect-ratio: auto; }
+.stage.immersive .panel-cap { min-height: 0; font-size: 12px; line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.stage.immersive .nav { width: 100%; padding-block: 14px; }
+@media (orientation: landscape) { .stage.immersive .panels { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); } }
+/* 手機橫拿：高度很少，把文字壓到最精簡，材料卡改為浮在圖上 */
+@media (orientation: landscape) and (max-height: 520px) {
+  .stage.immersive { gap: 4px; padding-top: calc(env(safe-area-inset-top, 0px) + 6px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px); }
+  .stage.immersive .panel-cap { display: none; }
+  .stage.immersive .imm-now { min-height: 0; font-size: 14px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .stage.immersive .nav { padding-block: 8px; }
+  .stage.immersive .imm-part { position: absolute; z-index: 2; left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px));
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 58px); box-shadow: 0 6px 24px rgb(0 0 0 / .25); }
+}
+.imm-part { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 4px; font-size: 13px; }
+.imm-part .row { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 15px; }
+.imm-part .sw { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.imm-part .x { margin-left: auto; font: 500 13px var(--font-body); background: none; border: 0; color: var(--muted); cursor: pointer; padding: 4px 6px; }
+.imm-part p { margin: 0; }
+
+/* 說明區 */
+.info { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; display: grid; gap: 12px; min-width: 0; }
+.eyebrow { font-size: 12px; letter-spacing: .06em; color: var(--muted); }
+h2 { font-size: 24px; font-weight: 900; line-height: 1.3; }
+.now { margin: 0; padding: 10px 12px; background: var(--accent-soft); border-radius: 6px; }
+.now .lab { font-size: 12px; color: var(--accent); font-weight: 700; display: block; }
+.plain { margin: 0; max-width: 65ch; }
+details { border-top: 1px solid var(--line); padding-top: 10px; }
+summary { cursor: pointer; font-weight: 700; }
+details p { margin: 8px 0 0; max-width: 65ch; }
+h3 { font-size: 14px; font-weight: 700; color: var(--muted); letter-spacing: .04em; }
+ol.src { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 13px; }
+ol.src a { color: var(--fg); text-decoration-color: var(--line); text-underline-offset: 3px; word-break: break-word; }
+ol.src .t { font-size: 11px; padding: 0 6px; border-radius: 4px; border: 1px solid currentColor; margin-right: 6px; white-space: nowrap; }
+.part-name { font-size: 18px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+.part-name .sw { width: 14px; height: 14px; border-radius: 3px; flex: none; }
+.part-en { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.part-text { margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font: 500 13px var(--font-body); padding: 4px 10px 4px 6px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--fg); cursor: pointer; }
+.chip .sw { width: 12px; height: 12px; border-radius: 3px; }
+.chip[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.muted { color: var(--muted); font-size: 13px; margin: 0; }
+#suppliers { display: grid; gap: 8px; font-size: 13px; }
+.supg { display: grid; gap: 2px; }
+.supg b { font-weight: 700; }
+.supg > span { display: flex; flex-wrap: wrap; gap: 2px 12px; }
+.sup.M { color: var(--muted); }
+footer { font-size: 12px; color: var(--muted); }
+
+/* SVG 材料與動畫 */
+svg .el { opacity: 0; pointer-events: none; cursor: pointer;
+  transition: opacity 420ms var(--ease-out), transform 640ms var(--ease-out); transition-delay: 0ms; }
+svg .el[data-fx="grow"] { transform-box: fill-box; transform-origin: 50% 100%; transform: scaleY(0.04); }
+svg .el[data-fx="drop"] { transform: translateY(-18px); }
+svg .el[data-fx="rise"] { transform: translateY(14px); }
+svg .el[data-fx="growx"] { transform-box: fill-box; transform-origin: 0 50%; transform: scaleX(0.04); }
+svg .el.on { opacity: 1; transform: none; pointer-events: auto; transition-delay: var(--d, 0ms); }
+svg .el.sel:not([data-part="printed"]):not([data-part="drc"]) { stroke: var(--accent); stroke-width: 2.5px; vector-effect: non-scaling-stroke; }
+[data-part="si-sub"] { fill: var(--m-sub); } [data-part="si-sheet"] { fill: var(--m-si); } [data-part="sige"] { fill: var(--m-sige); }
+[data-part="hardmask"] { fill: var(--m-mask); } [data-part="dummy"] { fill: var(--m-poly); } [data-part="gspacer"], [data-part="inner"] { fill: var(--m-nit); }
+[data-part="sti"] { fill: var(--m-sti); }
+svg rect { shape-rendering: crispEdges; }
+[data-part="sd"] { fill: var(--m-sd); } [data-part="ild"] { fill: var(--m-ox); } [data-part="highk"] { fill: var(--m-highk); } [data-part="metal"] { fill: var(--m-metal); }
+svg .arrow { fill: var(--accent); }
+svg .axis { font: 500 14px var(--font-body); fill: var(--muted); }
+/* 第一幕：示意圖用的框、文字與線 */
+svg .nbox { fill: var(--panel); stroke: var(--line); stroke-width: 1.5px; }
+svg .lbl { font: 500 14px var(--font-body); fill: var(--fg); }
+svg .lbl-s { font: 400 12px var(--font-body); fill: var(--muted); }
+svg .mono-t { font: 500 16px var(--font-mono); fill: var(--fg); }
+svg .ln { fill: none; stroke: var(--muted); stroke-width: 1.5px; }
+svg .arrow-m { fill: var(--muted); }
+svg .hl, svg .ring { fill: none; stroke: var(--accent); stroke-width: 2.5px; }
+svg .crit { fill: none; stroke: var(--accent); stroke-width: 4px; stroke-linejoin: round; }
+svg .beam { stroke: var(--accent); stroke-width: 3px; stroke-dasharray: 4 4; }
+svg .ghost { fill: none; stroke: var(--muted); stroke-width: 1.5px; stroke-dasharray: 5 4; }
+svg .band { fill: var(--accent); fill-opacity: .18; }
+[data-part="kit"], [data-part="masksvc"] { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5px; }
+[data-part="eda"] { fill: var(--panel); stroke: var(--m-sd); stroke-width: 2px; }
+[data-part="cell-short"], [data-part="stdcell"], [data-part="design"] { fill: var(--m-si); stroke: var(--panel); }
+[data-part="cell-tall"] { fill: var(--m-sige); stroke: var(--panel); }
+[data-part="wire"] { fill: var(--m-metal); }
+[data-part="drc"] { fill: none; stroke: var(--accent); stroke-width: 2.5px; }
+[data-part="shuttle"] { stroke: var(--panel); stroke-width: 2px; }
+[data-part="target"], [data-part="opc"], [data-part="curvy"], [data-part="absorber"] { fill: var(--m-mask); }
+[data-part="sraf"] { fill: var(--m-mask); fill-opacity: .55; }
+[data-part="printed"] { fill: none; stroke: var(--m-sd); }
+[data-part="mask-sub"] { fill: var(--m-sti); }
+[data-part="cap"] { fill: var(--m-sd); }
+[data-part="defect"] { fill: var(--accent); }
+[data-part="pellicle"] { fill: var(--m-ox); }
+[data-part="ild2"] { fill: var(--m-ox); }
+[data-part="contact"] { fill: var(--m-mask); }
+[data-part="beol"] { fill: var(--m-metal); }
+[data-part="mim"] { fill: var(--m-highk); }
+[data-part="rdl"] { fill: var(--m-poly); }
+[data-part="passiv"] { fill: var(--m-nit); }
+[data-part="wafer"] { fill: var(--m-si); }
+[data-part="die"] { fill: var(--m-sub); }
+[data-part="wat"], [data-part="fail"] { fill: var(--accent); }
+[data-part="pad"], [data-part="die2"] { fill: var(--m-sige); }
+[data-part="interposer"] { fill: var(--m-sti); }
+[data-part="hbm"] { fill: var(--m-si); }
+[data-part="pkgsub"] { fill: var(--m-sd); }
+[data-part="pkg"] { fill: var(--m-metal); }
+[data-part="node"] { fill: var(--m-sd); }
+[data-part="nodef"] { fill: var(--panel); stroke: var(--m-sd); stroke-width: 2.5px; stroke-dasharray: 3 3; }
+svg .bar { fill: var(--m-mask); } svg .bar.hi { fill: var(--accent); }
+svg .el.sel[data-part="printed"] { stroke: var(--accent); }
+@media (hover: hover) and (pointer: fine) { svg .el.on:hover { filter: brightness(1.12); } .dot:hover { border-color: var(--accent); } }
+@media (prefers-reduced-motion: reduce) {
+  svg .el, svg .el[data-fx] { transform: none; transition: opacity 200ms ease; }
+  svg .el.on { transition-delay: 0ms; }
+  .btn:active { transform: none; }
+}
+@media (max-width: 760px) {
+  .panels, .info { grid-template-columns: 1fr; }
+  .controls { grid-template-columns: minmax(0, 1fr) 88px minmax(0, 1fr); gap: 8px; }
+  .nav { width: 100%; }
+}
+/* 幕次軌道上的主線標記、說明區的「交會」標籤、圖片載入失敗時的來源連結 */
+.act-line { margin-left: 6px; padding: 0 5px; border: 1px solid var(--line); border-radius: 4px; font-size: 11px; }
+.cross { display: flex; flex-wrap: wrap; gap: 6px; }
+.cross[hidden] { display: none; }
+.cross .chip { padding: 4px 10px; }
+svg .lnk { fill: var(--accent); text-decoration: underline; }
+/* 骨架示範內容的材料色；正式成品換成自己的材料 */
+[data-part="demo-base"] { fill: var(--m-sub); } [data-part="demo-film"] { fill: var(--m-ox); } [data-part="demo-block"] { fill: var(--m-sd); }
+[data-part="demo-via"] { fill: var(--m-mask); } [data-part="demo-wire"] { fill: var(--m-metal); }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="kicker" id="kicker"></div>
+    <h1 id="headline"></h1>
+    <p class="lede" id="lede"></p>
+    <p class="notice" id="notice"></p>
+  </header>
+
+  <nav class="rail" aria-label="步驟">
+    <div class="acts" id="acts"></div>
+  </nav>
+
+  <section class="stage" id="stage" aria-label="逐拍示意圖">
+    <div class="stage-head">
+      <div class="where" id="where"></div>
+      <div class="head-r">
+        <div class="badges" id="badges"></div>
+        <button class="btn ghost" id="immBtn" type="button" aria-pressed="false">全螢幕觀看</button>
+      </div>
+    </div>
+    <p class="imm-now" id="immNow" aria-live="polite"></p>
+    <div class="panels" id="panels">
+      <figure class="panel" style="margin:0">
+        <figcaption class="panel-title"><span class="cut" id="paCut"></span><span id="paText"></span></figcaption>
+        <div class="svgbox"><svg id="svgA" viewBox="0 0 400 300" role="img" aria-label="左圖"></svg></div>
+        <p class="panel-cap" id="capA"></p>
+      </figure>
+      <figure class="panel" style="margin:0">
+        <figcaption class="panel-title"><span class="cut" id="pbCut"></span><span id="pbText"></span></figcaption>
+        <div class="svgbox"><svg id="svgB" viewBox="0 0 400 300" role="img" aria-label="右圖"></svg></div>
+        <p class="panel-cap" id="capB"></p>
+      </figure>
+    </div>
+    <div class="imm-part" id="immPart" hidden></div>
+    <div class="controls">
+      <button class="btn nav" id="prev" type="button">上一步</button>
+      <div class="beatinfo"><span id="beatlabel" class="mono"></span><div class="pips" id="pips"></div></div>
+      <button class="btn primary nav" id="next" type="button">下一步</button>
+    </div>
+    <p class="hint">鍵盤 ← → 切換，Esc 離開全螢幕；手機全螢幕時可左右滑動。</p>
+  </section>
+
+  <section class="info">
+    <article class="card" aria-live="polite">
+      <div class="eyebrow" id="eyebrow"></div>
+      <h2 id="title"></h2>
+      <div class="cross" id="cross" hidden></div>
+      <p class="now" id="nowWrap"><span class="lab">現在發生什麼</span><span id="now"></span></p>
+      <p class="plain" id="plain"></p>
+      <details id="detailWrap"><summary>展開看細節</summary><div id="detail"></div></details>
+      <div><h3>資料來源</h3><ol class="src" id="sources"></ol></div>
+    </article>
+    <aside class="card">
+      <div id="part"></div>
+      <div><h3>圖中的材料</h3><div class="chips" id="legend"></div></div>
+      <div><h3>這一步相關的廠商</h3><div id="suppliers"></div></div>
+    </aside>
+  </section>
+
+  <footer id="footer"></footer>
+</div>
+
+<script>
+(() => {
+  // ==================== 資料：換成自己的內容（欄位定義見方法檔 5.1） ====================
+  // 以下是骨架示範內容，全部虛構：兩幕三步，每一種欄位與互動各示範一次。
+  const META = {
+    title: '示範產品：從材料到出貨',
+    subtitle: '骨架示範：兩幕三步，展示每一種欄位與互動',
+    subject: '示範公司',
+    // supCaveat：選填，研究對象專屬的廠商但書，接在每一步廠商說明句的後面
+    market: 'TW',
+    ticker: 'TWSE:0000',
+    type: '產品技術研究',
+    methodology_version: 'product-technology-v1',
+    framework: '個人研究筆記（互動頁靜態版）',
+    date: '2026-11-07',
+    version: 'v0.1',
+    footer_right: '個人研究筆記 · 非投資建議',
+    disclaimer: '本頁為骨架示範，內容全部虛構，非投資建議。示意圖非依比例繪製。',
+    readingGuide: [
+      '本報告是互動頁的靜態版，內容與互動頁相同；每一步的每一拍各附一張示意圖。',
+      '**互動版** — 逐拍動畫、可點選材料看說明。',
+      '**來源標示** — 徽章依來源分級：公司正式文件、公司技術文件、供應商或合作夥伴聲明、間接來源、媒體轉述。',
+    ],
+    kpi: [
+      { label: '示範指標一', value: '2026 Q4', note: '虛構，示範用' },
+      { label: '示範指標二', value: '8%', note: '虛構，示範用' },
+      { label: '示範指標三', value: '−5%', note: '虛構，示範用' },
+    ],
+    actLead: {
+      1: '產品線：跟著最小單位，看它怎麼一步步做出來。',
+      2: '供應鏈：這一步的設備與材料由誰供應。',
+    },
+    kicker: 'DEMO · SKELETON',
+    lede: '骨架示範：按「下一步」播放每個環節，點圖中任何一塊材料看它的用途。',
+    notice: '圖為示意，非依比例繪製；本頁內容全部虛構，用來展示骨架的每一種欄位。',
+    footer: '個人研究筆記，非投資建議。資料查證日 2026-11-07。',
+  };
+
+  // 來源：t 為 TAG 的 key
+  const SRC = {
+    demo_ar: { t: 'official', label: '示範：公司年報（虛構）', url: 'https://example.com/annual-report' },
+    demo_paper: { t: 'paper', label: '示範：公司員工署名的論文（虛構）', url: 'https://example.com/paper' },
+    demo_vendor: { t: 'vendor', label: '示範：供應商新聞稿（虛構）', url: 'https://example.com/vendor-news' },
+    demo_generic: { t: 'generic', label: '示範：同類技術的教科書說明（虛構）', url: 'https://example.com/textbook' },
+    demo_media: { t: 'media', label: '示範：媒體報導（虛構）', url: 'https://example.com/news' },
+  };
+  // 來源類型；level 為方法檔 3.1 的分級，1 最高
+  const TAG = {
+    official: { name: '公司正式文件', level: 1 },
+    paper: { name: '公司技術文件', level: 2 },
+    vendor: { name: '供應商或合作夥伴聲明', level: 3 },
+    generic: { name: '間接來源', level: 4 },
+    media: { name: '媒體轉述', level: 5 },
+  };
+
+  // 廠商：S＝有公開資料顯示供貨或合作（●）；M＝該類主要廠商（○）
+  const SUP = {
+    demo: { name: '示範類別：製程設備', list: [['示範廠商甲', 'S'], ['示範廠商乙', 'M']] },
+  };
+
+  const PARTS = {
+    'demo-base': { name: '基板', en: 'Substrate', text: '示範材料：所有元件都建在它上面。' },
+    'demo-film': { name: '薄膜', en: 'Thin film', text: '示範材料：鋪在基板上的一層薄膜。' },
+    'demo-block': { name: '元件', en: 'Device', text: '示範材料：在薄膜上做出來的元件。' },
+    'demo-via': { name: '通孔', en: 'Via', text: '示範材料：上下方向的金屬柱，接在導線的兩端。' },
+    'demo-wire': { name: '導線', en: 'Wire', text: '示範材料：水平方向的金屬導線。' },
+  };
+  const PART_ORDER = ['demo-base', 'demo-film', 'demo-block', 'demo-via', 'demo-wire'];
+  // 材料的色票：CSS 變數名（不含 --），用在圖例與材料說明的色塊
+  const SWATCH = { 'demo-base': 'm-sub', 'demo-film': 'm-ox', 'demo-block': 'm-sd', 'demo-via': 'm-mask', 'demo-wire': 'm-metal' };
+
+  // line：這一幕走哪條線（product 產品線／supply 供應鏈／both 兩條線）
+  const ACTS = [
+    { n: 1, name: '第一幕', title: '做出元件', line: 'product' },
+    { n: 2, name: '第二幕', title: '誰來供應', line: 'supply' },
+  ];
+
+  const STEPS = [
+    { n: 1, act: 1, title: '鋪膜與做出元件', badges: ['official', 'generic'], cross: [3],
+      pa: ['①', '側面剖面（示意）'], pb: ['②', '重點數字'],
+      plain: '示範步驟：先在基板上鋪一層薄膜，再在薄膜上做出元件。這一步示範兩拍、交會標籤，以及圖片載入失敗時的替代卡片。',
+      detail: ['示範細節：展開後的補充說明放在這裡，一段一個字串。', '負數一律用 U+2212 減號，例如 −5%。'],
+      beats: [
+        { now: '在基板上鋪一層薄膜。示範數字：成本 −5%（虛構）。', a: '基板與薄膜（示意）。', b: '這一拍的重點數字（虛構）。' },
+        { now: '在薄膜上做出元件；右圖示範圖片載入失敗時的替代卡片。', a: '薄膜上的元件（示意）。', b: '圖片載入失敗時，改顯示圖說與來源連結。', pb: ['②', '示範圖片'] },
+      ],
+      supNote: '示範：這一步不列廠商。',
+      sources: ['demo_ar', 'demo_generic'] },
+    { n: 2, act: 1, title: '用導線把元件接起來', badges: ['paper'],
+      pa: ['①', '通孔與導線（示意）'], pb: ['②', '說明'],
+      plain: '示範步驟：兩個通孔各接在導線的一端。左圖的三個元件標了網路（data-net），可以傾印給連接檢查工具比對。',
+      beats: [
+        { now: '兩個通孔各接在導線的一端，三者屬於同一個網路 n1。', a: '通孔、導線、通孔（示意）。', b: '標了網路的元件可以交給連接檢查工具。' },
+      ],
+      supNote: '示範：這一步不列廠商。',
+      sources: ['demo_paper'] },
+    { n: 3, act: 2, title: '這一步的設備由誰供應', badges: ['vendor', 'media'], cross: [1],
+      pa: ['①', '供應關係（示意）'], pb: ['②', '廠商標示'],
+      plain: '示範步驟：供應鏈這條線在這裡與第一幕交會，說明做出元件的設備由誰供應。',
+      beats: [
+        { now: '示範廠商甲供應設備給示範公司。', a: '廠商、公司、產品的關係（示意）。', b: '● 有公開資料；○ 該類主要廠商。' },
+      ],
+      sources: ['demo_vendor', 'demo_media'] },
+  ];
+  // 每一步列出的廠商類別（SUP 的 key）；沒列的步驟顯示 supNote
+  const STEP_SUP = { 3: ['demo'] };
+  STEPS.forEach(s => { if (STEP_SUP[s.n]) s.sup = STEP_SUP[s.n]; });
+
+  // 場景：on／off 寫成「步號.拍號」，拍號從 1 起；元件在 on 之後、off 之前顯示，off 留空就一直顯示。
+  // 要給連接檢查工具的元件只用 <rect>，並標 id、data-net、data-kind（wire｜via｜node）。
+  function buildScene(A, B, { el, R, T, C, card, photo }) {
+    // 步驟 1：基板、薄膜、元件；右圖第 1 拍是數字卡，第 2 拍是一張不存在的圖
+    el(A, 'demo-base', 'rect', R(0, 230, 400, 70), '1.1', '2.1', 'rise');
+    el(A, 'demo-film', 'rect', R(0, 200, 400, 30), '1.1', '2.1', 'grow', 200);
+    el(A, 'demo-block', 'rect', R(140, 130, 120, 70), '1.2', '2.1', 'drop');
+    T(A, 200, 40, '基板、薄膜與元件（示意）', '1.1', '2.1', 'lbl', 'middle');
+    T(A, 200, 120, '元件', '1.2', '2.1', 'lbl-s', 'middle');
+    card('1.1', '1.2', ['示範數字（虛構）', ' ', '成本：−5%', '良率：90%']);
+    photo('img/demo-missing.png', '示範圖片：這張圖不存在，用來測試載入失敗時的替代卡片', '1.2', '2.1', 'https://example.com/demo-photo-source');
+
+    // 步驟 2：通孔—導線—通孔，同一個網路 n1；導線兩端都落在通孔內
+    el(A, 'demo-base', 'rect', R(0, 230, 400, 70), '2.1', '3.1');
+    el(A, 'demo-wire', 'rect', { id: 'demo-w1', 'data-net': 'n1', 'data-kind': 'wire', ...R(100, 140, 200, 10) }, '2.1', '3.1', 'growx', 200);
+    el(A, 'demo-via', 'rect', { id: 'demo-v1', 'data-net': 'n1', 'data-kind': 'via', ...R(96, 136, 16, 94) }, '2.1', '3.1', 'drop');
+    el(A, 'demo-via', 'rect', { id: 'demo-v2', 'data-net': 'n1', 'data-kind': 'via', ...R(288, 136, 16, 94) }, '2.1', '3.1', 'drop');
+    T(A, 200, 128, '導線', '2.1', '3.1', 'lbl-s', 'middle');
+    T(A, 104, 120, '通孔', '2.1', '3.1', 'lbl-s', 'middle');
+    T(A, 296, 120, '通孔', '2.1', '3.1', 'lbl-s', 'middle');
+    T(A, 200, 40, '同一個網路 n1（示意）', '2.1', '3.1', 'lbl', 'middle');
+    card('2.1', '3.1', ['左圖三個元件標了 data-net', ' ', '通孔、導線、通孔都屬於網路 n1；', 'dumpScene() 傳回它們的位置', '與大小，交給連接檢查工具']);
+
+    // 步驟 3：供應關係
+    C(A, 'nbox', 'rect', { x: 12, y: 116, width: 104, height: 68, rx: 8 }, '3.1');
+    T(A, 64, 156, '示範廠商甲', '3.1', null, 'lbl', 'middle');
+    C(A, 'ln', 'path', { d: 'M116,150 L150,150' }, '3.1'); C(A, 'arrow-m', 'polygon', { points: '148,145 158,150 148,155' }, '3.1');
+    C(A, 'nbox', 'rect', { x: 160, y: 116, width: 96, height: 68, rx: 8 }, '3.1', null, 'drop', 150);
+    T(A, 208, 156, '示範公司', '3.1', null, 'lbl', 'middle', 150);
+    C(A, 'ln', 'path', { d: 'M256,150 L290,150' }, '3.1', null, 'fade', 300); C(A, 'arrow-m', 'polygon', { points: '288,145 298,150 288,155' }, '3.1', null, 'fade', 300);
+    C(A, 'nbox', 'rect', { x: 300, y: 116, width: 88, height: 68, rx: 8 }, '3.1', null, 'drop', 300);
+    T(A, 344, 156, '產品', '3.1', null, 'lbl', 'middle', 300);
+    card('3.1', null, ['設備由誰供應？', ' ', '● 有公開資料：示範廠商甲', '○ 該類主要廠商：示範廠商乙']);
+  }
+
+  // ==================== 引擎：一般不需要修改 ====================
+  const NS = 'http://www.w3.org/2000/svg';
+  const key = (n, b) => n * 10 + b;
+  const parseKey = s => { const [n, b] = s.split('.').map(Number); return key(n, b); };
+  function el(svg, part, tag, attrs, on, off, fx, d) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    e.classList.add('el');
+    if (part) e.dataset.part = part;
+    e.dataset.on = on; if (off) e.dataset.off = off;
+    e.dataset.fx = fx || 'fade';
+    if (d) e.style.setProperty('--d', d + 'ms');
+    svg.appendChild(e);
+    return e;
+  }
+  const R = (x, y, w, h) => ({ x, y, width: w, height: h });
+  function T(svg, x, y, lines, on, off, cls = 'lbl', anchor = 'start', d) {
+    const t = el(svg, null, 'text', { x, y, 'text-anchor': anchor }, on, off, 'fade', d);
+    t.classList.add(cls);
+    [].concat(lines).forEach((line, i) => {
+      const sp = document.createElementNS(NS, 'tspan');
+      sp.setAttribute('x', x);
+      if (i) sp.setAttribute('dy', cls === 'lbl-s' ? 16 : 19);
+      sp.textContent = line;
+      t.appendChild(sp);
+    });
+    return t;
+  }
+  function C(svg, cls, tag, attrs, on, off, fx, d) { const e = el(svg, null, tag, attrs, on, off, fx, d); e.classList.add(...cls.split(' ')); return e; }
+
+  // 缺值：畫面顯示空字串，並在 console 留錯誤，讓檢查工具抓得到
+  const miss = (what, v = '') => { console.error(`walkthrough：${what} 缺值`); return v; };
+  const need = (v, what) => (v === undefined || v === null || v === '' ? miss(what) : v);
+
+  const A = document.getElementById('svgA');
+  const B = document.getElementById('svgB');
+  const card = (on, off, lines) => { C(B, 'nbox', 'rect', { x: 20, y: 30, width: 360, height: 240, rx: 8 }, on, off); T(B, 44, 74, lines, on, off); };
+  // 依字寬斷行：全形字算 1，半形字算 0.55
+  function wrapLines(text, max) {
+    const out = []; let line = '', w = 0;
+    for (const ch of text) {
+      const cw = ch.charCodeAt(0) < 0x2e80 ? 0.55 : 1;
+      if (w + cw > max && line) { out.push(line); line = ''; w = 0; }
+      line += ch; w += cw;
+    }
+    if (line) out.push(line);
+    return out;
+  }
+  // 圖片：載入失敗時拿掉圖片與圖下說明，改顯示一張卡片，寫圖說並附來源連結
+  const photo = (src, caption, on, off, url) => {
+    const img = el(B, null, 'image', { href: src, x: 6, y: 8, width: 388, height: 252, preserveAspectRatio: 'xMidYMid meet' }, on, off);
+    const cap = T(B, 200, 288, caption, on, off, 'lbl-s', 'middle');
+    const fb = [
+      C(B, 'nbox', 'rect', { x: 20, y: 30, width: 360, height: 240, rx: 8 }, on, off),
+      T(B, 44, 74, ['圖片無法載入', ' ', ...wrapLines(caption, 22)], on, off),
+    ];
+    if (url) {
+      const a = el(B, null, 'a', { href: url, target: '_blank', rel: 'noopener' }, on, off);
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('x', 44); t.setAttribute('y', 250); t.classList.add('lbl', 'lnk');
+      t.textContent = '開啟圖片來源';
+      a.appendChild(t);
+      fb.push(a);
+    } else {
+      miss(`圖片 ${src} 的來源網址`);
+    }
+    fb.forEach(e => { e.style.display = 'none'; });
+    img.addEventListener('error', () => {
+      [img, cap].forEach(e => { e.remove(); const i = ALL.indexOf(e); if (i >= 0) ALL.splice(i, 1); });
+      fb.forEach(e => { e.style.display = ''; });
+    }, { once: true });
+  };
+
+  buildScene(A, B, { el, R, T, C, card, photo });
+  const ALL = [...document.querySelectorAll('svg .el')];
+  ALL.forEach(e => { e._on = parseKey(e.dataset.on); e._off = e.dataset.off ? parseKey(e.dataset.off) : Infinity; });
+  // 必填的顯示欄位在載入時正規化一次：缺值一律變成空字串並記錯誤，標題、導覽、軌道、交會標籤共用同一個結果
+  ACTS.forEach(a => { a.name = need(a.name, `第 ${a.n} 幕的 name`); a.title = need(a.title, `第 ${a.n} 幕的 title`); });
+  STEPS.forEach(s => {
+    s.title = need(s.title, `步驟 ${s.n} 的 title`);
+    if (!s.beats || !s.beats.length) s.beats = miss(`步驟 ${s.n} 的 beats`, [{}]);
+  });
+  // 「步驟 n／總數」的總數只算沒有 label 的步驟（序幕、終章這類帶 label 的不算）
+  const NUMBERED = STEPS.filter(s => !s.label).length;
+  const stepName = s => s.label || `步驟 ${s.n}`;
+
+  // ---------- 狀態 ----------
+  const LINE = { product: '產品線', supply: '供應鏈', both: '兩條線' };
+  let cur = { n: STEPS[0].n, b: 1 };
+  let selPart = null;
+  let imm = false;
+  const $ = id => document.getElementById(id);
+  const partOf = id => {
+    const p = PARTS[id] || miss(`材料 ${id}`, {});
+    return { name: need(p.name, `材料 ${id} 的 name`), en: need(p.en, `材料 ${id} 的 en`), text: need(p.text, `材料 ${id} 的 text`) };
+  };
+
+  function renderMeta() {
+    $('kicker').textContent = need(META.kicker, 'META.kicker');
+    $('headline').textContent = need(META.title, 'META.title');
+    $('lede').textContent = need(META.lede, 'META.lede');
+    $('notice').textContent = need(META.notice, 'META.notice');
+    const f = $('footer');
+    f.textContent = need(META.footer, 'META.footer') + '來源標示：';
+    Object.entries(TAG).forEach(([k, v], i) => {
+      if (i) f.append('／');
+      const sp = document.createElement('span'); sp.style.color = `var(--tag-${k})`; sp.textContent = v.name;
+      f.append(sp);
+    });
+    f.append('。');
+  }
+
+  function buildRail() {
+    const acts = $('acts');
+    acts.style.gridTemplateColumns = ACTS.map(a => `minmax(max-content, ${Math.max(1, STEPS.filter(s => s.act === a.n).length)}fr)`).join(' ');
+    ACTS.forEach(a => {
+      const box = document.createElement('div'); box.className = 'act'; box.dataset.act = a.n;
+      box.innerHTML = `<div class="act-name"><b>${a.name}</b>${a.title}<span class="act-line">${need(LINE[a.line], `第 ${a.n} 幕的 line`)}</span></div><div class="dots"></div>`;
+      const dots = box.querySelector('.dots');
+      STEPS.filter(s => s.act === a.n).forEach(s => {
+        const d = document.createElement('button'); d.type = 'button'; d.className = 'dot';
+        d.textContent = s.short || s.n; d.dataset.n = s.n; d.setAttribute('aria-label', `${stepName(s)}：${s.title}`);
+        d.addEventListener('click', () => go(s.n, 1));
+        dots.appendChild(d);
+      });
+      acts.appendChild(box);
+    });
+  }
+
+  function stepOf(n) { return STEPS.find(s => s.n === n); }
+
+  function renderScene() {
+    const k = key(cur.n, cur.b);
+    ALL.forEach(e => e.classList.toggle('on', k >= e._on && k < e._off));
+    applySel();
+  }
+
+  function visibleParts() {
+    const set = new Set();
+    ALL.forEach(e => { if (e.classList.contains('on') && e.dataset.part) set.add(e.dataset.part); });
+    return PART_ORDER.filter(p => set.has(p));
+  }
+
+  function applySel() {
+    ALL.forEach(e => e.classList.toggle('sel', !!selPart && e.dataset.part === selPart && e.classList.contains('on')));
+  }
+
+  function renderPart() {
+    const box = $('part');
+    if (!selPart || !visibleParts().includes(selPart)) {
+      selPart = null;
+      box.innerHTML = visibleParts().length ? '<p class="muted">點圖中任何一塊材料，或下方的圖例，看它是什麼、做什麼用。</p>' : '<p class="muted">這一步的圖是說明用的示意，沒有可點選的材料。</p>';
+    } else {
+      const p = partOf(selPart);
+      box.innerHTML = `<div class="part-name"><span class="sw" style="background:var(--${swatch(selPart)})"></span>${p.name}</div>
+        <div class="part-en">${p.en}</div><p class="part-text">${p.text}</p>`;
+    }
+    const ip = $('immPart');
+    ip.hidden = !(imm && selPart);
+    if (imm && selPart) {
+      const p = partOf(selPart);
+      ip.innerHTML = `<div class="row"><span class="sw" style="background:var(--${swatch(selPart)})"></span>${p.name}
+        <button class="x" type="button" aria-label="關閉材料說明">關閉</button></div><p>${p.text}</p>`;
+      ip.querySelector('.x').addEventListener('click', () => { selPart = null; applySel(); renderPart(); });
+    }
+    const lg = $('legend'); lg.innerHTML = '';
+    const vis = visibleParts();
+    if (!vis.length) { lg.innerHTML = '<span class="muted">這一步的圖沒有可點選的材料。</span>'; }
+    vis.forEach(id => {
+      const c = document.createElement('button'); c.type = 'button'; c.className = 'chip';
+      c.setAttribute('aria-pressed', String(id === selPart));
+      c.innerHTML = `<span class="sw" style="background:var(--${swatch(id)})"></span>${partOf(id).name}`;
+      c.addEventListener('click', () => { selPart = selPart === id ? null : id; applySel(); renderPart(); });
+      lg.appendChild(c);
+    });
+    applySel();
+  }
+  function swatch(id) { return need(SWATCH[id], `材料 ${id} 的色票`); }
+
+  function renderText() {
+    const s = stepOf(cur.n);
+    const act = ACTS.find(a => a.n === s.act) || miss(`步驟 ${s.n} 所屬的幕`, { name: '', title: '' });
+    $('eyebrow').textContent = `${act.name}・${act.title}　|　${s.label || `步驟 ${s.n}／${NUMBERED}`}`;
+    $('title').textContent = s.title;
+    $('where').textContent = `${act.name} ${act.title} › ${stepName(s)} ${s.title}`;
+    const beat = s.beats[cur.b - 1] || {};
+    // scale：選填，圖依數字比例繪製時設 true；寫在拍上時以拍為準
+    const scale = (beat.scale ?? s.scale) === true;
+    $('badges').innerHTML = `<span class="badge generic">${scale ? '依數字比例' : '示意，非比例'}</span>`
+      + (s.badges || []).map(t => `<span class="badge ${t}">含${need(TAG[t] && TAG[t].name, `來源類型 ${t}`)}資料</span>`).join('');
+    const cross = $('cross'); cross.innerHTML = '';
+    (s.cross || []).forEach(n => {
+      const t = stepOf(n);
+      if (!t) { miss(`步驟 ${s.n} 的 cross 指向的步驟 ${n}`); return; }
+      const ta = ACTS.find(a => a.n === t.act);
+      const c = document.createElement('button'); c.type = 'button'; c.className = 'chip';
+      c.textContent = `交會（${ta ? LINE[ta.line] : ''}）：${stepName(t)} ${t.title}`;
+      c.addEventListener('click', () => go(t.n, 1));
+      cross.appendChild(c);
+    });
+    cross.hidden = !cross.children.length;
+    $('nowWrap').hidden = !beat.now;
+    $('now').textContent = need(beat.now, `步驟 ${s.n} 第 ${cur.b} 拍的 now`);
+    $('plain').textContent = need(s.plain, `步驟 ${s.n} 的 plain`);
+    $('capA').textContent = beat.a || '';
+    $('capB').textContent = beat.b || '';
+    const pa = beat.pa || s.pa || miss(`步驟 ${s.n} 的 pa`, ['', '']), pb = beat.pb || s.pb || miss(`步驟 ${s.n} 的 pb`, ['', '']);
+    $('paCut').textContent = pa[0]; $('paText').textContent = pa[1];
+    $('pbCut').textContent = pb[0]; $('pbText').textContent = pb[1];
+    $('svgA').setAttribute('aria-label', pa[1]); $('svgB').setAttribute('aria-label', pb[1]);
+    $('detailWrap').hidden = !s.detail;
+    $('detail').innerHTML = (s.detail || []).map(p => `<p>${p}</p>`).join('');
+    const src = $('sources'); src.innerHTML = '';
+    (s.sources || miss(`步驟 ${s.n} 的 sources`, [])).forEach(id => {
+      const o = SRC[id];
+      if (!o) { miss(`來源 ${id}`); return; }
+      // data-src 讓產生衍生成品的腳本對得回來源 key；url 缺值時不放 href，避免被解析成本機路徑
+      const li = document.createElement('li'); li.dataset.src = id;
+      const url = need(o.url, `來源 ${id} 的 url`);
+      li.innerHTML = `<span class="t" style="color:var(--tag-${o.t})">${need(TAG[o.t] && TAG[o.t].name, `來源類型 ${o.t}`)}</span><a${url ? ` href="${url}"` : ''} target="_blank" rel="noopener">${need(o.label, `來源 ${id} 的 label`)}</a>`;
+      src.appendChild(li);
+    });
+    const supGroup = g => {
+      const sg = SUP[g] || miss(`廠商類別 ${g}`, {});
+      const list = (sg.list || miss(`廠商類別 ${g} 的 list`, [])).map(([nm, lv], i) =>
+        `<span class="sup ${lv}">${lv === 'S' ? '●' : '○'} ${need(nm, `廠商類別 ${g} 第 ${i + 1} 家的名稱`)}</span>`).join('');
+      return `<div class="supg"><b>${need(sg.name, `廠商類別 ${g} 的 name`)}</b><span>${list}</span></div>`;
+    };
+    $('suppliers').innerHTML = s.sup
+      ? s.sup.map(supGroup).join('')
+        + `<p class="muted">● 有公開資料顯示供貨給${META.subject}或與${META.subject}合作（供應商獎、官方名單、雙方新聞稿或媒體報導）　○ 該類主要廠商。名單依類別列出，沒有逐家證明用在這一步${META.supCaveat ? '，' + META.supCaveat : ''}。</p>`
+      : need(s.supNote, `步驟 ${s.n} 的 sup 或 supNote`);
+
+    document.querySelectorAll('.dot').forEach(d => {
+      const n = Number(d.dataset.n);
+      d.classList.toggle('cur', n === cur.n); d.classList.toggle('done', n < cur.n);
+      d.setAttribute('aria-current', n === cur.n ? 'step' : 'false');
+    });
+    document.querySelectorAll('.act').forEach(a => a.classList.toggle('cur', Number(a.dataset.act) === s.act));
+    const pips = $('pips'); pips.innerHTML = '';
+    s.beats.forEach((_, i) => { const p = document.createElement('span'); p.className = 'pip' + (i < cur.b ? ' on' : ''); pips.appendChild(p); });
+    $('beatlabel').textContent = `${cur.b}／${s.beats.length}`;
+    $('immNow').textContent = beat.now || '';
+    const idx = STEPS.indexOf(s);
+    $('prev').disabled = idx === 0 && cur.b === 1;
+    $('next').disabled = idx === STEPS.length - 1 && cur.b === s.beats.length;
+  }
+
+  // 內部的 b 是拍號，從 1 起，與場景的「步號.拍號」一致
+  function go(n, b) {
+    cur = { n, b };
+    renderScene(); renderText(); renderPart();
+    try { history.replaceState(null, '', '#s' + n); } catch (e) { /* 部分環境不允許改網址 */ }
+  }
+  // 依 STEPS 陣列順序前後移動
+  function next() {
+    const s = stepOf(cur.n), i = STEPS.indexOf(s);
+    if (cur.b < s.beats.length) go(cur.n, cur.b + 1);
+    else if (i < STEPS.length - 1) go(STEPS[i + 1].n, 1);
+  }
+  function prev() {
+    const i = STEPS.indexOf(stepOf(cur.n));
+    if (cur.b > 1) go(cur.n, cur.b - 1);
+    else if (i > 0) { const p = STEPS[i - 1]; go(p.n, p.beats.length); }
+  }
+
+  [A, B].forEach(svg => svg.addEventListener('click', ev => {
+    const t = ev.target.closest('.el.on[data-part]');
+    if (!t) return;
+    selPart = selPart === t.dataset.part ? null : t.dataset.part;
+    applySel(); renderPart();
+  }));
+  $('next').addEventListener('click', next);
+  $('prev').addEventListener('click', prev);
+  document.addEventListener('keydown', ev => {
+    if (ev.target.closest && ev.target.closest('input, textarea, select')) return;
+    if (ev.key === 'ArrowRight') { ev.preventDefault(); next(); }
+    if (ev.key === 'ArrowLeft') { ev.preventDefault(); prev(); }
+    if (ev.key === 'Escape' && imm) { ev.preventDefault(); setImm(false); }
+  });
+
+  // ---------- 沉浸模式 ----------
+  const stage = $('stage');
+  const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function setImm(on) {
+    imm = on;
+    stage.classList.toggle('immersive', on);
+    document.documentElement.classList.toggle('imm-lock', on);
+    document.querySelectorAll('.wrap > :not(#stage)').forEach(e => { e.inert = on; });
+    const btn = $('immBtn');
+    btn.textContent = on ? '結束全螢幕' : '全螢幕觀看';
+    btn.setAttribute('aria-pressed', String(on));
+    if (on) {
+      stage.setAttribute('role', 'dialog'); stage.setAttribute('aria-modal', 'true');
+      const frames = reduceMotion() ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: 'scale(0.98)' }, { opacity: 1, transform: 'none' }];
+      stage.animate(frames, { duration: reduceMotion() ? 200 : 260, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
+      $('next').focus();
+    } else {
+      stage.removeAttribute('role'); stage.removeAttribute('aria-modal');
+      btn.focus();
+    }
+    renderPart();
+  }
+  $('immBtn').addEventListener('click', () => setImm(!imm));
+
+  // 全螢幕時左右滑動切換；只認觸控，且水平位移要明顯大於垂直位移
+  let touchStart = null;
+  $('panels').addEventListener('pointerdown', ev => { if (imm && ev.pointerType === 'touch') touchStart = { x: ev.clientX, y: ev.clientY }; });
+  $('panels').addEventListener('pointerup', ev => {
+    if (!touchStart) return;
+    const dx = ev.clientX - touchStart.x, dy = ev.clientY - touchStart.y;
+    touchStart = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { dx < 0 ? next() : prev(); }
+  });
+  $('panels').addEventListener('pointercancel', () => { touchStart = null; });
+
+  function fromHash() {
+    const m = /^#s(\d+)$/.exec(location.hash);
+    const n = m ? Number(m[1]) : NaN;
+    return stepOf(n) ? n : STEPS[0].n;
+  }
+  window.addEventListener('hashchange', () => { const n = fromHash(); if (n !== cur.n) go(n, 1); });
+
+  // ---------- 場景傾印：給連接檢查工具讀 ----------
+  // 回傳目前顯示中、帶 data-net 的元件；座標是 getBBox() 的 viewBox 單位。只支援 <rect>。
+  function dumpScene() {
+    const out = [];
+    [['A', A], ['B', B]].forEach(([name, svg]) => svg.querySelectorAll('.el.on[data-net]').forEach(e => {
+      if (e.tagName.toLowerCase() !== 'rect') { console.error(`walkthrough：data-net 只支援 <rect>，略過 ${e.id || e.tagName}`); return; }
+      const r = e.getBBox();
+      out.push({ id: e.id, svg: name, part: e.dataset.part || '', net: e.dataset.net, kind: e.dataset.kind || 'node', x: r.x, y: r.y, w: r.width, h: r.height });
+    }));
+    return out;
+  }
+
+  renderMeta();
+  buildRail();
+  go(fromHash(), 1);
+
+  // 對外介面：go(n, b) 的 b 是 beats 陣列索引，從 0 起
+  window.walkthrough = {
+    meta: META, steps: STEPS, tags: TAG,
+    go(n, b = 0) {
+      const s = stepOf(n);
+      if (!s || !(b >= 0 && b < s.beats.length)) { console.error(`walkthrough.go：沒有步驟 ${n} 的第 ${b} 拍`); return; }
+      go(n, b + 1);
+    },
+    setImmersive(on) { setImm(!!on); },
+    dumpScene,
+  };
+})();
+</script>

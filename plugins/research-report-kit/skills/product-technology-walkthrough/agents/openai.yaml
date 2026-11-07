@@ -1,0 +1,7 @@
+interface:
+  display_name: "Product Technology Walkthrough"
+  short_description: "產品技術拆解：跟著產品最小單位走一遍，看懂產品線與供應鏈怎麼跑，不評價股價"
+  default_prompt: "Use $product-technology-walkthrough to collect and integrate evidence on how a company's main product is built and runs; generating the interactive page is done in Claude Code."
+
+policy:
+  allow_implicit_invocation: true

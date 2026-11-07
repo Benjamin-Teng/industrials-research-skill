@@ -1,6 +1,6 @@
 ---
 name: research-report-output
-description: "產出投資研究報告時使用（台股、美股共用同一套骨架），統一輸出格式：一律同時交付 .md 與機構風 .pdf。觸發情境包含企業與產業研究（商業模式、營收拆解、SWOT、產業鏈與利潤池）、個股深度研究、產業／供應鏈／技術研究、輪動掃描與 channel check 週報、SOTP／DCF 估值報告、供應鏈上下游分析、產品銷售展望、技術瓶頸分析；也在使用者說「寫一份研究報告」「做個股深度研究」「產業研究報告」「幫我出 PDF 版報告」時使用；使用者要「簡介」「摘要」「briefing」「重點速覽」時走 Briefing 模式。"
+description: "產出投資研究報告時使用（台股、美股共用同一套骨架），統一輸出格式：一律同時交付 .md 與機構風 .pdf。觸發情境包含企業與產業研究（商業模式、營收拆解、SWOT、產業鏈與利潤池）、個股深度研究、產業／供應鏈／技術研究、輪動掃描與 channel check 週報、SOTP／DCF 估值報告、供應鏈上下游分析、產品銷售展望、技術瓶頸分析、產品技術研究（跟著主力產品走一遍的技術拆解，E 型）；也在使用者說「寫一份研究報告」「做個股深度研究」「產業研究報告」「幫我出 PDF 版報告」時使用；使用者要「簡介」「摘要」「briefing」「重點速覽」時走 Briefing 模式。"
 metadata:
   compatibility: 產 PDF 需要 pandoc、playwright(chromium)、pypdf、PyYAML 與 Noto CJK 字型；缺件時的降級路徑見 references/output-spec.md 第六章。無這些依賴的環境（如 ChatGPT 網頁沙箱）只能交付 .md。
 ---
@@ -11,7 +11,7 @@ metadata:
 
 本 skill 管**格式與交付**：長什麼樣、怎麼排版、怎麼產檔、怎麼交。
 
-**內容標準**（方法、假設紀律、發布前的內容層檢查）依報告類型交給內容層 skill：A 型交 `equity-valuation-discipline`，D 型交 `business-industry-analysis`；
+**內容標準**（方法、假設紀律、發布前的內容層檢查）依報告類型交給內容層 skill：A 型交 `equity-valuation-discipline`，D 型交 `business-industry-analysis`，E 型交 `product-technology-walkthrough`；
 **產業掃描與 channel check** 交給 `product-cycle-rotation`；
 **取價**交給 `price-routing`。這些都是可替換層——使用者若有自己的方法論文件，優先讀他的。
 
@@ -22,10 +22,10 @@ metadata:
 1. 一律**同時產出 `.md` 與 `.pdf`**，PDF 由該 md 直接生成，不得手改。
 2. PDF 一律用 `scripts/md2pdf.py` 產生（機構研究報告樣式）。
 3. **兩檔都要交付給使用者**，附一句話結論——不要複述報告內容。（Claude 用 `SendUserFile`；Codex／其他環境把檔案寫進工作目錄並告知路徑。）
-4. md 必須有完整 YAML front matter（見下方樣板與 `references/output-spec.md` 第二章）；D 型依 `templates/D-business-industry.md` 的 front matter。
-5. 關鍵數據標**資料層級標籤**（`l1/l2/l3`）與**查價日**；價格書寫格式強制為「**數值＋日期＋盤別**」三件套（例：`US$218.98（2026-08-14 正常盤收盤）`），缺任一件即視為未查證數據。D 型不含價格與市場數據，以完整會計期間取代查價日。
+4. md 必須有完整 YAML front matter（見下方樣板與 `references/output-spec.md` 第二章）；D 型依 `templates/D-business-industry.md` 的 front matter；E 型的 front matter 由 `product-technology-walkthrough` 的 `scripts/build_walkthrough_md.py` 依互動頁產生（見 `references/output-spec.md` E 型一節）。
+5. 關鍵數據標**資料層級標籤**（`l1/l2/l3`）與**查價日**；價格書寫格式強制為「**數值＋日期＋盤別**」三件套（例：`US$218.98（2026-08-14 正常盤收盤）`），缺任一件即視為未查證數據。D 型不含價格與市場數據，以完整會計期間取代查價日；E 型同樣沒有價格與市場數據，以查證日與來源分級取代。
 6. **骨架不因市場而變**：台股、美股共用同一套章節與檢查清單，只換資料源與籌碼欄位（`references/market-localization.md`），依 front matter 的 `market` 取用。
-7. 交付前跑完 `references/output-spec.md` 第八章的**格式層檢查清單**＋下方 **F-rules 六項自查（F-a 至 F-f）**；內容層檢查清單依報告類型區分：A 型見 `equity-valuation-discipline`；D 型見 `business-industry-analysis` 的「交付前內容層檢查」。
+7. 交付前跑完 `references/output-spec.md` 第八章的**格式層檢查清單**＋下方 **F-rules 六項自查（F-a 至 F-f）**；內容層檢查清單依報告類型區分：A 型見 `equity-valuation-discipline`；D 型見 `business-industry-analysis` 的「交付前內容層檢查」；E 型見 `product-technology-walkthrough` 的方法檔第八章與第六章。
 8. **排版即內容**：任何需要讀第二次才能拆解的排版，等於沒寫。
 
 ---
@@ -66,6 +66,9 @@ metadata:
    - 單一個股的研究請求，沒有明確要求估值、目標價、報酬風險比或買賣判斷 → `templates/D-business-industry.md`（企業與產業研究），內容層用 business-industry-analysis。例：「幫我研究 BE」「做 BE 的個股深度研究」「BE 的供應鏈上下游分析」「BE 前景如何」。
      - 單一個股請求即使用到「供應鏈上下游分析」「技術瓶頸分析」等字眼，也走 D 型；以產業或技術主題為主體才走 B 型。
    - 明確要求估值、目標價、報酬風險比，或買進、賣出、加減碼、持有的判斷 → `templates/A-single-stock.md`（個股深度研究），內容層用 equity-valuation-discipline。例：「BE 值不值得買」「BE 要不要賣」「算 BE 的目標價」。同一標的已有 D 型報告時，A 型第四章直接引用它。
+   - 單一公司主力產品「怎麼做出來、怎麼運作」為主體，要跟著產品最小單位走一遍 → E 型（產品技術研究），內容層用 `product-technology-walkthrough`。例：「台積電 N2 怎麼做出來」「BE 的電堆怎麼運作」。請求明確指向產品技術細節時走 E 型，不走 D 型。
+     - E 型的主要成品是互動頁，沒有 `templates/` 骨架；下方第 4–6 步由 `product-technology-walkthrough` 方法檔 5.2 的重產流程取代（含 `fa_check.py` 與 `md2pdf.py`），第 7 步起照常。
+     - 以產業或技術主題為主體的研究仍走 B 型。
    - 以產業或供應鏈主題為主體 → `templates/B-industry-supplychain.md`（產業供應鏈研究）。
    - 輪動掃描與 channel check 週報 → `templates/C-rotation-weekly.md`（輪動掃描週報）。
 3. **命名**：`{主體}_{報告類型}_{版本}_{YYYYMMDD}.md`。版本語意：`v1.1` 補資料／**`v2.0` 結論改變**。同標的新版不覆蓋舊版。
@@ -117,6 +120,7 @@ metadata:
 
 **保留**：所有數字、表格、結論、資料層級標籤、來源清單、KPI 卡、bull/bear/caveat 區塊內容本身。A 型（`methodology_version: expectations-v1`）另須保留：模型依賴（走哪條估值路徑）、機率主觀性（示範機率的 `illustrative`／`subjective_evidence_based`／`empirically_calibrated` 標記）、資料缺口、時間假設（`holding_horizon_months`／`forecast_horizon_years`／價格反映收斂係數）、R/R 與示範機率表的示範標籤、價格假設（進場基準、日期、盤別）、機率來源與計算限制——刪內部方法論編號不等於可以移除這些揭露。
 **D 型保留**（`methodology_version: business-industry-v1`）：資料標示（推論、未揭露、未查到、未核對、口述、第三方逐字稿、屬技術報告範圍、管理層預測、第三方預測、未扣資本成本）、會計期間、比較基準未查的標記、交接清單的資料缺口。
+**E 型保留**（`methodology_version: product-technology-v1`）：每個說法的來源分級與出處、查證日、相關廠商與資料來源清單、逐拍截圖與圖說。E 型沒有價格與市場數據；「方法檔 x.y」這類引用比照 D 型刪去。E 型 External 版的刪節在互動頁上做，再依方法檔 5.2 重產 md 與 PDF，不手改 md。
 
 ### Briefing（摘要，≤3 頁）
 
@@ -126,6 +130,7 @@ metadata:
 **刪去**：市場共識基線拆解細節（留分歧一句）、事業結構全文、供應鏈全文（留一行定位句）、交叉驗證細節、敏感度矩陣（留排序第一名一句）、催化劑表（留下一個關鍵觀察時點一行）、命題監控儀表板、Caveats 全文、來源清單。⛔ 篇幅不足時優先縮減背景敘述，**不得刪除機率性質標記、成本／股利缺口揭露或建倉前最低檢查**。
 **D 型保留**（D 型以這兩行取代上方兩行）：營收來源排序、各來源 SWOT 的第一項、利潤分布結論、交接變數，以及這些內容的資料標示與會計期間。
 **D 型刪去**：各來源 SWOT 第一項以外的項目、同業比較表的明細列（保留結論）、資料時點疊加表的明細（保留體制轉換旗標）。
+**E 型暫不支援 Briefing**：E 型的 md 一律由互動頁重產，產檔器沒有摘要模式，不手改 md 來縮短。使用者要摘要時，交付互動頁連結，另寫一段 3–5 句的文字摘要（不是 md 報告），或建議改走 D 型 Briefing。
 
 ### ⚠️ 刪節後處理（External 與 Briefing 共用）
 
@@ -143,7 +148,7 @@ metadata:
 ---
 title: 〈公司名〉〈代號〉個股深度研究報告
 subtitle: 一句話講清楚論點與方法
-type: 個股深度研究          # 個股深度研究 / 產業供應鏈研究 / 輪動掃描週報 / 企業與產業研究
+type: 個股深度研究          # 個股深度研究 / 產業供應鏈研究 / 輪動掃描週報 / 企業與產業研究 / 產品技術研究
 market: TW                 # TW / US / TW+US
 ticker: TWSE:0000          # 美股寫 NYSE:XXX、NASDAQ:XXXX
 version: v1.0
@@ -175,7 +180,7 @@ kpi:
 ---
 ```
 
-`tone` 可填 `bull`／`bear`／留空（中性）。KPI 卡 3–5 張，且數字須與內文一致；**未知項不填零**，缺值行為見 `references/output-spec.md` 二；⛔ **不得把熊情境持有期損失標為最大可能損失**。`rating` 必須與 `decision_status` 一致（對照表見 `references/output-spec.md` 2.2）。D 型的 front matter 以 `templates/D-business-industry.md` 為準，欄位規則見 references/output-spec.md 第二章。
+`tone` 可填 `bull`／`bear`／留空（中性）。KPI 卡 3–5 張，且數字須與內文一致；**未知項不填零**，缺值行為見 `references/output-spec.md` 二；⛔ **不得把熊情境持有期損失標為最大可能損失**。`rating` 必須與 `decision_status` 一致（對照表見 `references/output-spec.md` 2.2）。D 型的 front matter 以 `templates/D-business-industry.md` 為準，欄位規則見 references/output-spec.md 第二章；E 型的 front matter 由 `build_walkthrough_md.py` 產生，不手寫。
 
 ## 專用語法速查
 
@@ -206,11 +211,11 @@ kpi:
 
 | 檔案 | 用途 |
 |---|---|
-| `references/output-spec.md` | 完整輸出規範：檔名規則、front matter schema、四型骨架、標註規範、產檔流程、格式層檢查清單 |
+| `references/output-spec.md` | 完整輸出規範：檔名規則、front matter schema、五型骨架、標註規範、產檔流程、格式層檢查清單 |
 | `references/formatting-rules.md` | F1–F5 完整版：正反例、嚴重度分級、常見漏網區域 |
 | `references/market-localization.md` | 台股／美股資料源與籌碼欄位對照，以及三個真正的方法論差異 |
 | `references/customize-your-framework.md` | 如何接上你自己的方法論、改樣式、換免責標語 |
-| `templates/` | A／B／C／D 四型報告骨架模板 |
+| `templates/` | A／B／C／D 報告骨架模板（E 型是互動頁衍生，沒有模板） |
 | `scripts/md2pdf.py` | md → PDF 產檔器（md → pandoc → HTML → Playwright/Chromium → PDF） |
 | `scripts/fa_check.py` | F-a 數字密集檢查（段落與表格儲存格；產 PDF 前必跑） |
 | `assets/report.css` | PDF 版面樣式（A4、邊界 16mm、內文 10pt、表格 8.6pt、深藍 `#16324f` 主色） |

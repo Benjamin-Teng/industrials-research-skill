@@ -7,12 +7,13 @@
 `research-report-kit` —— 一個同時封裝成 Claude Code plugin 與 Codex plugin 的投資研究工具組。
 內容是**方法論文件與報告模板**（繁體中文），加上一支支撐它們的數值核心。
 
-方法論有兩份**單一來源**：
+方法論有三份**單一來源**：
 
 - 估值：`plugins/research-report-kit/skills/equity-valuation-discipline/references/expectations-and-decisions.md`
 - Layer 1 企業與產業分析：`plugins/research-report-kit/skills/business-industry-analysis/references/business-industry-method.md`
+- 產品技術拆解：`plugins/research-report-kit/skills/product-technology-walkthrough/references/product-technology-method.md`
 
-兩份各自的公式、符號、口徑與規則，以各自的檔案為準；其他檔案只引用，不另抄變體。
+三份各自的公式、符號、口徑與規則，以各自的檔案為準；其他檔案只引用，不另抄變體。
 文件與程式若不一致，以文件的定義為準、修程式。
 
 ## 在唯讀沙箱裡怎麼跑驗證（重要）
@@ -41,7 +42,7 @@ Linux／macOS 把 `.venv/Scripts/` 換成 `.venv/bin/`，去掉 `.exe`。
 宣稱完成前，下列全部要 0 error，且**輸出要實際貼出來**：
 
 - `ruff check` 與 `ty check`（改了 `.py` 時）
-- `pytest tests/`（全數通過；數字以當場輸出為準）
+- `pytest tests/`（全數通過；數字以當場輸出為準）。瀏覽器測試要實際執行時加 `REQUIRE_BROWSER=1`，缺瀏覽器就失敗而不是 skip，skipped 須為 0
 - `npx --yes markdownlint-cli2 "plugins/research-report-kit/**/*.md" "README.md"`（改了 `.md` 時）
 - `claude plugin validate .`（改了 manifest 時）
 - **表格欄數上限 7 欄**——這不是 lint 規則，lint 抓不到，PDF 版面會擠壓。
@@ -64,6 +65,7 @@ Linux／macOS 把 `.venv/Scripts/` 換成 `.venv/bin/`，去掉 `.exe`。
 
 - 估值：依 `calibration-and-governance.md` 4.1。單一案例的發現先記進 4.5「觀察區」，達到升級條件再修法。
 - Layer 1 企業與產業分析：依 `business-industry-method.md` 第六章「治理」。
+- 產品技術拆解：依 `product-technology-method.md` 第八章「治理」。
 
 盲測是取得證據的方法：讓不知情的 agent 拿新舊兩版 skill 回答同一個問題，再依事先寫好的
 評分表計分。做法、已知的坑與各次結果的彙總放在 repo 根目錄的 `evals/blind-tests/`，
